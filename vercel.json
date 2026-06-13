@@ -43,6 +43,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "/api/index"
+    },
+    {
       "source": "/s/:token",
       "destination": "/index.html"
     },
