@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 describe("Vercel config", () => {
   it("exposes API routes through one Vercel catch-all function", async () => {
     await expect(access("api/index.ts")).resolves.toBeUndefined();
+    await expect(access("api/health.ts")).resolves.toBeUndefined();
 
     const apiEntry = await readFile("api/index.ts", "utf8");
     expect(apiEntry).toContain("../server/vercelRequestHandler.js");
