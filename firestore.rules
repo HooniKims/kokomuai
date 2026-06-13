@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // KkokkomuAI production data is managed by the Vercel API through Firebase Admin SDK.
+    // Direct browser access is blocked by default to protect teacher/admin data and student privacy.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

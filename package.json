@@ -1,0 +1,45 @@
+{
+  "name": "curriculum-question-chatbot",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "server": "tsx server/dev-server.ts",
+    "preflight:production": "tsx scripts/productionPreflight.ts",
+    "deployment:status": "tsx scripts/deploymentReadiness.ts",
+    "firebase:auth:check": "tsx scripts/checkFirebaseAuthProviders.ts",
+    "firebase:auth:bootstrap": "tsx scripts/bootstrapFirebaseAuth.ts",
+    "vercel:link:env": "tsx scripts/linkVercelProject.ts",
+    "vercel:env:dry-run": "tsx scripts/syncVercelEnv.ts",
+    "vercel:env:sync": "tsx scripts/syncVercelEnv.ts --apply",
+    "smoke:deploy": "tsx scripts/postDeploySmokeTest.ts",
+    "dev:full": "concurrently \"npm:server\" \"npm:dev\""
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "^8.6.0",
+    "firebase": "^12.14.0",
+    "firebase-admin": "^14.0.0",
+    "idb": "^8.0.3",
+    "jspdf": "^4.2.1",
+    "lucide-react": "^0.561.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^25.0.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.0.0",
+    "concurrently": "^10.0.3",
+    "tsx": "^4.21.0",
+    "vite": "^7.2.7",
+    "vitest": "^4.0.15"
+  }
+}
