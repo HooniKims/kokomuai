@@ -1,4 +1,4 @@
-import type { IdentitySchool } from "../src/domain/identity/identityAccess";
+﻿import type { IdentitySchool } from "../src/domain/identity/identityAccess.js";
 
 export interface NeisSchool extends IdentitySchool {
   address: string;

@@ -1,7 +1,7 @@
-import type { AiSettings } from "../src/domain/ai/aiSettings";
-import type { ManagedChatbot } from "../src/domain/chatbot/chatbotManagement";
-import type { AdminActionLogEvent, IdentityTeacherAccount } from "../src/domain/identity/identityAccess";
-import type { MonthlyUsageSummary, UsageAccountingEvent, UsageSurface } from "../src/domain/usage/usageAccounting";
+﻿import type { AiSettings } from "../src/domain/ai/aiSettings.js";
+import type { ManagedChatbot } from "../src/domain/chatbot/chatbotManagement.js";
+import type { AdminActionLogEvent, IdentityTeacherAccount } from "../src/domain/identity/identityAccess.js";
+import type { MonthlyUsageSummary, UsageAccountingEvent, UsageSurface } from "../src/domain/usage/usageAccounting.js";
 
 export const storePortContractVersion = 2;
 

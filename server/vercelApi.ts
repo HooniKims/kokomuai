@@ -1,16 +1,16 @@
-import type http from "node:http";
-import type { ProviderEnvironment } from "./aiProviderRequest";
-import { createApiHandler } from "./apiHandler";
-import type { VerifyIdToken } from "./authContext";
-import type { CurriculumIndex } from "./curriculumIndex";
-import { getFileBackedCurriculumIndex } from "./curriculumRepository";
-import { getFirebaseAdminAuth, getFirebaseAdminFirestore } from "./firebaseAdmin";
-import { parseFirebaseServerEnv } from "./firebaseEnv";
-import { createFirebaseStore, type FirestoreLike } from "./firebaseStore";
-import type { SchoolSearchDependency } from "./localApi";
-import { searchNeisSchools } from "./neisSchoolSearch";
-import { sendFirebasePasswordResetEmail } from "./passwordResetEmail";
-import type { StorePort } from "./storePort";
+﻿import type http from "node:http";
+import type { ProviderEnvironment } from "./aiProviderRequest.js";
+import { createApiHandler } from "./apiHandler.js";
+import type { VerifyIdToken } from "./authContext.js";
+import type { CurriculumIndex } from "./curriculumIndex.js";
+import { getFileBackedCurriculumIndex } from "./curriculumRepository.js";
+import { getFirebaseAdminAuth, getFirebaseAdminFirestore } from "./firebaseAdmin.js";
+import { parseFirebaseServerEnv } from "./firebaseEnv.js";
+import { createFirebaseStore, type FirestoreLike } from "./firebaseStore.js";
+import type { SchoolSearchDependency } from "./localApi.js";
+import { searchNeisSchools } from "./neisSchoolSearch.js";
+import { sendFirebasePasswordResetEmail } from "./passwordResetEmail.js";
+import type { StorePort } from "./storePort.js";
 
 type EnvironmentSource = ProviderEnvironment & Record<string, string | undefined>;
 

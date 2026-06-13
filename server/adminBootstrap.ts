@@ -1,4 +1,4 @@
-import { promoteTeacherToAdmin, type IdentityTeacherAccount } from "../src/domain/identity/identityAccess";
+﻿import { promoteTeacherToAdmin, type IdentityTeacherAccount } from "../src/domain/identity/identityAccess.js";
 
 type EnvironmentSource = Record<string, string | undefined>;
 

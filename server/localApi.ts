@@ -1,6 +1,6 @@
-import type http from "node:http";
-import { listAvailableAiModels } from "../src/domain/ai/modelCatalog";
-import { updateAiSettingsModel } from "../src/domain/ai/aiSettings";
+﻿import type http from "node:http";
+import { listAvailableAiModels } from "../src/domain/ai/modelCatalog.js";
+import { updateAiSettingsModel } from "../src/domain/ai/aiSettings.js";
 import {
   createChatbot,
   deleteChatbot,
@@ -9,9 +9,12 @@ import {
   isShareLinkAccessible,
   type ManagedChatbot,
   updateChatbot,
-  type CreateChatbotInput
-} from "../src/domain/chatbot/chatbotManagement";
-import type { CurriculumIndex, CurriculumRecommendationCandidate } from "./curriculumIndex";
+  type CreateChatbotInput,
+} from "../src/domain/chatbot/chatbotManagement.js";
+import type {
+  CurriculumIndex,
+  CurriculumRecommendationCandidate,
+} from "./curriculumIndex.js";
 import {
   approveTeacher,
   canUseTeacherFeatures,
@@ -20,19 +23,22 @@ import {
   rejectTeacher,
   registerLocalTeacher,
   type IdentityTeacherAccount,
-  type RegisterLocalTeacherInput
-} from "../src/domain/identity/identityAccess";
-import type { NeisSchool } from "./neisSchoolSearch";
-import type { StorePort } from "./storePort";
+  type RegisterLocalTeacherInput,
+} from "../src/domain/identity/identityAccess.js";
+import type { NeisSchool } from "./neisSchoolSearch.js";
+import type { StorePort } from "./storePort.js";
 import {
   requireAdminAuth,
   requireTeacherFeatureAuth,
   resolveRequestAuthContext,
-  type VerifyIdToken
-} from "./authContext";
-import { isBootstrapAdminEmail, promoteBootstrapAdminProfile } from "./adminBootstrap";
-import { isPayloadTooLargeError, readJson } from "./httpJson";
-import { applyCorsHeaders, writeCorsPreflight } from "./cors";
+  type VerifyIdToken,
+} from "./authContext.js";
+import {
+  isBootstrapAdminEmail,
+  promoteBootstrapAdminProfile,
+} from "./adminBootstrap.js";
+import { isPayloadTooLargeError, readJson } from "./httpJson.js";
+import { applyCorsHeaders, writeCorsPreflight } from "./cors.js";
 
 export type SchoolSearchDependency = (query: string) => Promise<NeisSchool[]>;
 type EnvironmentSource = Record<string, string | undefined>;
@@ -49,7 +55,9 @@ export interface LocalApiDependencies {
   passwordResetEmail?: (email: string) => Promise<void>;
 }
 
-export function createLocalApiHandler(dependencies: LocalApiDependencies): http.RequestListener {
+export function createLocalApiHandler(
+  dependencies: LocalApiDependencies,
+): http.RequestListener {
   return async (request, response) => {
     applyCorsHeaders(request, response, dependencies.env);
 
@@ -63,8 +71,14 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
     try {
       if (request.method === "GET" && url.pathname === "/api/teachers") {
         if (dependencies.auth?.requireFirebaseAuth) {
-          const context = await resolveRequiredAuthContextFromRequest(request, dependencies);
-          const visibleTeachers = context.teacher.status === "admin" ? await dependencies.store.listTeachers() : [context.teacher];
+          const context = await resolveRequiredAuthContextFromRequest(
+            request,
+            dependencies,
+          );
+          const visibleTeachers =
+            context.teacher.status === "admin"
+              ? await dependencies.store.listTeachers()
+              : [context.teacher];
           sendJson(response, 200, { teachers: visibleTeachers });
           return;
         }
@@ -80,24 +94,34 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
           sendJson(response, 200, { schools: [] });
           return;
         }
-        const schools = dependencies.schoolSearch ? await dependencies.schoolSearch(query) : [];
+        const schools = dependencies.schoolSearch
+          ? await dependencies.schoolSearch(query)
+          : [];
         sendJson(response, 200, { schools });
         return;
       }
 
-      if (request.method === "GET" && url.pathname === "/api/admin/ai-settings") {
+      if (
+        request.method === "GET" &&
+        url.pathname === "/api/admin/ai-settings"
+      ) {
         if (dependencies.auth?.requireFirebaseAuth) {
           await requireAdminFromRequest(request, dependencies);
         }
         sendJson(response, 200, {
           settings: await dependencies.store.getAiSettings(),
-          models: listAvailableAiModels()
+          models: listAvailableAiModels(),
         });
         return;
       }
 
-      if (request.method === "PATCH" && url.pathname === "/api/admin/ai-settings") {
-        const body = await readJson<{ adminId?: string; modelId?: string }>(request);
+      if (
+        request.method === "PATCH" &&
+        url.pathname === "/api/admin/ai-settings"
+      ) {
+        const body = await readJson<{ adminId?: string; modelId?: string }>(
+          request,
+        );
         const admin = dependencies.auth?.requireFirebaseAuth
           ? await requireAdminFromRequest(request, dependencies)
           : body.adminId
@@ -109,20 +133,24 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
         }
 
         try {
-          const next = updateAiSettingsModel(await dependencies.store.getAiSettings(), {
-            modelId: body.modelId ?? "",
-            adminId: admin.id,
-            now: new Date().toISOString()
-          });
+          const next = updateAiSettingsModel(
+            await dependencies.store.getAiSettings(),
+            {
+              modelId: body.modelId ?? "",
+              adminId: admin.id,
+              now: new Date().toISOString(),
+            },
+          );
           await dependencies.store.saveAiSettings(next);
           sendJson(response, 200, {
             settings: next,
-            models: listAvailableAiModels()
+            models: listAvailableAiModels(),
           });
         } catch (error) {
           sendJson(response, 400, {
             error: "invalid_ai_model",
-            message: error instanceof Error ? error.message : "Invalid AI model"
+            message:
+              error instanceof Error ? error.message : "Invalid AI model",
           });
         }
         return;
@@ -138,33 +166,62 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
           {
             ...body,
             email: verified?.email ?? body.email,
-            passwordHash: verified ? "firebase-auth" : body.passwordHash
+            passwordHash: verified ? "firebase-auth" : body.passwordHash,
           },
           {
-          id: verified?.uid ?? createId("teacher"),
-          now
-          }
+            id: verified?.uid ?? createId("teacher"),
+            now,
+          },
         );
-        const shouldBootstrapAdmin = Boolean(verified && isBootstrapAdminEmail(verified.email, dependencies.env));
-        const profileToSave: { teacher: IdentityTeacherAccount; event?: ReturnType<typeof promoteBootstrapAdminProfile>["event"] } =
-          shouldBootstrapAdmin ? promoteBootstrapAdminProfile(teacher, { now, logId: createId("admin-log") }) : { teacher };
-        const result = await dependencies.store.saveTeacherIfEmailAbsent(profileToSave.teacher);
+        const shouldBootstrapAdmin = Boolean(
+          verified && isBootstrapAdminEmail(verified.email, dependencies.env),
+        );
+        const profileToSave: {
+          teacher: IdentityTeacherAccount;
+          event?: ReturnType<typeof promoteBootstrapAdminProfile>["event"];
+        } = shouldBootstrapAdmin
+          ? promoteBootstrapAdminProfile(teacher, {
+              now,
+              logId: createId("admin-log"),
+            })
+          : { teacher };
+        const result = await dependencies.store.saveTeacherIfEmailAbsent(
+          profileToSave.teacher,
+        );
         if (result.created && profileToSave.event) {
           await dependencies.store.appendAdminActionLog(profileToSave.event);
         }
-        if (!result.created && shouldBootstrapAdmin && result.teacher.status !== "admin") {
-          const promoted = await dependencies.store.updateTeacherWithAdminAction(result.teacher.id, (existing) =>
-            existing.status === "admin" ? { teacher: existing } : promoteBootstrapAdminProfile(existing, { now, logId: createId("admin-log") })
-          );
-          sendJson(response, 200, { teacher: promoted?.teacher ?? result.teacher });
+        if (
+          !result.created &&
+          shouldBootstrapAdmin &&
+          result.teacher.status !== "admin"
+        ) {
+          const promoted =
+            await dependencies.store.updateTeacherWithAdminAction(
+              result.teacher.id,
+              (existing) =>
+                existing.status === "admin"
+                  ? { teacher: existing }
+                  : promoteBootstrapAdminProfile(existing, {
+                      now,
+                      logId: createId("admin-log"),
+                    }),
+            );
+          sendJson(response, 200, {
+            teacher: promoted?.teacher ?? result.teacher,
+          });
           return;
         }
 
-        sendJson(response, result.created ? 201 : 200, { teacher: result.teacher });
+        sendJson(response, result.created ? 201 : 200, {
+          teacher: result.teacher,
+        });
         return;
       }
 
-      const approveMatch = /^\/api\/admin\/teachers\/([^/]+)\/approve$/.exec(url.pathname);
+      const approveMatch = /^\/api\/admin\/teachers\/([^/]+)\/approve$/.exec(
+        url.pathname,
+      );
       if (request.method === "POST" && approveMatch) {
         const body = await readJson<{ adminId?: string }>(request);
         const admin = dependencies.auth?.requireFirebaseAuth
@@ -177,17 +234,20 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
           return;
         }
 
-        const result = await dependencies.store.updateTeacherWithAdminAction(approveMatch[1], (teacher) => {
-          if (teacher.status === "approved") {
-            return { teacher };
-          }
+        const result = await dependencies.store.updateTeacherWithAdminAction(
+          approveMatch[1],
+          (teacher) => {
+            if (teacher.status === "approved") {
+              return { teacher };
+            }
 
-          return approveTeacher(teacher, {
-            adminId: admin.id,
-            now: new Date().toISOString(),
-            logId: createId("admin-log")
-          });
-        });
+            return approveTeacher(teacher, {
+              adminId: admin.id,
+              now: new Date().toISOString(),
+              logId: createId("admin-log"),
+            });
+          },
+        );
         if (!result) {
           sendJson(response, 404, { error: "teacher_not_found" });
           return;
@@ -197,9 +257,12 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
         return;
       }
 
-      const rejectTeacherMatch = /^\/api\/admin\/teachers\/([^/]+)\/reject$/.exec(url.pathname);
+      const rejectTeacherMatch =
+        /^\/api\/admin\/teachers\/([^/]+)\/reject$/.exec(url.pathname);
       if (request.method === "POST" && rejectTeacherMatch) {
-        const body = await readJson<{ adminId?: string; reason?: string }>(request);
+        const body = await readJson<{ adminId?: string; reason?: string }>(
+          request,
+        );
         const admin = dependencies.auth?.requireFirebaseAuth
           ? await requireAdminFromRequest(request, dependencies)
           : body.adminId
@@ -210,18 +273,21 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
           return;
         }
 
-        const result = await dependencies.store.updateTeacherWithAdminAction(rejectTeacherMatch[1], (teacher) => {
-          if (teacher.status === "rejected") {
-            return { teacher };
-          }
+        const result = await dependencies.store.updateTeacherWithAdminAction(
+          rejectTeacherMatch[1],
+          (teacher) => {
+            if (teacher.status === "rejected") {
+              return { teacher };
+            }
 
-          return rejectTeacher(teacher, {
-            adminId: admin.id,
-            now: new Date().toISOString(),
-            logId: createId("admin-log"),
-            reason: body.reason ?? "학교 정보 확인 필요"
-          });
-        });
+            return rejectTeacher(teacher, {
+              adminId: admin.id,
+              now: new Date().toISOString(),
+              logId: createId("admin-log"),
+              reason: body.reason ?? "학교 정보 확인 필요",
+            });
+          },
+        );
         if (!result) {
           sendJson(response, 404, { error: "teacher_not_found" });
           return;
@@ -231,7 +297,8 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
         return;
       }
 
-      const disableTeacherMatch = /^\/api\/admin\/teachers\/([^/]+)\/disable$/.exec(url.pathname);
+      const disableTeacherMatch =
+        /^\/api\/admin\/teachers\/([^/]+)\/disable$/.exec(url.pathname);
       if (request.method === "POST" && disableTeacherMatch) {
         const body = await readJson<{ adminId?: string }>(request);
         const admin = dependencies.auth?.requireFirebaseAuth
@@ -244,17 +311,20 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
           return;
         }
 
-        const result = await dependencies.store.updateTeacherWithAdminAction(disableTeacherMatch[1], (teacher) => {
-          if (teacher.status === "disabled") {
-            return { teacher };
-          }
+        const result = await dependencies.store.updateTeacherWithAdminAction(
+          disableTeacherMatch[1],
+          (teacher) => {
+            if (teacher.status === "disabled") {
+              return { teacher };
+            }
 
-          return disableTeacher(teacher, {
-            adminId: admin.id,
-            now: new Date().toISOString(),
-            logId: createId("admin-log")
-          });
-        });
+            return disableTeacher(teacher, {
+              adminId: admin.id,
+              now: new Date().toISOString(),
+              logId: createId("admin-log"),
+            });
+          },
+        );
         if (!result) {
           sendJson(response, 404, { error: "teacher_not_found" });
           return;
@@ -264,7 +334,8 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
         return;
       }
 
-      const disableChatbotMatch = /^\/api\/admin\/chatbots\/([^/]+)\/disable$/.exec(url.pathname);
+      const disableChatbotMatch =
+        /^\/api\/admin\/chatbots\/([^/]+)\/disable$/.exec(url.pathname);
       if (request.method === "POST" && disableChatbotMatch) {
         const body = await readJson<{ adminId?: string }>(request);
         const admin = dependencies.auth?.requireFirebaseAuth
@@ -277,7 +348,9 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
           return;
         }
 
-        const chatbot = await dependencies.store.getChatbot(disableChatbotMatch[1]);
+        const chatbot = await dependencies.store.getChatbot(
+          disableChatbotMatch[1],
+        );
         if (!chatbot || chatbot.lifecycle.status === "deleted") {
           sendJson(response, 404, { error: "chatbot_not_found" });
           return;
@@ -286,7 +359,7 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
         const result = disableChatbotByAdmin(chatbot, {
           adminId: admin.id,
           now: new Date().toISOString(),
-          logId: createId("admin-log")
+          logId: createId("admin-log"),
         });
         await dependencies.store.saveChatbot(result.chatbot);
         await dependencies.store.appendAdminActionLog(result.event);
@@ -294,7 +367,8 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
         return;
       }
 
-      const passwordResetMatch = /^\/api\/admin\/teachers\/([^/]+)\/password-reset$/.exec(url.pathname);
+      const passwordResetMatch =
+        /^\/api\/admin\/teachers\/([^/]+)\/password-reset$/.exec(url.pathname);
       if (request.method === "POST" && passwordResetMatch) {
         const body = await readJson<{ adminId?: string }>(request);
         const admin = dependencies.auth?.requireFirebaseAuth
@@ -307,7 +381,9 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
           return;
         }
 
-        const teacher = await dependencies.store.getTeacher(passwordResetMatch[1]);
+        const teacher = await dependencies.store.getTeacher(
+          passwordResetMatch[1],
+        );
         if (!teacher) {
           sendJson(response, 404, { error: "teacher_not_found" });
           return;
@@ -320,7 +396,7 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
           adminId: admin.id,
           now: new Date().toISOString(),
           actionId: createId("password-reset"),
-          logId: createId("admin-log")
+          logId: createId("admin-log"),
         });
         await dependencies.store.appendAdminActionLog(result.event);
         sendJson(response, 200, { action: result.action });
@@ -340,12 +416,12 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
         const chatbot = createChatbot(
           {
             ...body,
-            ownerTeacherId: owner.id
+            ownerTeacherId: owner.id,
           },
           {
             id: createId("chatbot"),
-            now: new Date().toISOString()
-          }
+            now: new Date().toISOString(),
+          },
         );
         await dependencies.store.saveChatbot(chatbot);
         sendJson(response, 201, { chatbot });
@@ -353,19 +429,34 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
       }
 
       if (request.method === "GET" && url.pathname === "/api/chatbots") {
-        const authTeacher = dependencies.auth?.requireFirebaseAuth ? await requireTeacherFromRequest(request, dependencies) : undefined;
-        const ownerTeacherId = authTeacher && authTeacher.status !== "admin" ? authTeacher.id : url.searchParams.get("ownerTeacherId");
-        const source = ownerTeacherId ? await dependencies.store.listChatbotsByOwner(ownerTeacherId) : await dependencies.store.listChatbots();
-        const chatbots = source.filter((chatbot) => chatbot.lifecycle.status !== "deleted");
+        const authTeacher = dependencies.auth?.requireFirebaseAuth
+          ? await requireTeacherFromRequest(request, dependencies)
+          : undefined;
+        const ownerTeacherId =
+          authTeacher && authTeacher.status !== "admin"
+            ? authTeacher.id
+            : url.searchParams.get("ownerTeacherId");
+        const source = ownerTeacherId
+          ? await dependencies.store.listChatbotsByOwner(ownerTeacherId)
+          : await dependencies.store.listChatbots();
+        const chatbots = source.filter(
+          (chatbot) => chatbot.lifecycle.status !== "deleted",
+        );
         sendJson(response, 200, {
-          chatbots
+          chatbots,
         });
         return;
       }
 
       const chatbotMatch = /^\/api\/chatbots\/([^/]+)$/.exec(url.pathname);
-      if ((request.method === "PATCH" || request.method === "DELETE") && chatbotMatch) {
-        const body = await readJson<{ actorTeacherId: string; patch?: Partial<Omit<CreateChatbotInput, "ownerTeacherId">> }>(request);
+      if (
+        (request.method === "PATCH" || request.method === "DELETE") &&
+        chatbotMatch
+      ) {
+        const body = await readJson<{
+          actorTeacherId: string;
+          patch?: Partial<Omit<CreateChatbotInput, "ownerTeacherId">>;
+        }>(request);
         const actor = dependencies.auth?.requireFirebaseAuth
           ? await requireTeacherFromRequest(request, dependencies)
           : await dependencies.store.getTeacher(body.actorTeacherId);
@@ -385,18 +476,19 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
             request.method === "PATCH"
               ? updateChatbot(chatbot, body.patch ?? {}, {
                   actorTeacherId: actor.id,
-                  now: new Date().toISOString()
+                  now: new Date().toISOString(),
                 })
               : deleteChatbot(chatbot, {
                   actorTeacherId: actor.id,
-                  now: new Date().toISOString()
+                  now: new Date().toISOString(),
                 });
           await dependencies.store.saveChatbot(next);
           sendJson(response, 200, { chatbot: next });
         } catch (error) {
           sendJson(response, 403, {
             error: "chatbot_forbidden",
-            message: error instanceof Error ? error.message : "Cannot manage chatbot"
+            message:
+              error instanceof Error ? error.message : "Cannot manage chatbot",
           });
         }
         return;
@@ -404,7 +496,11 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
 
       const shareMatch = /^\/api\/chatbots\/([^/]+)\/share$/.exec(url.pathname);
       if (request.method === "POST" && shareMatch) {
-        const body = await readJson<{ actorTeacherId: string; token?: string; expiresAt?: string | null }>(request);
+        const body = await readJson<{
+          actorTeacherId: string;
+          token?: string;
+          expiresAt?: string | null;
+        }>(request);
         const actor = dependencies.auth?.requireFirebaseAuth
           ? await requireTeacherFromRequest(request, dependencies)
           : await dependencies.store.getTeacher(body.actorTeacherId);
@@ -422,7 +518,7 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
         const shared = enableShareLink(chatbot, {
           actorTeacherId: actor.id,
           token: body.token ?? createOpaqueToken(chatbot.id),
-          expiresAt: body.expiresAt ?? null
+          expiresAt: body.expiresAt ?? null,
         });
         await dependencies.store.saveChatbot(shared);
         sendJson(response, 200, { chatbot: shared });
@@ -431,8 +527,16 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
 
       const shareTokenMatch = /^\/api\/share\/([^/]+)$/.exec(url.pathname);
       if (request.method === "GET" && shareTokenMatch) {
-        const chatbot = await dependencies.store.findChatbotByShareToken(shareTokenMatch[1]);
-        if (!chatbot || !isShareLinkAccessible(chatbot, url.searchParams.get("now") ?? new Date().toISOString())) {
+        const chatbot = await dependencies.store.findChatbotByShareToken(
+          shareTokenMatch[1],
+        );
+        if (
+          !chatbot ||
+          !isShareLinkAccessible(
+            chatbot,
+            url.searchParams.get("now") ?? new Date().toISOString(),
+          )
+        ) {
           sendJson(response, 404, { error: "share_not_found" });
           return;
         }
@@ -443,13 +547,22 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
 
       if (request.method === "GET" && url.pathname === "/api/usage") {
         if (dependencies.auth?.requireFirebaseAuth) {
-          const context = await resolveRequiredAuthContextFromRequest(request, dependencies);
+          const context = await resolveRequiredAuthContextFromRequest(
+            request,
+            dependencies,
+          );
           const summaries =
             context.teacher.status === "admin"
               ? await dependencies.store.listUsageSummaries()
-              : await dependencies.store.listUsageSummariesByTeacher(context.teacher.id);
+              : await dependencies.store.listUsageSummariesByTeacher(
+                  context.teacher.id,
+                );
           const visibleSummaries =
-            context.teacher.status === "admin" ? summaries : summaries.filter((summary) => summary.teacherId === context.teacher.id);
+            context.teacher.status === "admin"
+              ? summaries
+              : summaries.filter(
+                  (summary) => summary.teacherId === context.teacher.id,
+                );
           sendJson(response, 200, { summaries: visibleSummaries });
           return;
         }
@@ -459,23 +572,36 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
         return;
       }
 
-      if (request.method === "GET" && url.pathname === "/api/admin/provider-errors") {
+      if (
+        request.method === "GET" &&
+        url.pathname === "/api/admin/provider-errors"
+      ) {
         if (dependencies.auth?.requireFirebaseAuth) {
           await requireAdminFromRequest(request, dependencies);
         }
-        sendJson(response, 200, { logs: await dependencies.store.listProviderErrorLogs() });
+        sendJson(response, 200, {
+          logs: await dependencies.store.listProviderErrorLogs(),
+        });
         return;
       }
 
-      if (request.method === "GET" && url.pathname === "/api/admin/action-logs") {
+      if (
+        request.method === "GET" &&
+        url.pathname === "/api/admin/action-logs"
+      ) {
         if (dependencies.auth?.requireFirebaseAuth) {
           await requireAdminFromRequest(request, dependencies);
         }
-        sendJson(response, 200, { logs: await dependencies.store.listAdminActionLogs() });
+        sendJson(response, 200, {
+          logs: await dependencies.store.listAdminActionLogs(),
+        });
         return;
       }
 
-      if (request.method === "GET" && url.pathname === "/api/curriculum/recommend") {
+      if (
+        request.method === "GET" &&
+        url.pathname === "/api/curriculum/recommend"
+      ) {
         const topic = url.searchParams.get("topic") ?? "";
         const schoolLevel = url.searchParams.get("schoolLevel");
         const gradeBand = url.searchParams.get("gradeBand");
@@ -483,7 +609,13 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
         const recommendations = dependencies.curriculumIndex
           ? dependencies.curriculumIndex
               .search(topic)
-              .filter((candidate) => matchesCurriculumFilters(candidate, { schoolLevel, gradeBand, subject }))
+              .filter((candidate) =>
+                matchesCurriculumFilters(candidate, {
+                  schoolLevel,
+                  gradeBand,
+                  subject,
+                }),
+              )
               .slice(0, 8)
               .map(toCurriculumApiItem)
           : [];
@@ -494,7 +626,8 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
       if (isPayloadTooLargeError(error)) {
         sendJson(response, 413, {
           error: "payload_too_large",
-          message: "요청 내용이 너무 큽니다. 입력 내용을 줄여 다시 시도해 주세요."
+          message:
+            "요청 내용이 너무 큽니다. 입력 내용을 줄여 다시 시도해 주세요.",
         });
         return;
       }
@@ -506,7 +639,8 @@ export function createLocalApiHandler(dependencies: LocalApiDependencies): http.
 
       sendJson(response, 500, {
         error: "local_api_error",
-        message: "요청을 처리하는 중 문제가 생겼습니다. 잠시 후 다시 시도해 주세요."
+        message:
+          "요청을 처리하는 중 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.",
       });
       return;
     }
@@ -520,7 +654,12 @@ function toCurriculumApiItem(candidate: CurriculumRecommendationCandidate) {
 
   return {
     chunkId: candidate.chunkId,
-    label: candidate.score >= 5 ? "추천" : candidate.score >= 2 ? "관련 있음" : "검토 필요",
+    label:
+      candidate.score >= 5
+        ? "추천"
+        : candidate.score >= 2
+          ? "관련 있음"
+          : "검토 필요",
     reason: `${recommendationScope} 영역에서 수업 주제와 연결되는 성취기준입니다.`,
     matchedTerms: candidate.matchedTerms,
     score: candidate.score,
@@ -533,8 +672,8 @@ function toCurriculumApiItem(candidate: CurriculumRecommendationCandidate) {
       area: candidate.area,
       achievement: candidate.achievement,
       excerpt: candidate.excerpt,
-      sectionPath: candidate.sectionPath
-    }
+      sectionPath: candidate.sectionPath,
+    },
   };
 }
 
@@ -553,24 +692,34 @@ function toPublicSharedChatbot(chatbot: ManagedChatbot) {
     share: {
       enabled: true,
       publicToken: chatbot.share.publicToken,
-      expiresAt: chatbot.share.expiresAt
-    }
+      expiresAt: chatbot.share.expiresAt,
+    },
   };
 }
 
 function matchesCurriculumFilters(
   candidate: CurriculumRecommendationCandidate,
-  filters: { schoolLevel: string | null; gradeBand: string | null; subject: string | null }
+  filters: {
+    schoolLevel: string | null;
+    gradeBand: string | null;
+    subject: string | null;
+  },
 ): boolean {
   if (filters.schoolLevel && candidate.schoolLevel !== filters.schoolLevel) {
     return false;
   }
 
-  if (filters.gradeBand && !matchesGradeBand(candidate.gradeBand, filters.gradeBand)) {
+  if (
+    filters.gradeBand &&
+    !matchesGradeBand(candidate.gradeBand, filters.gradeBand)
+  ) {
     return false;
   }
 
-  if (filters.subject && normalizeSubject(candidate.subject) !== normalizeSubject(filters.subject)) {
+  if (
+    filters.subject &&
+    normalizeSubject(candidate.subject) !== normalizeSubject(filters.subject)
+  ) {
     return false;
   }
 
@@ -581,7 +730,10 @@ function normalizeSubject(subject: string): string {
   return subject.replace(/\s+/g, "").toLowerCase();
 }
 
-function matchesGradeBand(candidateGradeBand: string, requestedGradeBand: string): boolean {
+function matchesGradeBand(
+  candidateGradeBand: string,
+  requestedGradeBand: string,
+): boolean {
   if (candidateGradeBand === "all") return true;
   if (candidateGradeBand === requestedGradeBand) return true;
 
@@ -596,25 +748,34 @@ function matchesGradeBand(candidateGradeBand: string, requestedGradeBand: string
 
 async function requireTeacherFromRequest(
   request: http.IncomingMessage,
-  dependencies: LocalApiDependencies
+  dependencies: LocalApiDependencies,
 ): Promise<IdentityTeacherAccount> {
   if (!dependencies.auth) throw new Error("auth_required");
-  const context = await resolveRequiredAuthContextFromRequest(request, dependencies);
+  const context = await resolveRequiredAuthContextFromRequest(
+    request,
+    dependencies,
+  );
   return requireTeacherFeatureAuth(context);
 }
 
-async function resolveRequiredAuthContextFromRequest(request: http.IncomingMessage, dependencies: LocalApiDependencies) {
+async function resolveRequiredAuthContextFromRequest(
+  request: http.IncomingMessage,
+  dependencies: LocalApiDependencies,
+) {
   if (!dependencies.auth) throw new Error("auth_required");
   const context = await resolveRequestAuthContext({
     authorizationHeader: getAuthorizationHeader(request),
     store: dependencies.store,
-    verifyIdToken: dependencies.auth.verifyIdToken
+    verifyIdToken: dependencies.auth.verifyIdToken,
   });
   if (context.kind !== "teacher") throw new Error("auth_required");
   return context;
 }
 
-async function requireVerifiedFirebaseTokenFromRequest(request: http.IncomingMessage, dependencies: LocalApiDependencies) {
+async function requireVerifiedFirebaseTokenFromRequest(
+  request: http.IncomingMessage,
+  dependencies: LocalApiDependencies,
+) {
   if (!dependencies.auth) throw new Error("auth_required");
   const token = parseBearerToken(getAuthorizationHeader(request));
   if (!token) throw new Error("auth_required");
@@ -628,14 +789,19 @@ async function requireVerifiedFirebaseTokenFromRequest(request: http.IncomingMes
 
 async function requireAdminFromRequest(
   request: http.IncomingMessage,
-  dependencies: LocalApiDependencies
+  dependencies: LocalApiDependencies,
 ): Promise<IdentityTeacherAccount> {
   if (!dependencies.auth) throw new Error("auth_required");
-  const context = await resolveRequiredAuthContextFromRequest(request, dependencies);
+  const context = await resolveRequiredAuthContextFromRequest(
+    request,
+    dependencies,
+  );
   return requireAdminAuth(context);
 }
 
-function getAuthorizationHeader(request: http.IncomingMessage): string | undefined {
+function getAuthorizationHeader(
+  request: http.IncomingMessage,
+): string | undefined {
   const value = request.headers.authorization;
   return Array.isArray(value) ? value[0] : value;
 }
@@ -649,14 +815,24 @@ function parseBearerToken(value: string | undefined): string {
 function isAuthorizationError(error: unknown): error is Error {
   return (
     error instanceof Error &&
-    ["auth_required", "teacher_not_approved", "admin_not_allowed", "teacher_profile_not_found", "invalid_token"].includes(error.message)
+    [
+      "auth_required",
+      "teacher_not_approved",
+      "admin_not_allowed",
+      "teacher_profile_not_found",
+      "invalid_token",
+    ].includes(error.message)
   );
 }
 
-function sendJson(response: http.ServerResponse, status: number, payload: unknown) {
+function sendJson(
+  response: http.ServerResponse,
+  status: number,
+  payload: unknown,
+) {
   response.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store"
+    "Cache-Control": "no-store",
   });
   response.end(JSON.stringify(payload));
 }
@@ -666,5 +842,7 @@ function createId(prefix: string): string {
 }
 
 function createOpaqueToken(seed: string): string {
-  return `${seed.replace(/[^a-z0-9]/gi, "")}${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`.padEnd(24, "x").slice(0, 32);
+  return `${seed.replace(/[^a-z0-9]/gi, "")}${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`
+    .padEnd(24, "x")
+    .slice(0, 32);
 }

@@ -1,15 +1,15 @@
-import { createDefaultAiSettings, type AiSettings } from "../src/domain/ai/aiSettings";
-import type { AiProvider } from "../src/domain/ai/modelCatalog";
-import type { ManagedChatbot } from "../src/domain/chatbot/chatbotManagement";
-import type { AdminActionLogEvent, IdentityTeacherAccount } from "../src/domain/identity/identityAccess";
+﻿import { createDefaultAiSettings, type AiSettings } from "../src/domain/ai/aiSettings.js";
+import type { AiProvider } from "../src/domain/ai/modelCatalog.js";
+import type { ManagedChatbot } from "../src/domain/chatbot/chatbotManagement.js";
+import type { AdminActionLogEvent, IdentityTeacherAccount } from "../src/domain/identity/identityAccess.js";
 import type {
   AiCallUsageEvent,
   MonthlyUsageSummary,
   UsageAccountingEvent,
   UsageErrorEvent,
   UsageSurface
-} from "../src/domain/usage/usageAccounting";
-import type { ProviderErrorLogEntry, StorePort } from "./storePort";
+} from "../src/domain/usage/usageAccounting.js";
+import type { ProviderErrorLogEntry, StorePort } from "./storePort.js";
 
 export interface FirestoreDocumentSnapshotLike {
   exists: boolean;

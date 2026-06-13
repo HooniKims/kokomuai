@@ -5315,6 +5315,51 @@ TDD 기록:
 - Vite: `http://127.0.0.1:5173/`
 - API: `http://127.0.0.1:8787`
 
+### 운영 전환 42차: Vercel API 라우트 복구 및 교사 우선 진입 흐름 정리
+
+완료 시간: 2026-06-13 23:50:46 +09:00
+
+요청:
+
+- 배포 환경에서 `/api/curriculum/recommend`, `/api/schools/search`가 404로 실패하는 문제를 수정한다.
+- 학교명은 검색 버튼 없이 일부 입력하면 하단 목록으로 자동 표시되고, 그 목록에서 선택할 수 있게 한다.
+- 첫 화면은 학생 화면이 아니라 교사 화면으로 시작한다.
+- 학생 화면은 상단 탭에서 제거하고, 교사가 생성한 공유 링크(`/s/{token}`)로 접속했을 때만 표시한다.
+
+작업:
+
+- Vercel 서버리스 함수에서 ESM 상대 import가 확장자 없이 배포되어 `server/vercelApi`를 찾지 못하던 문제를 수정했다.
+  - `server`, `api`의 상대 import를 `.js` 확장자 포함 형태로 정리했다.
+  - `server/vercelRequestHandler.ts`를 추가해 Vercel 함수가 공통 API 핸들러를 재사용하도록 했다.
+  - 중첩 API 경로가 Vercel에서 명시 함수로 잡히도록 `api/schools/search.ts`, `api/curriculum/recommend.ts` 등 실제 사용 경로 파일을 추가했다.
+- 교사 가입 학교 검색 흐름을 버튼 방식에서 300ms debounce 자동완성 방식으로 바꿨다.
+- 기본 진입 화면을 `teacher`로 변경하고, `/s/...` 공유 링크에서만 `student` 화면으로 진입하도록 `resolveInitialView`를 추가했다.
+- 상단 역할 탭에서 학생 화면 버튼을 제거했다.
+- 이전 일괄 수정 중 깨진 한국어 UI/API 문구를 정상 한국어로 복구했다.
+- 회귀 테스트를 추가했다.
+  - 교사 화면 기본 진입, 공유 링크 학생 화면 진입
+  - 학교 자동완성 상태 표시와 검색 버튼 제거
+  - Vercel 명시 API 파일 존재 확인
+
+검증:
+
+- 관련 테스트
+  - `npm test -- tests/presentation/studentShareNavigation.test.ts tests/presentation/teacherAuthPanel.test.ts tests/infrastructure/vercelConfig.test.ts tests/infrastructure/vercelApi.test.ts`
+  - 결과: 통과
+  - 4개 테스트 파일, 13개 테스트 통과
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 65개 테스트 파일, 262개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+
+주의:
+
+- Vercel 배포 후에는 환경변수와 Firebase Auth 설정에 따라 로그인 400이 별도로 발생할 수 있다.
+- 학교 검색과 교육과정 추천 404는 명시 API 라우트 추가로 해결되도록 수정했다.
+
 ### 운영 전환 42차: GitHub 업로드 전 대용량 원본 자료와 공개 파일 정리
 
 완료 시간: 2026-06-13 23:03:37 +09:00

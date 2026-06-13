@@ -1,11 +1,20 @@
-import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+﻿import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createDefaultAiSettings, type AiSettings } from "../src/domain/ai/aiSettings";
-import type { ManagedChatbot } from "../src/domain/chatbot/chatbotManagement";
-import type { AdminActionLogEvent, IdentityTeacherAccount } from "../src/domain/identity/identityAccess";
-import { aggregateUsageByMonth, type UsageAccountingEvent } from "../src/domain/usage/usageAccounting";
-import type { ProviderErrorLogEntry, StorePort } from "./storePort";
+import {
+  createDefaultAiSettings,
+  type AiSettings,
+} from "../src/domain/ai/aiSettings.js";
+import type { ManagedChatbot } from "../src/domain/chatbot/chatbotManagement.js";
+import type {
+  AdminActionLogEvent,
+  IdentityTeacherAccount,
+} from "../src/domain/identity/identityAccess.js";
+import {
+  aggregateUsageByMonth,
+  type UsageAccountingEvent,
+} from "../src/domain/usage/usageAccounting.js";
+import type { ProviderErrorLogEntry, StorePort } from "./storePort.js";
 
 export interface LocalStoreData {
   version: 1;
@@ -19,7 +28,11 @@ export interface LocalStoreData {
 
 export type LocalStore = StorePort;
 
-const defaultStorePath = join(dirname(fileURLToPath(import.meta.url)), "data", "local-dev-store.json");
+const defaultStorePath = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "data",
+  "local-dev-store.json",
+);
 const updateQueues = new Map<string, Promise<void>>();
 
 export function createLocalStore(filePath = defaultStorePath): LocalStore {
@@ -43,10 +56,14 @@ export function createLocalStore(filePath = defaultStorePath): LocalStore {
     },
 
     async saveTeacherIfEmailAbsent(teacher) {
-      let result: { teacher: IdentityTeacherAccount; created: boolean } | undefined;
+      let result:
+        | { teacher: IdentityTeacherAccount; created: boolean }
+        | undefined;
       await updateStore(storePath, (data) => {
         const normalizedTeacher = cloneJson(teacher);
-        const existing = data.teachers.find((item) => item.email === normalizedTeacher.email);
+        const existing = data.teachers.find(
+          (item) => item.email === normalizedTeacher.email,
+        );
         if (existing) {
           result = { teacher: cloneJson(existing), created: false };
           return;
@@ -61,9 +78,13 @@ export function createLocalStore(filePath = defaultStorePath): LocalStore {
     },
 
     async updateTeacherWithAdminAction(teacherId, update) {
-      let result: { teacher: IdentityTeacherAccount; event?: AdminActionLogEvent } | undefined;
+      let result:
+        | { teacher: IdentityTeacherAccount; event?: AdminActionLogEvent }
+        | undefined;
       await updateStore(storePath, (data) => {
-        const existing = data.teachers.find((teacher) => teacher.id === teacherId);
+        const existing = data.teachers.find(
+          (teacher) => teacher.id === teacherId,
+        );
         if (!existing) return;
 
         result = update(cloneJson(existing));
@@ -83,7 +104,11 @@ export function createLocalStore(filePath = defaultStorePath): LocalStore {
 
     async listChatbotsByOwner(ownerTeacherId) {
       const data = await readStore(storePath);
-      return cloneJson(data.chatbots.filter((chatbot) => chatbot.ownerTeacherId === ownerTeacherId));
+      return cloneJson(
+        data.chatbots.filter(
+          (chatbot) => chatbot.ownerTeacherId === ownerTeacherId,
+        ),
+      );
     },
 
     async getChatbot(id) {
@@ -100,7 +125,11 @@ export function createLocalStore(filePath = defaultStorePath): LocalStore {
     async findChatbotByShareToken(token) {
       const data = await readStore(storePath);
       const normalizedToken = token.trim();
-      return cloneJson(data.chatbots.find((chatbot) => chatbot.share.publicToken === normalizedToken));
+      return cloneJson(
+        data.chatbots.find(
+          (chatbot) => chatbot.share.publicToken === normalizedToken,
+        ),
+      );
     },
 
     async appendUsageEvent(event) {
@@ -121,7 +150,9 @@ export function createLocalStore(filePath = defaultStorePath): LocalStore {
 
     async listUsageSummariesByTeacher(teacherId) {
       const data = await readStore(storePath);
-      return aggregateUsageByMonth(data.usageEvents.filter((event) => event.teacherId === teacherId));
+      return aggregateUsageByMonth(
+        data.usageEvents.filter((event) => event.teacherId === teacherId),
+      );
     },
 
     async getAiSettings() {
@@ -155,13 +186,15 @@ export function createLocalStore(filePath = defaultStorePath): LocalStore {
     async listProviderErrorLogs() {
       const data = await readStore(storePath);
       return cloneJson(data.providerErrorLogs);
-    }
+    },
   };
 }
 
 async function readStore(filePath: string): Promise<LocalStoreData> {
   try {
-    const parsed = JSON.parse(await readFile(filePath, "utf8")) as Partial<LocalStoreData>;
+    const parsed = JSON.parse(
+      await readFile(filePath, "utf8"),
+    ) as Partial<LocalStoreData>;
     return normalizeStoreData(parsed);
   } catch (error) {
     if (isNodeFileError(error) && error.code === "ENOENT") {
@@ -174,14 +207,19 @@ async function readStore(filePath: string): Promise<LocalStoreData> {
   }
 }
 
-async function updateStore(filePath: string, update: (data: LocalStoreData) => void): Promise<void> {
+async function updateStore(
+  filePath: string,
+  update: (data: LocalStoreData) => void,
+): Promise<void> {
   const queueKey = getQueueKey(filePath);
   const previous = updateQueues.get(queueKey) ?? Promise.resolve();
-  const next = previous.catch(() => undefined).then(async () => {
-    const data = await readStore(filePath);
-    update(data);
-    await writeStore(filePath, data);
-  });
+  const next = previous
+    .catch(() => undefined)
+    .then(async () => {
+      const data = await readStore(filePath);
+      update(data);
+      await writeStore(filePath, data);
+    });
 
   updateQueues.set(queueKey, next);
 
@@ -194,7 +232,10 @@ async function updateStore(filePath: string, update: (data: LocalStoreData) => v
   }
 }
 
-async function writeStore(filePath: string, data: LocalStoreData): Promise<void> {
+async function writeStore(
+  filePath: string,
+  data: LocalStoreData,
+): Promise<void> {
   await mkdir(dirname(filePath), { recursive: true });
   const tempPath = `${filePath}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
   try {
@@ -214,12 +255,22 @@ function getQueueKey(filePath: string): string {
 function normalizeStoreData(data: Partial<LocalStoreData>): LocalStoreData {
   return {
     version: 1,
-    teachers: Array.isArray(data.teachers) ? data.teachers : createSeedData().teachers,
+    teachers: Array.isArray(data.teachers)
+      ? data.teachers
+      : createSeedData().teachers,
     chatbots: Array.isArray(data.chatbots) ? data.chatbots : [],
-    usageEvents: Array.isArray(data.usageEvents) ? data.usageEvents.map(toUsageAccountingEvent) : [],
-    aiSettings: isAiSettings(data.aiSettings) ? data.aiSettings : createDefaultAiSettings("2026-06-11T00:00:00.000Z"),
-    adminActionLogs: Array.isArray(data.adminActionLogs) ? data.adminActionLogs.map(toAdminActionLog) : [],
-    providerErrorLogs: Array.isArray(data.providerErrorLogs) ? data.providerErrorLogs.map(toProviderErrorLog) : []
+    usageEvents: Array.isArray(data.usageEvents)
+      ? data.usageEvents.map(toUsageAccountingEvent)
+      : [],
+    aiSettings: isAiSettings(data.aiSettings)
+      ? data.aiSettings
+      : createDefaultAiSettings("2026-06-11T00:00:00.000Z"),
+    adminActionLogs: Array.isArray(data.adminActionLogs)
+      ? data.adminActionLogs.map(toAdminActionLog)
+      : [],
+    providerErrorLogs: Array.isArray(data.providerErrorLogs)
+      ? data.providerErrorLogs.map(toProviderErrorLog)
+      : [],
   };
 }
 
@@ -236,22 +287,22 @@ function createSeedData(): LocalStoreData {
         passwordHash: "local-dev-admin-password-hash",
         school: {
           schoolName: "로컬 테스트 학교",
-          schoolKind: "기타",
+          schoolKind: "湲고?",
           officeCode: "LOCAL",
           standardSchoolCode: "LOCAL",
-          region: "로컬"
+          region: "로컬",
         },
         status: "admin",
         createdAt: "2026-06-11T00:00:00.000Z",
         promotedAt: "2026-06-11T00:00:00.000Z",
-        promotedBy: "system"
-      }
+        promotedBy: "system",
+      },
     ],
     chatbots: [],
     usageEvents: [],
     aiSettings: createDefaultAiSettings("2026-06-11T00:00:00.000Z"),
     adminActionLogs: [],
-    providerErrorLogs: []
+    providerErrorLogs: [],
   };
 }
 
@@ -262,7 +313,7 @@ function toAdminActionLog(input: AdminActionLogEvent): AdminActionLogEvent {
     action: input.action,
     adminId: input.adminId,
     targetTeacherId: input.targetTeacherId,
-    createdAt: input.createdAt
+    createdAt: input.createdAt,
   };
 
   if (input.reason !== undefined) {
@@ -275,12 +326,14 @@ function toAdminActionLog(input: AdminActionLogEvent): AdminActionLogEvent {
   return event;
 }
 
-function toProviderErrorLog(input: ProviderErrorLogEntry): ProviderErrorLogEntry {
+function toProviderErrorLog(
+  input: ProviderErrorLogEntry,
+): ProviderErrorLogEntry {
   const event: ProviderErrorLogEntry = {
     id: input.id,
     occurredAt: input.occurredAt,
     provider: input.provider,
-    message: input.message
+    message: input.message,
   };
 
   if (typeof input.status === "number") event.status = input.status;
@@ -306,7 +359,9 @@ function isAiSettings(value: unknown): value is AiSettings {
   );
 }
 
-function toUsageAccountingEvent(input: UsageAccountingEvent): UsageAccountingEvent {
+function toUsageAccountingEvent(
+  input: UsageAccountingEvent,
+): UsageAccountingEvent {
   if (input.kind === "error") {
     const event: UsageAccountingEvent = {
       id: input.id,
@@ -323,7 +378,7 @@ function toUsageAccountingEvent(input: UsageAccountingEvent): UsageAccountingEve
       outputTokenEstimate: input.outputTokenEstimate,
       estimatedCostUsd: input.estimatedCostUsd,
       errorCode: input.errorCode,
-      riskCodes: [...input.riskCodes]
+      riskCodes: [...input.riskCodes],
     };
 
     if (input.provider !== undefined) event.provider = input.provider;
@@ -331,9 +386,15 @@ function toUsageAccountingEvent(input: UsageAccountingEvent): UsageAccountingEve
 
     if (input.technical !== undefined) {
       event.technical = {
-        ...(input.technical.provider !== undefined ? { provider: input.technical.provider } : {}),
-        ...(typeof input.technical.status === "number" ? { status: input.technical.status } : {}),
-        ...(input.technical.code !== undefined ? { code: input.technical.code } : {})
+        ...(input.technical.provider !== undefined
+          ? { provider: input.technical.provider }
+          : {}),
+        ...(typeof input.technical.status === "number"
+          ? { status: input.technical.status }
+          : {}),
+        ...(input.technical.code !== undefined
+          ? { code: input.technical.code }
+          : {}),
       };
     }
 
@@ -356,7 +417,7 @@ function toUsageAccountingEvent(input: UsageAccountingEvent): UsageAccountingEve
     estimatedCostUsd: input.estimatedCostUsd,
     provider: input.provider,
     modelId: input.modelId,
-    riskCodes: [...input.riskCodes]
+    riskCodes: [...input.riskCodes],
   };
 }
 

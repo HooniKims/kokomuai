@@ -1,4 +1,4 @@
-import { LogIn, LogOut, Mail, Search, School, UserPlus } from "lucide-react";
+﻿import { LogIn, LogOut, Mail, School, UserPlus } from "lucide-react";
 import type { SchoolSearchResult } from "../apiClient";
 import { canSubmitTeacherProfile } from "./teacherAuthForm";
 
@@ -17,7 +17,6 @@ export interface TeacherAuthPanelProps {
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onSchoolQueryChange: (value: string) => void;
-  onSearchSchools: () => void | Promise<void>;
   onSelectSchool: (school: SchoolSearchResult) => void;
   onEmailSignIn: () => void | Promise<void>;
   onEmailSignUp: () => void | Promise<void>;
@@ -41,16 +40,18 @@ export function TeacherAuthPanel({
   onEmailChange,
   onPasswordChange,
   onSchoolQueryChange,
-  onSearchSchools,
   onSelectSchool,
   onEmailSignIn,
   onEmailSignUp,
   onGoogleSignIn,
   onRegisterProfile,
-  onSignOut
+  onSignOut,
 }: TeacherAuthPanelProps) {
-  const canRegisterProfile = canSubmitTeacherProfile({ realName, email, selectedSchool }) && !isSubmitting;
-  const canUseEmailAuth = email.trim().length > 0 && password.length >= 8 && !isSubmitting;
+  const canRegisterProfile =
+    canSubmitTeacherProfile({ realName, email, selectedSchool }) &&
+    !isSubmitting;
+  const canUseEmailAuth =
+    email.trim().length > 0 && password.length >= 8 && !isSubmitting;
 
   return (
     <section className="workspace auth-workspace">
@@ -72,7 +73,12 @@ export function TeacherAuthPanel({
             <span className="soft-label">가입 및 로그인</span>
             <h2>교사 계정으로 시작하기</h2>
           </div>
-          <button className="pill outline" type="button" onClick={() => void onSignOut()} disabled={isSubmitting}>
+          <button
+            className="pill outline"
+            type="button"
+            onClick={() => void onSignOut()}
+            disabled={isSubmitting}
+          >
             <LogOut size={16} /> 로그아웃
           </button>
         </div>
@@ -80,11 +86,20 @@ export function TeacherAuthPanel({
         <div className="form-grid auth-form-grid">
           <label>
             이름
-            <input value={realName} placeholder="김하늘" onChange={(event) => onRealNameChange(event.target.value)} />
+            <input
+              value={realName}
+              placeholder="김하늘"
+              onChange={(event) => onRealNameChange(event.target.value)}
+            />
           </label>
           <label>
             이메일
-            <input type="email" value={email} placeholder="teacher@example.com" onChange={(event) => onEmailChange(event.target.value)} />
+            <input
+              type="email"
+              value={email}
+              placeholder="teacher@example.com"
+              onChange={(event) => onEmailChange(event.target.value)}
+            />
           </label>
           <label>
             비밀번호
@@ -99,13 +114,28 @@ export function TeacherAuthPanel({
         </div>
 
         <div className="auth-actions">
-          <button className="pill dark" type="button" onClick={() => void onEmailSignIn()} disabled={!canUseEmailAuth}>
+          <button
+            className="pill dark"
+            type="button"
+            onClick={() => void onEmailSignIn()}
+            disabled={!canUseEmailAuth}
+          >
             <LogIn size={16} /> 이메일 로그인
           </button>
-          <button className="pill outline" type="button" onClick={() => void onEmailSignUp()} disabled={!canUseEmailAuth}>
+          <button
+            className="pill outline"
+            type="button"
+            onClick={() => void onEmailSignUp()}
+            disabled={!canUseEmailAuth}
+          >
             <Mail size={16} /> 이메일 가입
           </button>
-          <button className="pill outline" type="button" onClick={() => void onGoogleSignIn()} disabled={isSubmitting}>
+          <button
+            className="pill outline"
+            type="button"
+            onClick={() => void onGoogleSignIn()}
+            disabled={isSubmitting}
+          >
             <UserPlus size={16} /> Google로 계속하기
           </button>
         </div>
@@ -114,20 +144,28 @@ export function TeacherAuthPanel({
           <div className="section-heading compact">
             <div>
               <span className="soft-label">학교 선택</span>
-              <h2>학교 검색 결과에서 선택해야 가입할 수 있습니다.</h2>
+              <h2>학교명을 일부 입력한 뒤 목록에서 선택해 주세요.</h2>
             </div>
-            <button className="pill outline" type="button" onClick={() => void onSearchSchools()} disabled={schoolQuery.trim().length < 2 || isSearchingSchools}>
-              <Search size={16} /> {isSearchingSchools ? "검색 중" : "검색"}
-            </button>
           </div>
           <label className="school-query-label">
             학교명
-            <input value={schoolQuery} placeholder="예: 새빛중학교" onChange={(event) => onSchoolQueryChange(event.target.value)} />
+            <input
+              value={schoolQuery}
+              placeholder="예: 등촌중"
+              onChange={(event) => onSchoolQueryChange(event.target.value)}
+            />
           </label>
+          {isSearchingSchools ? (
+            <p className="selected-school-note">
+              학교 목록을 불러오는 중입니다.
+            </p>
+          ) : null}
 
           <div className="school-result-list">
             {schoolResults.map((school) => {
-              const isSelected = selectedSchool?.standardSchoolCode === school.standardSchoolCode;
+              const isSelected =
+                selectedSchool?.standardSchoolCode ===
+                school.standardSchoolCode;
               return (
                 <button
                   aria-pressed={isSelected}
@@ -140,7 +178,9 @@ export function TeacherAuthPanel({
                   <span>
                     <strong>{school.schoolName}</strong>
                     <small>
-                      {[school.region, school.schoolKind, school.address].filter(Boolean).join(" · ")}
+                      {[school.region, school.schoolKind, school.address]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </small>
                   </span>
                 </button>
@@ -154,7 +194,9 @@ export function TeacherAuthPanel({
               {selectedSchool.address ? ` · ${selectedSchool.address}` : ""}
             </p>
           ) : (
-            <p className="selected-school-note">학교를 직접 입력하지 말고 검색 결과에서 선택해 주세요.</p>
+            <p className="selected-school-note">
+              학교를 직접 입력하지 말고 아래 목록에서 선택해 주세요.
+            </p>
           )}
         </div>
 

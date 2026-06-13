@@ -1,8 +1,8 @@
-import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
+﻿import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
-import { parseFirebaseServerEnv } from "./firebaseEnv";
-import type { FirestoreLike } from "./firebaseStore";
+import { parseFirebaseServerEnv } from "./firebaseEnv.js";
+import type { FirestoreLike } from "./firebaseStore.js";
 
 type EnvironmentSource = Record<string, string | undefined>;
 

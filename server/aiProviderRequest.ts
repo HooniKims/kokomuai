@@ -1,4 +1,4 @@
-import type { AiModelOption } from "../src/domain/ai/modelCatalog";
+﻿import type { AiModelOption } from "../src/domain/ai/modelCatalog.js";
 
 export type ProviderMessage = { role: "system" | "user" | "assistant"; content: string };
 

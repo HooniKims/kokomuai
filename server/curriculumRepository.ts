@@ -1,7 +1,7 @@
-import { readdir, readFile } from "node:fs/promises";
+﻿import { readdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildCurriculumIndex, type CurriculumIndex } from "./curriculumIndex";
+import { buildCurriculumIndex, type CurriculumIndex } from "./curriculumIndex.js";
 
 const projectRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const defaultDocumentsDir = join(projectRoot, "2022_Revised_National_Curriculum", "documents");

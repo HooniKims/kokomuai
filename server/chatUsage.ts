@@ -1,11 +1,11 @@
-import type { ChatRequest } from "./chatProxy";
+﻿import type { ChatRequest } from "./chatProxy.js";
 import {
   createUsageErrorEvent,
   createUsageEvent,
   type UsageAccountingEvent,
   type UsageSurface,
   type UsageTechnicalMetadata
-} from "../src/domain/usage/usageAccounting";
+} from "../src/domain/usage/usageAccounting.js";
 
 interface ChatbotUsageIdentity {
   id?: string;

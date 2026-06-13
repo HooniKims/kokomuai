@@ -1,5 +1,5 @@
 import type http from "node:http";
-import { handleVercelRequest } from "../server/vercelRequestHandler.js";
+import { handleVercelRequest } from "../../../../server/vercelRequestHandler.js";
 
 export default async function handler(
   request: http.IncomingMessage,

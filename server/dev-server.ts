@@ -1,9 +1,9 @@
-import http from "node:http";
-import { createApiHandler } from "./apiHandler";
-import { getFileBackedCurriculumIndex } from "./curriculumRepository";
-import { createLocalStore } from "./localStore";
-import { searchNeisSchools } from "./neisSchoolSearch";
-import { loadDotEnvFile } from "./serverEnv";
+﻿import http from "node:http";
+import { createApiHandler } from "./apiHandler.js";
+import { getFileBackedCurriculumIndex } from "./curriculumRepository.js";
+import { createLocalStore } from "./localStore.js";
+import { searchNeisSchools } from "./neisSchoolSearch.js";
+import { loadDotEnvFile } from "./serverEnv.js";
 
 loadDotEnvFile();
 

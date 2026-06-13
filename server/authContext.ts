@@ -1,5 +1,5 @@
-import { canUseTeacherFeatures, type IdentityTeacherAccount } from "../src/domain/identity/identityAccess";
-import type { StorePort } from "./storePort";
+﻿import { canUseTeacherFeatures, type IdentityTeacherAccount } from "../src/domain/identity/identityAccess.js";
+import type { StorePort } from "./storePort.js";
 
 export interface VerifiedFirebaseToken {
   uid: string;
