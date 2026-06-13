@@ -51,6 +51,11 @@ async function runScenario(attempt) {
   page.on("console", (message) => {
     if (message.type() === "error") resourceWarnings.push(message.text());
   });
+  page.on("response", (response) => {
+    if (response.status() >= 400) {
+      resourceWarnings.push(`${response.status()} ${response.url()}`);
+    }
+  });
 
   try {
     await page.goto(appUrl, { waitUntil: "networkidle" });

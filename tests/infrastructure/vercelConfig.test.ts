@@ -2,33 +2,11 @@ import { access, readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
 describe("Vercel config", () => {
-  it("exposes nested API routes as explicit Vercel functions", async () => {
-    const requiredApiFiles = [
-      "api/health.ts",
-      "api/chat.ts",
-      "api/teachers.ts",
-      "api/chatbots.ts",
-      "api/chatbots/[chatbotId].ts",
-      "api/chatbots/[chatbotId]/share.ts",
-      "api/share/[token].ts",
-      "api/usage.ts",
-      "api/schools/search.ts",
-      "api/curriculum/recommend.ts",
-      "api/admin/ai-settings.ts",
-      "api/admin/provider-errors.ts",
-      "api/admin/action-logs.ts",
-      "api/admin/teachers/[teacherId]/approve.ts",
-      "api/admin/teachers/[teacherId]/reject.ts",
-      "api/admin/teachers/[teacherId]/disable.ts",
-      "api/admin/teachers/[teacherId]/password-reset.ts",
-      "api/admin/chatbots/[chatbotId]/disable.ts",
-    ];
+  it("exposes API routes through one Vercel catch-all function", async () => {
+    await expect(access("api/[...path].ts")).resolves.toBeUndefined();
 
-    await Promise.all(
-      requiredApiFiles.map((file) =>
-        expect(access(file)).resolves.toBeUndefined(),
-      ),
-    );
+    const apiEntry = await readFile("api/[...path].ts", "utf8");
+    expect(apiEntry).toContain("../server/vercelRequestHandler.js");
   });
 
   it("keeps API routes server-side and rewrites app routes to the Vite entry", async () => {

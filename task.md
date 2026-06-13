@@ -5358,7 +5358,58 @@ TDD 기록:
 주의:
 
 - Vercel 배포 후에는 환경변수와 Firebase Auth 설정에 따라 로그인 400이 별도로 발생할 수 있다.
-- 학교 검색과 교육과정 추천 404는 명시 API 라우트 추가로 해결되도록 수정했다.
+- 학교 검색과 교육과정 추천 404는 Vercel API 엔트리의 ESM import 경로를 고쳐 단일 catch-all 라우트에서 처리되도록 수정했다.
+
+### 운영 전환 43차: 전체 기능 재검증 및 Vercel 함수 구조 재정리
+
+완료 시간: 2026-06-14 00:10:17 +09:00
+
+요청:
+
+- `/goal` 흐름으로 모든 기능이 정상 작동하는지 검사하고 GitHub에 푸시한다.
+- Vercel에서 빌드는 끝났지만 `Deploying outputs...` 이후 Error가 나는 문제를 확인한다.
+
+원인:
+
+- 42차에서 `/api/*` 경로별 명시 Vercel 함수 파일을 여러 개 추가하면서 각 함수가 같은 서버 코드를 반복 번들링했다.
+- 원격 Vercel 로그에서 TypeScript 함수 번들링 메시지가 여러 번 반복된 뒤 `Deploying outputs...`에서 Error로 종료됐다.
+- 중첩 API 404의 실제 원인은 단일 catch-all 함수 자체가 아니라, 배포 런타임에서 확장자 없는 ESM import가 깨진 문제였다.
+
+수정:
+
+- Vercel API 구조를 다시 `api/[...path].ts` 단일 catch-all 함수로 통합했다.
+- 단일 함수는 `server/vercelRequestHandler.js`를 통해 공통 API 핸들러를 호출한다.
+- 서버/API 상대 import의 `.js` 확장자는 유지해 Vercel ESM 런타임에서 모듈을 찾을 수 있게 했다.
+- E2E 검증 스크립트가 400 이상 HTTP 응답 URL을 기록하도록 개선했다.
+
+검증:
+
+- 관련 테스트
+  - `npm test -- tests/infrastructure/vercelConfig.test.ts tests/infrastructure/vercelApi.test.ts tests/presentation/studentShareNavigation.test.ts tests/presentation/teacherAuthPanel.test.ts`
+  - 결과: 통과
+  - 4개 테스트 파일, 13개 테스트 통과
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 65개 테스트 파일, 262개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+- 로컬 HTTP 스모크
+  - `/api/health`: HTTP `200`, `provider: lmstudio`, `model: gemma-4-12b-it`
+  - `/api/schools/search?q=등촌중`: HTTP `200`, `등촌중학교` 반환
+  - `/api/curriculum/recommend`: HTTP `200`, `[9국04-03]` 포함 추천 반환
+  - Vite 첫 화면: HTTP `200`
+- 로컬 E2E 전체 흐름
+  - `node tests/e2e/localFullFlow.mjs`
+  - 결과: 통과
+  - 교사 승인, 챗봇 생성, 성취기준 연결, 학생 공유 링크 접속, 학생 답변, 사용량 기록 확인
+  - `resourceWarnings`: 빈 배열
+
+현재 판단:
+
+- 로컬 기준 핵심 기능은 통과했다.
+- Vercel 배포 실패를 줄이기 위해 다중 함수 구조를 제거했으므로, 다음 GitHub 자동 배포에서 단일 API 함수 구조로 다시 배포된다.
 
 ### 운영 전환 42차: GitHub 업로드 전 대용량 원본 자료와 공개 파일 정리
 
