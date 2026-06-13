@@ -5451,6 +5451,43 @@ TDD 기록:
 - Vercel 배포 실패 원인인 다중 함수 중복 번들링은 43차에서 제거했다.
 - Vercel 런타임 500 원인인 `src` 내부 확장자 없는 ESM import는 44차에서 제거했다.
 
+### 운영 전환 45차: Firebase Admin Auth 런타임 로드 지연 및 Node 22 고정
+
+완료 시간: 2026-06-14 00:20:07 +09:00
+
+요청:
+
+- Vercel Ready 배포 이후에도 `/api/health`가 500으로 실패하는 문제를 계속 추적한다.
+
+원인:
+
+- Vercel 함수 로그에서 다음 오류를 확인했다.
+  - `ERR_REQUIRE_ESM`
+  - `jwks-rsa`가 `jose` ESM 모듈을 CommonJS `require()`로 불러 실패
+- 이 경로는 `firebase-admin/auth` 로드 중 발생했다.
+- `/api/health`, 학교 검색, 교육과정 추천처럼 인증이 필요 없는 요청도 정적 import 때문에 Auth 모듈을 먼저 로드하고 있었다.
+
+수정:
+
+- `package.json`에 `"engines": { "node": "22.x" }`를 추가해 Vercel 함수 런타임을 Node 22 계열로 고정했다.
+- `server/firebaseAdmin.ts`에서 `firebase-admin/auth` 정적 import를 제거하고, 실제 ID 토큰 검증 시점에만 동적 import하도록 변경했다.
+- `server/vercelApi.ts`의 토큰 검증 호출부를 비동기 Auth getter에 맞게 수정했다.
+
+검증:
+
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 65개 테스트 파일, 262개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+
+현재 판단:
+
+- 인증이 필요 없는 공개 API는 더 이상 `firebase-admin/auth` 로드 실패에 막히지 않아야 한다.
+- 교사 인증이 필요한 요청은 실제 토큰 검증 시점에 Auth 모듈을 로드한다.
+
 ### 운영 전환 42차: GitHub 업로드 전 대용량 원본 자료와 공개 파일 정리
 
 완료 시간: 2026-06-13 23:03:37 +09:00

@@ -1,5 +1,4 @@
 ﻿import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { parseFirebaseServerEnv } from "./firebaseEnv.js";
 import type { FirestoreLike } from "./firebaseStore.js";
@@ -42,6 +41,7 @@ export function getFirebaseAdminFirestore(env: EnvironmentSource = process.env):
   return getFirestore(getFirebaseAdminApp(env)) as unknown as FirestoreLike;
 }
 
-export function getFirebaseAdminAuth(env: EnvironmentSource = process.env) {
+export async function getFirebaseAdminAuth(env: EnvironmentSource = process.env) {
+  const { getAuth } = await import("firebase-admin/auth");
   return getAuth(getFirebaseAdminApp(env));
 }

@@ -43,7 +43,7 @@ export async function createVercelApiHandler(dependencies: VercelApiDependencies
       : {
           requireFirebaseAuth: true,
           verifyIdToken: async (token: string) => {
-            const decoded = await getFirebaseAdminAuth(env).verifyIdToken(token);
+            const decoded = await (await getFirebaseAdminAuth(env)).verifyIdToken(token);
             return {
               uid: decoded.uid,
               email: decoded.email
