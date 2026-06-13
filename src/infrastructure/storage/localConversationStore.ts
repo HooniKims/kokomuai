@@ -1,4 +1,4 @@
-import type { UiChatMessage } from "../ai/streamingChatClient";
+﻿import type { UiChatMessage } from "../ai/streamingChatClient.js";
 
 const key = "curriculum-chatbot:student-conversation";
 

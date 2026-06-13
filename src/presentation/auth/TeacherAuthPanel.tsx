@@ -1,6 +1,6 @@
 ﻿import { LogIn, LogOut, Mail, School, UserPlus } from "lucide-react";
-import type { SchoolSearchResult } from "../apiClient";
-import { canSubmitTeacherProfile } from "./teacherAuthForm";
+import type { SchoolSearchResult } from "../apiClient.js";
+import { canSubmitTeacherProfile } from "./teacherAuthForm.js";
 
 export interface TeacherAuthPanelProps {
   realName: string;

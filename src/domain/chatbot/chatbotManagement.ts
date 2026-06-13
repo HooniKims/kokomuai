@@ -1,5 +1,5 @@
-import type { ChatbotPolicyInput } from "./types";
-import type { AdminActionLogEvent } from "../identity/identityAccess";
+﻿import type { ChatbotPolicyInput } from "./types.js";
+import type { AdminActionLogEvent } from "../identity/identityAccess.js";
 
 export interface CurriculumLink {
   chunkId: string;

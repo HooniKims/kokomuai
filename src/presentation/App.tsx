@@ -3,18 +3,18 @@ import {
   clearLocalConversation,
   loadLocalConversation,
   saveLocalConversation,
-} from "../infrastructure/storage/localConversationStore";
+} from "../infrastructure/storage/localConversationStore.js";
 import {
   streamStudentChat,
   type UiChatMessage,
-} from "../infrastructure/ai/streamingChatClient";
-import type { ChatbotPolicyInput } from "../domain/chatbot/types";
-import type { ManagedChatbot } from "../domain/chatbot/chatbotManagement";
-import type { IdentityTeacherAccount } from "../domain/identity/identityAccess";
+} from "../infrastructure/ai/streamingChatClient.js";
+import type { ChatbotPolicyInput } from "../domain/chatbot/types.js";
+import type { ManagedChatbot } from "../domain/chatbot/chatbotManagement.js";
+import type { IdentityTeacherAccount } from "../domain/identity/identityAccess.js";
 import {
   recommendCurriculum,
   type CurriculumChunk,
-} from "../domain/curriculum/curriculumRecommendation";
+} from "../domain/curriculum/curriculumRecommendation.js";
 import {
   createFirebaseAuthTokenProvider,
   getKkokkomuFirebaseAuth,
@@ -25,31 +25,31 @@ import {
   signInTeacherWithGoogle,
   signOutTeacher,
   signUpTeacherWithEmail,
-} from "../infrastructure/firebase/client";
-import * as api from "./apiClient";
-import { TeacherAuthPanel } from "./auth/TeacherAuthPanel";
-import { buildTeacherRegistrationPayload } from "./auth/teacherAuthForm";
-import { AdminDashboardRoute } from "./routes/AdminDashboardRoute";
-import { PrivacyPolicyRoute } from "./routes/PrivacyPolicyRoute";
-import { StudentChatRoute } from "./routes/StudentChatRoute";
-import { TeacherDashboardRoute } from "./routes/TeacherDashboardRoute";
-import { footerCopyrightText } from "./legal/privacyPolicy";
-import { formatSchoolLevelLabel } from "./schoolLevelLabel";
-import { teacherChatbotSample } from "./teacherChatbotSample";
-import { resolveCurriculumRecommendationState } from "./curriculumRecommendationState";
+} from "../infrastructure/firebase/client.js";
+import * as api from "./apiClient.js";
+import { TeacherAuthPanel } from "./auth/TeacherAuthPanel.js";
+import { buildTeacherRegistrationPayload } from "./auth/teacherAuthForm.js";
+import { AdminDashboardRoute } from "./routes/AdminDashboardRoute.js";
+import { PrivacyPolicyRoute } from "./routes/PrivacyPolicyRoute.js";
+import { StudentChatRoute } from "./routes/StudentChatRoute.js";
+import { TeacherDashboardRoute } from "./routes/TeacherDashboardRoute.js";
+import { footerCopyrightText } from "./legal/privacyPolicy.js";
+import { formatSchoolLevelLabel } from "./schoolLevelLabel.js";
+import { teacherChatbotSample } from "./teacherChatbotSample.js";
+import { resolveCurriculumRecommendationState } from "./curriculumRecommendationState.js";
 import {
   resolveSelectedCurriculumRecommendations,
   toCurriculumLink,
   toggleCurriculumSelection,
-} from "./curriculumSelection";
+} from "./curriculumSelection.js";
 import {
   resolveNextChatbotSelection,
   toggleAllChatbotSelection,
   toggleChatbotSelection,
-} from "./chatbotListSelection";
-import { shouldPersistConversation } from "./conversationPersistence";
-import { getHeroDescription } from "./heroDescription";
-import { summarizeUsageTotals } from "./usage/usageDisplay";
+} from "./chatbotListSelection.js";
+import { shouldPersistConversation } from "./conversationPersistence.js";
+import { getHeroDescription } from "./heroDescription.js";
+import { summarizeUsageTotals } from "./usage/usageDisplay.js";
 
 const demoChatbot: ChatbotPolicyInput = teacherChatbotSample;
 

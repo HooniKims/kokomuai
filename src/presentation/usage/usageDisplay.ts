@@ -1,5 +1,5 @@
-import type { IdentityTeacherAccount } from "../../domain/identity/identityAccess";
-import type { MonthlyUsageSummary } from "../../domain/usage/usageAccounting";
+﻿import type { IdentityTeacherAccount } from "../../domain/identity/identityAccess.js";
+import type { MonthlyUsageSummary } from "../../domain/usage/usageAccounting.js";
 
 export interface UsageDisplayTotals {
   conversationCount: number;

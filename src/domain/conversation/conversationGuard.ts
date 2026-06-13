@@ -1,5 +1,5 @@
-import type { ChatbotPolicyInput } from "../chatbot/types";
-import { detectPrivacyRisks } from "../privacy/privacyFilter";
+﻿import type { ChatbotPolicyInput } from "../chatbot/types.js";
+import { detectPrivacyRisks } from "../privacy/privacyFilter.js";
 
 export type ConversationGuardKind =
   | "normal"

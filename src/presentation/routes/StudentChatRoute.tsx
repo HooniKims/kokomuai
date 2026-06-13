@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
+﻿import { useEffect, useRef } from "react";
 import { Download, Eraser, Pause, RotateCcw, Send } from "lucide-react";
-import type { ChatbotPolicyInput } from "../../domain/chatbot/types";
-import type { UiChatMessage } from "../../infrastructure/ai/streamingChatClient";
-import { renderChatMessageMarkdown } from "../chatMessageMarkdown";
-import { formatSchoolLevelLabel } from "../schoolLevelLabel";
-import { createStudentOpeningMessage } from "../studentOpeningMessage";
+import type { ChatbotPolicyInput } from "../../domain/chatbot/types.js";
+import type { UiChatMessage } from "../../infrastructure/ai/streamingChatClient.js";
+import { renderChatMessageMarkdown } from "../chatMessageMarkdown.js";
+import { formatSchoolLevelLabel } from "../schoolLevelLabel.js";
+import { createStudentOpeningMessage } from "../studentOpeningMessage.js";
 
 type ScrollableMessageList = {
   scrollHeight: number;

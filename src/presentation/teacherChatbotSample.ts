@@ -1,4 +1,4 @@
-import type { ChatbotPolicyInput } from "../domain/chatbot/types";
+﻿import type { ChatbotPolicyInput } from "../domain/chatbot/types.js";
 
 export const teacherChatbotSample: ChatbotPolicyInput & { name: string } = {
   name: "중1 국어 9품사 이해",

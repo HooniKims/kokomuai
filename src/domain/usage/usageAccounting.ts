@@ -1,4 +1,4 @@
-import { calculateModelCostUsd, resolveAiModel, type AiProvider } from "../ai/modelCatalog";
+﻿import { calculateModelCostUsd, resolveAiModel, type AiProvider } from "../ai/modelCatalog.js";
 
 export type UsageSurface = "student_share" | "teacher_preview";
 

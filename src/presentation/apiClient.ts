@@ -1,10 +1,10 @@
-import type { CreateChatbotInput, ManagedChatbot } from "../domain/chatbot/chatbotManagement";
-import type { AiSettings } from "../domain/ai/aiSettings";
-import type { AiModelOption } from "../domain/ai/modelCatalog";
-import type { AdminActionLogEvent, IdentityTeacherAccount, RegisterLocalTeacherInput } from "../domain/identity/identityAccess";
-import type { PasswordResetAction } from "../domain/identity/identityAccess";
-import type { MonthlyUsageSummary } from "../domain/usage/usageAccounting";
-import type { CurriculumChunk, CurriculumRecommendation } from "../domain/curriculum/curriculumRecommendation";
+﻿import type { CreateChatbotInput, ManagedChatbot } from "../domain/chatbot/chatbotManagement.js";
+import type { AiSettings } from "../domain/ai/aiSettings.js";
+import type { AiModelOption } from "../domain/ai/modelCatalog.js";
+import type { AdminActionLogEvent, IdentityTeacherAccount, RegisterLocalTeacherInput } from "../domain/identity/identityAccess.js";
+import type { PasswordResetAction } from "../domain/identity/identityAccess.js";
+import type { MonthlyUsageSummary } from "../domain/usage/usageAccounting.js";
+import type { CurriculumChunk, CurriculumRecommendation } from "../domain/curriculum/curriculumRecommendation.js";
 
 export interface ProviderErrorLogView {
   id: string;

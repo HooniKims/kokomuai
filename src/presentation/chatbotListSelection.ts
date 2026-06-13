@@ -1,4 +1,4 @@
-import type { ManagedChatbot } from "../domain/chatbot/chatbotManagement";
+﻿import type { ManagedChatbot } from "../domain/chatbot/chatbotManagement.js";
 
 export function toggleChatbotSelection(selectedIds: string[], chatbotId: string): string[] {
   if (selectedIds.includes(chatbotId)) {

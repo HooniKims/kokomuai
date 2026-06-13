@@ -1,4 +1,4 @@
-import { footerCopyrightText, privacyPolicySections } from "../legal/privacyPolicy";
+﻿import { footerCopyrightText, privacyPolicySections } from "../legal/privacyPolicy.js";
 
 export function PrivacyPolicyRoute() {
   return (

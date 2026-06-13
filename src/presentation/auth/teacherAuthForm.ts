@@ -1,5 +1,5 @@
-import type { RegisterLocalTeacherInput } from "../../domain/identity/identityAccess";
-import type { SchoolSearchResult } from "../apiClient";
+﻿import type { RegisterLocalTeacherInput } from "../../domain/identity/identityAccess.js";
+import type { SchoolSearchResult } from "../apiClient.js";
 
 export interface TeacherProfileDraft {
   realName: string;

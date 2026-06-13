@@ -5411,6 +5411,46 @@ TDD 기록:
 - 로컬 기준 핵심 기능은 통과했다.
 - Vercel 배포 실패를 줄이기 위해 다중 함수 구조를 제거했으므로, 다음 GitHub 자동 배포에서 단일 API 함수 구조로 다시 배포된다.
 
+### 운영 전환 44차: Vercel Node ESM 런타임 import 오류 수정
+
+완료 시간: 2026-06-14 00:15:18 +09:00
+
+요청:
+
+- Vercel 배포 후 `/api/health`가 500으로 실패하고, `/api/schools/search`, `/api/curriculum/recommend`가 정상 응답하지 않는 문제를 끝까지 확인한다.
+
+원인:
+
+- 새 배포는 Ready 상태였고, 함수 크기도 `api/[...path]` 단일 함수 `9.02MB`로 정상 축소됐다.
+- Vercel 함수 로그에서 다음 오류를 확인했다.
+  - `ERR_MODULE_NOT_FOUND`
+  - `/var/task/src/domain/privacy/privacyFilter`를 찾지 못함
+- 서버/API 파일의 상대 import는 `.js` 확장자로 고쳤지만, 서버 함수가 함께 가져오는 `src/domain`, `src/presentation`, `src/infrastructure` 내부 상대 import 일부가 확장자 없이 남아 있었다.
+- Vercel Node ESM 런타임은 번들에 포함된 내부 모듈도 확장자 없는 상대 import를 자동 해석하지 못한다.
+
+수정:
+
+- `src`, `server`, `api`의 상대 import 중 `.js`, `.css`, `.json`, 이미지, 폰트 확장자가 없는 경로를 `.js` 확장자 포함 형태로 정리했다.
+- 누락된 상대 import가 없는지 `rg --pcre2`로 확인했다.
+
+검증:
+
+- 누락 import 검사
+  - `rg --pcre2 'from ...' src server api`
+  - 결과: 누락 없음
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 65개 테스트 파일, 262개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+
+현재 판단:
+
+- Vercel 배포 실패 원인인 다중 함수 중복 번들링은 43차에서 제거했다.
+- Vercel 런타임 500 원인인 `src` 내부 확장자 없는 ESM import는 44차에서 제거했다.
+
 ### 운영 전환 42차: GitHub 업로드 전 대용량 원본 자료와 공개 파일 정리
 
 완료 시간: 2026-06-13 23:03:37 +09:00

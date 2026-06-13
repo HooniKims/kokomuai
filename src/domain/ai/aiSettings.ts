@@ -1,4 +1,4 @@
-import { getDefaultAiModel, listAvailableAiModels } from "./modelCatalog";
+﻿import { getDefaultAiModel, listAvailableAiModels } from "./modelCatalog.js";
 
 export interface AiSettings {
   activeModelId: string;

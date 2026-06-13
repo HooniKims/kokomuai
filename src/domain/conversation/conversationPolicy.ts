@@ -1,4 +1,4 @@
-import type { SchoolLevel } from "../chatbot/types";
+﻿import type { SchoolLevel } from "../chatbot/types.js";
 
 interface OpeningMessageInput {
   schoolLevel: SchoolLevel;

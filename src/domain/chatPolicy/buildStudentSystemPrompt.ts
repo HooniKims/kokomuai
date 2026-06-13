@@ -1,5 +1,5 @@
-import type { ChatbotPolicyInput } from "../chatbot/types";
-import type { CurriculumLink } from "../chatbot/chatbotManagement";
+﻿import type { ChatbotPolicyInput } from "../chatbot/types.js";
+import type { CurriculumLink } from "../chatbot/chatbotManagement.js";
 
 const hintPolicy = {
   low: "힌트 강도는 낮음입니다. 거의 질문만 하고, 관찰이나 비교처럼 쉬운 사고 활동으로 이끄세요.",

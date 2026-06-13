@@ -1,5 +1,5 @@
-import type { ChatbotPolicyInput } from "../domain/chatbot/types";
-import { buildCurriculumRecommendationQuery } from "./curriculumRecommendationQuery";
+﻿import type { ChatbotPolicyInput } from "../domain/chatbot/types.js";
+import { buildCurriculumRecommendationQuery } from "./curriculumRecommendationQuery.js";
 
 type ChatbotFormState = ChatbotPolicyInput & { name: string };
 

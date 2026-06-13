@@ -1,5 +1,5 @@
-import type { CurriculumLink } from "../domain/chatbot/chatbotManagement";
-import type { CurriculumRecommendationView } from "./apiClient";
+﻿import type { CurriculumLink } from "../domain/chatbot/chatbotManagement.js";
+import type { CurriculumRecommendationView } from "./apiClient.js";
 
 const DEFAULT_VISIBLE_RECOMMENDATION_COUNT = 3;
 

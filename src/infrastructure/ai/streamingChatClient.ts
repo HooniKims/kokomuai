@@ -1,5 +1,5 @@
-import { parseOpenAIStreamLine } from "./lmStudioClient";
-import type { ChatbotPolicyInput } from "../../domain/chatbot/types";
+﻿import { parseOpenAIStreamLine } from "./lmStudioClient.js";
+import type { ChatbotPolicyInput } from "../../domain/chatbot/types.js";
 
 export interface UiChatMessage {
   role: "user" | "assistant";

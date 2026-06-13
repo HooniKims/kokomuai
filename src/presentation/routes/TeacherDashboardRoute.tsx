@@ -1,14 +1,14 @@
-import { Calendar, Check, CheckCircle2, Copy, Eraser, ExternalLink } from "lucide-react";
-import type { ManagedChatbot } from "../../domain/chatbot/chatbotManagement";
-import type { ChatbotPolicyInput } from "../../domain/chatbot/types";
-import type { CurriculumRecommendationView } from "../apiClient";
-import { formatSchoolLevelLabel } from "../schoolLevelLabel";
-import { teacherChatbotSample } from "../teacherChatbotSample";
-import { formatRecommendationRelevance } from "../curriculumRecommendationAccuracy";
-import { formatCurriculumSelectionStatus, getVisibleCurriculumRecommendations } from "../curriculumSelection";
-import { formatShareNotice } from "../shareNotice";
-import { getChatbotDeletionPrompt } from "../chatbotDeletionPrompt";
-import { formatKrwCost, formatTokenCount } from "../usage/usageDisplay";
+﻿import { Calendar, Check, CheckCircle2, Copy, Eraser, ExternalLink } from "lucide-react";
+import type { ManagedChatbot } from "../../domain/chatbot/chatbotManagement.js";
+import type { ChatbotPolicyInput } from "../../domain/chatbot/types.js";
+import type { CurriculumRecommendationView } from "../apiClient.js";
+import { formatSchoolLevelLabel } from "../schoolLevelLabel.js";
+import { teacherChatbotSample } from "../teacherChatbotSample.js";
+import { formatRecommendationRelevance } from "../curriculumRecommendationAccuracy.js";
+import { formatCurriculumSelectionStatus, getVisibleCurriculumRecommendations } from "../curriculumSelection.js";
+import { formatShareNotice } from "../shareNotice.js";
+import { getChatbotDeletionPrompt } from "../chatbotDeletionPrompt.js";
+import { formatKrwCost, formatTokenCount } from "../usage/usageDisplay.js";
 
 export interface TeacherDashboardRouteProps {
   workspaceStatus: string;

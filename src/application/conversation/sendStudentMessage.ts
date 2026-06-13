@@ -1,17 +1,17 @@
-import type { ChatbotPolicyInput } from "../../domain/chatbot/types";
-import { buildStudentSystemPrompt } from "../../domain/chatPolicy/buildStudentSystemPrompt";
+﻿import type { ChatbotPolicyInput } from "../../domain/chatbot/types.js";
+import { buildStudentSystemPrompt } from "../../domain/chatPolicy/buildStudentSystemPrompt.js";
 import {
   classifyStudentMessage,
   createGuardrailReply,
   type ConversationGuardDecision
-} from "../../domain/conversation/conversationGuard";
+} from "../../domain/conversation/conversationGuard.js";
 import {
   createUsageErrorEvent,
   createUsageEvent,
   type UsageAccountingEvent,
   type UsageErrorEvent,
   type UsageSurface
-} from "../../domain/usage/usageAccounting";
+} from "../../domain/usage/usageAccounting.js";
 
 export interface AiChatMessage {
   role: "system" | "user" | "assistant";

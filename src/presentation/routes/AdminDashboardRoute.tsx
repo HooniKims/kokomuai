@@ -1,9 +1,9 @@
-import { Ban, KeyRound, ShieldCheck } from "lucide-react";
-import type { AiSettingsPayload } from "../apiClient";
-import type { ManagedChatbot } from "../../domain/chatbot/chatbotManagement";
-import type { AdminActionLogEvent, IdentityTeacherAccount } from "../../domain/identity/identityAccess";
-import type { MonthlyUsageSummary } from "../../domain/usage/usageAccounting";
-import { formatKrwCost, formatTokenCount, summarizeUsageByTeacher } from "../usage/usageDisplay";
+﻿import { Ban, KeyRound, ShieldCheck } from "lucide-react";
+import type { AiSettingsPayload } from "../apiClient.js";
+import type { ManagedChatbot } from "../../domain/chatbot/chatbotManagement.js";
+import type { AdminActionLogEvent, IdentityTeacherAccount } from "../../domain/identity/identityAccess.js";
+import type { MonthlyUsageSummary } from "../../domain/usage/usageAccounting.js";
+import { formatKrwCost, formatTokenCount, summarizeUsageByTeacher } from "../usage/usageDisplay.js";
 
 export interface AdminDashboardRouteProps {
   teachers: IdentityTeacherAccount[];
