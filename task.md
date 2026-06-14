@@ -5352,6 +5352,26 @@ TDD 기록:
   - 버튼 텍스트: `가입 요청`
   - 비밀번호 보기/숨기기 버튼 2개 모두 `tabIndex=-1`
   - 비밀번호 입력 후 Tab 포커스: 비밀번호 확인 입력칸
+- GitHub 반영
+  - 커밋: `50350f4 fix: unify teacher signup request flow`
+  - 원격: `main -> main`
+- Vercel 운영 배포
+  - 배포 ID: `dpl_BctzTxsyfmWfTfWrRdRNR1PrdGKd`
+  - 배포 URL: `https://kokomuai-pk3h2yr91-hoonikims-projects-bfecfa8a.vercel.app`
+  - 운영 별칭: `https://kokomuai.vercel.app`
+  - 상태: `READY`
+- 배포 후 smoke test
+  - `$env:DEPLOY_URL='https://kokomuai.vercel.app'; npm run smoke:deploy`
+  - 결과: 통과
+  - `spa-root`, `privacy-route`, `api-health`, `teacher-api-auth`, `security-headers`, `cors-preflight` 모두 통과
+- 운영 브라우저 검증
+  - 대상: `https://kokomuai.vercel.app`
+  - 회원가입 화면의 `email-signup`: 0개
+  - 회원가입 화면의 `switch-login`: 0개
+  - 회원가입 화면의 `register-profile`: 1개
+  - 버튼 텍스트: `가입 요청`
+  - 비밀번호 보기/숨기기 버튼 2개 모두 `tabIndex=-1`
+  - 비밀번호 입력 후 Tab 포커스: 비밀번호 확인 입력칸
 
 ### 운영 전환 48차: 로그인 화면 정렬과 Firebase 토큰 환경 점검 보강
 
