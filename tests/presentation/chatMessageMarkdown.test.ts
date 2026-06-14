@@ -24,4 +24,9 @@ describe("chatMessageMarkdown", () => {
       '값은 <span class="inline-math">&lt;script&gt;x&lt;/script&gt;</span>입니다.'
     );
   });
+  it("renders display math markers without exposing dollar signs", () => {
+    expect(renderChatMessageMarkdown("formula $$y = ax + b$$ next")).toBe(
+      'formula <span class="display-math">y = ax + b</span> next'
+    );
+  });
 });

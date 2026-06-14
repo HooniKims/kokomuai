@@ -6845,3 +6845,36 @@ LLM 실구동 확인:
   - `npm run build`
   - 결과: 통과
 
+### 운영 전환 52차: E2B channel preamble 제거와 display math 표시 보정
+
+완료 시간: 2026-06-14 21:20:00 +09:00
+
+요청:
+
+- E2B가 `<think>` 태그 없이 `학생은 이전 답변...`, `현재 상황...`, `다음 사고 단계...`, `질문 방향...`을 출력한 뒤 `<channel|>` 뒤에 실제 답변을 내보내는 문제를 막는다.
+- `$$y = ax + b$$` 같은 display math에서도 달러 기호가 남지 않게 한다.
+
+수정:
+
+- `/api/chat` 스트림 필터가 초기 응답을 짧게 검사해 reasoning preamble 패턴을 발견하면 `<channel|>` 이전 내용을 학생에게 보내지 않도록 했다.
+- `<channel|>` 마커 자체도 학생 화면과 사용량 기록에 남지 않도록 제거했다.
+- 모델이 `<channel|>` 없이 숨김 reasoning만 보내는 경우에는 빈 답변 대신 주제 기반의 짧은 대체 질문을 보내도록 했다.
+- 실제 운영에서 확인된 `학생이 ... 대답`, `수업 목표`, `**계획:**` 형태의 planning-style reasoning도 숨김 대상으로 추가했다.
+- `$$...$$` display math를 `<span class="display-math">...</span>`으로 렌더링하도록 추가했다.
+- display math는 채팅 말풍선 안에서 가운데 정렬된 수식처럼 보이도록 스타일을 추가했다.
+
+검증:
+
+- 관련 테스트
+  - `npm test -- --run tests/infrastructure/apiHandler.test.ts`
+  - 결과: 통과
+  - `npm test -- --run tests/presentation/chatMessageMarkdown.test.ts`
+  - 결과: 통과
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 74개 테스트 파일, 320개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+

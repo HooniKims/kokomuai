@@ -507,6 +507,170 @@ describe("apiHandler", () => {
     expect(JSON.stringify(await store.listUsageEvents())).not.toContain("private chain");
   });
 
+  it("removes E2B channel preambles before sending the final answer to students", async () => {
+    const { baseUrl, store } = await createServer({
+      env: {
+        LMSTUDIO_API_KEY: "test-lmstudio-key"
+      },
+      fetchImpl: async () =>
+        new Response(
+          [
+            'data: {"choices":[{"delta":{"content":"학생은 이전 답변에 대해 그래라고 짧게 대답했다.\\n\\n"}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"현재 상황: 1차 함수 정의를 제시했다.\\n"}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"다음 사고 단계: 식으로 연결한다.\\n"}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"질문 방향: 일차식으로 연결하자.<channel|>"}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"네, 그럼 1차 함수 식을 살펴볼까요?"}}]}\n\n',
+            "data: [DONE]\n\n"
+          ].join(""),
+          {
+            status: 200,
+            headers: { "Content-Type": "text/event-stream" }
+          }
+        )
+    });
+    await store.saveAiSettings({
+      activeModelId: "gemma4:e2b",
+      updatedAt: "2026-06-14T10:20:00.000Z",
+      updatedBy: "admin-1"
+    });
+
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "그래",
+        history: [{ role: "assistant", content: "1차 함수의 뜻을 알아볼까요?" }],
+        chatbot: {
+          name: "수학 챗봇",
+          schoolLevel: "middle",
+          gradeBand: "1",
+          subject: "수학",
+          topic: "1차 함수",
+          learningGoal: "1차 함수의 뜻과 식을 이해한다.",
+          hintStrength: "medium",
+          persona: "질문으로 돕는 수학 선생님"
+        }
+      })
+    });
+
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(body).toContain("네, 그럼 1차 함수 식을 살펴볼까요?");
+    expect(body).not.toContain("학생은 이전 답변");
+    expect(body).not.toContain("현재 상황");
+    expect(body).not.toContain("다음 사고 단계");
+    expect(body).not.toContain("질문 방향");
+    expect(body).not.toContain("<channel|>");
+    expect(JSON.stringify(await store.listUsageEvents())).not.toContain("현재 상황");
+  });
+
+  it("sends a safe fallback question when the model only streams hidden reasoning", async () => {
+    const { baseUrl, store } = await createServer({
+      env: {
+        LMSTUDIO_API_KEY: "test-lmstudio-key"
+      },
+      fetchImpl: async () =>
+        new Response(
+          [
+            'data: {"choices":[{"delta":{"content":"학생은 이전 답변에 대해 그래라고 짧게 대답했다.\\n"}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"현재 상황: 다음 단계로 넘어가야 한다.\\n"}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"질문 방향: 식으로 연결하자."}}]}\n\n',
+            "data: [DONE]\n\n"
+          ].join(""),
+          {
+            status: 200,
+            headers: { "Content-Type": "text/event-stream" }
+          }
+        )
+    });
+    await store.saveAiSettings({
+      activeModelId: "gemma4:e2b",
+      updatedAt: "2026-06-14T10:20:00.000Z",
+      updatedBy: "admin-1"
+    });
+
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "그래",
+        history: [{ role: "assistant", content: "1차 함수의 뜻을 알아볼까요?" }],
+        chatbot: {
+          name: "수학 챗봇",
+          schoolLevel: "middle",
+          gradeBand: "1",
+          subject: "수학",
+          topic: "1차 함수",
+          learningGoal: "1차 함수의 뜻과 식을 이해한다.",
+          hintStrength: "medium",
+          persona: "질문으로 돕는 수학 선생님"
+        }
+      })
+    });
+
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(body).toContain("1차 함수");
+    expect(body).toContain("어떤 점이 궁금한가요");
+    expect(body).not.toContain("현재 상황");
+    expect(body).not.toContain("질문 방향");
+  });
+
+  it("removes planning-style Korean reasoning even without a channel marker", async () => {
+    const { baseUrl, store } = await createServer({
+      env: {
+        LMSTUDIO_API_KEY: "test-lmstudio-key"
+      },
+      fetchImpl: async () =>
+        new Response(
+          [
+            'data: {"choices":[{"delta":{"content":"학생이 그래라고만 대답했다. 수업 목표는 1차 함수의 뜻과 식을 이해하는 것이다.\\n\\n"}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"**계획:**\\n1. 학생 반응을 격려한다.\\n2. 1차 함수가 무엇인지 묻는다."}}]}\n\n',
+            "data: [DONE]\n\n"
+          ].join(""),
+          {
+            status: 200,
+            headers: { "Content-Type": "text/event-stream" }
+          }
+        )
+    });
+    await store.saveAiSettings({
+      activeModelId: "gemma4:e2b",
+      updatedAt: "2026-06-14T10:20:00.000Z",
+      updatedBy: "admin-1"
+    });
+
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "그래",
+        history: [{ role: "assistant", content: "1차 함수의 뜻을 알아볼까요?" }],
+        chatbot: {
+          name: "수학 챗봇",
+          schoolLevel: "middle",
+          gradeBand: "1",
+          subject: "수학",
+          topic: "1차 함수",
+          learningGoal: "1차 함수의 뜻과 식을 이해한다.",
+          hintStrength: "medium",
+          persona: "질문으로 돕는 수학 선생님"
+        }
+      })
+    });
+
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(body).toContain("1차 함수");
+    expect(body).toContain("어떤 점이 궁금한가요");
+    expect(body).not.toContain("수업 목표");
+    expect(body).not.toContain("**계획:**");
+    expect(body).not.toContain("학생 반응");
+  });
+
   it("records provider network errors without exposing provider exception details", async () => {
     const { baseUrl, store } = await createServer({
       env: {

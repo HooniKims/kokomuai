@@ -1460,6 +1460,15 @@ textarea:focus {
   white-space: nowrap;
 }
 
+.message p .display-math {
+  display: block;
+  margin: 10px 0;
+  font-family: "Times New Roman", Georgia, serif;
+  font-size: 1.08em;
+  font-style: italic;
+  text-align: center;
+}
+
 .error-text {
   margin: 0;
   padding: 0 8px;

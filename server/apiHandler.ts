@@ -219,6 +219,10 @@ async function proxyStreamToProvider(
     writeSseDelta(response, trailingToken);
     assistantText += trailingToken;
   }
+  if (!assistantText.trim()) {
+    assistantText = createEmptyVisibleReply(authoritativeRequestBody);
+    writeSseDelta(response, assistantText);
+  }
   response.write("data: [DONE]\n\n");
 
   const usageEvent = createChatUsageEventFromRequest(authoritativeRequestBody, {
@@ -483,25 +487,77 @@ function writeSseDelta(response: http.ServerResponse, content: string) {
   );
 }
 
+function createEmptyVisibleReply(requestBody: ChatRequest): string {
+  const topic = requestBody.chatbot.topic.trim() || "오늘 주제";
+  return `좋아요. ${topic}에 대해 이어서 생각해 봅시다. 지금 설명에서 어떤 점이 궁금한가요?`;
+}
+
 function createThinkingTraceFilter() {
   let carry = "";
   let hidden = false;
+  let probingInitialText = true;
+  let initialBuffer = "";
   const holdbackCharacters = 32;
+  const initialProbeCharacters = 256;
+  const maxReasoningPreambleCharacters = 4000;
   const startTagPattern = /<\s*(think|thinking|reasoning)\b[^>]*>/i;
   const endTagPattern = /<\s*\/\s*(think|thinking|reasoning)\s*>/i;
+  const channelMarkerPattern = /<channel\|>/i;
+  const reasoningPreamblePattern =
+    /(학생은\s*이전\s*답변|학생이[\s\S]{0,120}대답|현재\s*상황|다음\s*사고\s*단계|질문\s*방향|수업\s*목표|\*\*계획:\*\*)/;
 
   function push(token: string): string {
+    if (probingInitialText) {
+      initialBuffer += token;
+      const channel = findTag(initialBuffer, channelMarkerPattern);
+      if (channel) {
+        probingInitialText = false;
+        carry += initialBuffer.slice(channel.index + channel.text.length);
+        initialBuffer = "";
+        return drainCarry();
+      }
+
+      if (reasoningPreamblePattern.test(initialBuffer)) {
+        if (initialBuffer.length > maxReasoningPreambleCharacters) {
+          initialBuffer = initialBuffer.slice(-holdbackCharacters);
+        }
+        return "";
+      }
+
+      if (initialBuffer.length < initialProbeCharacters) return "";
+      probingInitialText = false;
+      carry += initialBuffer;
+      initialBuffer = "";
+      return drainCarry();
+    }
+
     carry += token;
+    return drainCarry();
+  }
+
+  function drainCarry(holdBackPossibleTags = true): string {
     let output = "";
 
     while (carry) {
       if (hidden) {
         const end = findTag(carry, endTagPattern);
-        if (!end) {
+        if (!end && holdBackPossibleTags) {
           carry = carry.slice(-holdbackCharacters);
           return output;
         }
+        if (!end) {
+          carry = "";
+          return output;
+        }
         carry = carry.slice(end.index + end.text.length);
+        hidden = false;
+        continue;
+      }
+
+      const channel = findTag(carry, channelMarkerPattern);
+      if (channel) {
+        output = "";
+        carry = carry.slice(channel.index + channel.text.length);
         hidden = false;
         continue;
       }
@@ -514,9 +570,15 @@ function createThinkingTraceFilter() {
         continue;
       }
 
-      if (carry.length <= holdbackCharacters) return output;
-      output += carry.slice(0, -holdbackCharacters);
-      carry = carry.slice(-holdbackCharacters);
+      if (holdBackPossibleTags) {
+        if (carry.length <= holdbackCharacters) return output;
+        output += carry.slice(0, -holdbackCharacters);
+        carry = carry.slice(-holdbackCharacters);
+        return output;
+      }
+
+      output += carry;
+      carry = "";
       return output;
     }
 
@@ -524,13 +586,18 @@ function createThinkingTraceFilter() {
   }
 
   function flush(): string {
-    if (hidden) {
-      carry = "";
-      return "";
+    if (probingInitialText) {
+      const channel = findTag(initialBuffer, channelMarkerPattern);
+      if (channel) {
+        carry += initialBuffer.slice(channel.index + channel.text.length);
+      } else if (!reasoningPreamblePattern.test(initialBuffer)) {
+        carry += initialBuffer;
+      }
+      initialBuffer = "";
+      probingInitialText = false;
     }
-    const output = carry;
-    carry = "";
-    return output;
+
+    return drainCarry(false);
   }
 
   return { push, flush };
