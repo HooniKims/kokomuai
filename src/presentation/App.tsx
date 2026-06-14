@@ -4,7 +4,7 @@ import {
   loadLocalConversation,
   saveLocalConversation,
 } from "../infrastructure/storage/localConversationStore.js";
-import { KeyRound, Trash2, UserCircle } from "lucide-react";
+import { KeyRound, LogOut, Trash2, UserCircle } from "lucide-react";
 import {
   streamStudentChat,
   type UiChatMessage,
@@ -1192,20 +1192,14 @@ export function App() {
   return (
     <main className="app-shell">
       <section className="hero-band">
-        <nav className="top-nav">
-          <div className="brand">꼬꼬무AI</div>
-          {shouldShowAccountMenu ? (
-            <button
-              aria-expanded={isAccountPanelOpen}
-              className="icon-pill account-menu-button"
-              type="button"
-              onClick={() => setIsAccountPanelOpen((current) => !current)}
-              title="나의 정보"
-            >
-              <UserCircle size={20} />
-            </button>
-          ) : null}
-        </nav>
+        <TopNav
+          showAccountMenu={shouldShowAccountMenu}
+          isAccountPanelOpen={isAccountPanelOpen}
+          toggleAccountPanel={() =>
+            setIsAccountPanelOpen((current) => !current)
+          }
+          signOut={() => void signOutCurrentTeacher()}
+        />
         <div className="hero-copy">
           <h1>
             꼬리에 꼬리를 무는 <span className="highlight-word">AI</span>
@@ -1370,6 +1364,60 @@ export function App() {
         <a href="/privacy">개인정보처리방침</a>
       </footer>
     </main>
+  );
+}
+
+export function TopNav({
+  showAccountMenu,
+  isAccountPanelOpen,
+  toggleAccountPanel,
+  signOut,
+}: {
+  showAccountMenu: boolean;
+  isAccountPanelOpen: boolean;
+  toggleAccountPanel: () => void;
+  signOut: () => void;
+}) {
+  return (
+    <nav className="top-nav">
+      <div className="brand">꼬꼬무AI</div>
+      {showAccountMenu ? (
+        <div className="top-nav-account">
+          <button
+            className="pill outline top-nav-logout"
+            data-action="top-nav-sign-out"
+            type="button"
+            onClick={signOut}
+          >
+            <LogOut size={16} /> 로그아웃
+          </button>
+          <div className="account-menu-wrap">
+            <button
+              aria-expanded={isAccountPanelOpen}
+              className="icon-pill account-menu-button"
+              type="button"
+              onClick={toggleAccountPanel}
+              title="나의 정보"
+            >
+              <UserCircle size={20} />
+            </button>
+            {isAccountPanelOpen ? (
+              <div className="account-popover" role="menu">
+                <button
+                  className="account-popover-item"
+                  data-action="account-menu-sign-out"
+                  type="button"
+                  onClick={signOut}
+                  role="menuitem"
+                >
+                  <LogOut size={16} /> 로그아웃
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </nav>
   );
 }
 
