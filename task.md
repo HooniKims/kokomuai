@@ -5332,6 +5332,7 @@ TDD 기록:
 - 배포 전 점검에서 현재 Vercel API 진입점인 `api/index.ts`를 확인하도록 파일 계약을 최신화했다.
 - `FIREBASE_PROJECT_ID`와 `VITE_FIREBASE_PROJECT_ID`가 다르면 배포 전 점검이 실패하도록 추가했다.
   - 두 값이 다르면 브라우저에서 받은 Firebase ID 토큰을 서버가 다른 프로젝트 토큰으로 검증해 `invalid_token`이 발생할 수 있다.
+- Windows에서 Vercel CLI를 직접 `npx.cmd`로 spawn할 때 `EINVAL`이 나는 문제를 `cmd.exe /d /s /c` 래퍼와 안전한 환경변수 필터링으로 보정했다.
 
 검증:
 
@@ -5355,6 +5356,9 @@ TDD 기록:
 - 배포 준비 리포트
   - `npm run deployment:status`
   - 결과: `ready_to_deploy`
+- Vercel 환경변수 동기화
+  - `npm run vercel:env:sync`
+  - 결과: production 대상 18개 변수 동기화 완료
 - 브라우저 렌더링 확인
   - Vite: `http://127.0.0.1:5175/`
   - 스크린샷: `artifacts/auth-layout-1280.png`

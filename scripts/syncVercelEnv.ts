@@ -82,11 +82,48 @@ export function parseVercelTargets(value: string | undefined): VercelEnvironment
   return targets as VercelEnvironmentTarget[];
 }
 
-export function buildVercelEnvAddCommand(entry: Pick<VercelEnvPlanEntry, "name">, target: VercelEnvironmentTarget): VercelEnvAddCommand {
+export function buildVercelEnvAddCommand(
+  entry: Pick<VercelEnvPlanEntry, "name">,
+  target: VercelEnvironmentTarget,
+  platform: NodeJS.Platform = process.platform
+): VercelEnvAddCommand {
+  const vercelArgs = ["vercel", "env", "add", entry.name, target, "--force", "--yes", "--non-interactive"];
+  if (platform === "win32") {
+    return {
+      executable: "cmd.exe",
+      args: ["/d", "/s", "/c", `npx ${vercelArgs.join(" ")}`]
+    };
+  }
+
   return {
-    executable: process.platform === "win32" ? "npx.cmd" : "npx",
-    args: ["vercel", "env", "add", entry.name, target, "--force", "--yes", "--non-interactive"]
+    executable: "npx",
+    args: vercelArgs
   };
+}
+
+export function buildVercelChildProcessEnv(
+  env: Record<string, string | undefined>,
+  baseEnv: Record<string, string | undefined> = process.env
+): Record<string, string> {
+  const childEnv = Object.fromEntries(
+    Object.entries(baseEnv).filter(
+      (entry): entry is [string, string] =>
+        isValidProcessEnvName(entry[0]) && entry[1] !== undefined
+    )
+  );
+  const token = env.VERCEL_TOKEN?.trim() || baseEnv.VERCEL_TOKEN?.trim();
+
+  if (token) {
+    childEnv.VERCEL_TOKEN = token;
+  } else {
+    delete childEnv.VERCEL_TOKEN;
+  }
+
+  return childEnv;
+}
+
+function isValidProcessEnvName(name: string): boolean {
+  return name.length > 0 && !name.includes("=");
 }
 
 async function main() {
@@ -147,10 +184,7 @@ function addVercelEnv(
     const timeoutMs = readTimeoutMs(env.VERCEL_ENV_SYNC_TIMEOUT_MS);
     const child = spawn(command.executable, command.args, {
       cwd: process.cwd(),
-      env: {
-        ...process.env,
-        VERCEL_TOKEN: env.VERCEL_TOKEN ?? process.env.VERCEL_TOKEN
-      },
+      env: buildVercelChildProcessEnv(env),
       stdio: ["pipe", "pipe", "pipe"]
     });
 

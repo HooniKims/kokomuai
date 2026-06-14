@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildVercelChildProcessEnv,
   buildVercelEnvAddCommand,
   buildVercelEnvSyncPlan,
   maskVercelEnvPlan,
@@ -81,10 +82,49 @@ describe("Vercel environment sync plan", () => {
       {
         name: "OPENAI_API_KEY"
       },
-      "production"
+      "production",
+      "linux"
     );
 
+    expect(command.executable).toBe("npx");
     expect(command.args).toEqual(["vercel", "env", "add", "OPENAI_API_KEY", "production", "--force", "--yes", "--non-interactive"]);
     expect(command.args.join(" ")).not.toContain("secret-openai");
+  });
+
+  it("wraps Vercel CLI calls through cmd.exe on Windows", () => {
+    const command = buildVercelEnvAddCommand(
+      {
+        name: "OPENAI_API_KEY"
+      },
+      "production",
+      "win32"
+    );
+
+    expect(command).toEqual({
+      executable: "cmd.exe",
+      args: [
+        "/d",
+        "/s",
+        "/c",
+        "npx vercel env add OPENAI_API_KEY production --force --yes --non-interactive"
+      ]
+    });
+  });
+
+  it("does not pass undefined Vercel token values to child processes", () => {
+    const childEnv = buildVercelChildProcessEnv(
+      {},
+      {
+        "=C:": "C:\\Users\\Administrator",
+        PATH: "C:\\node",
+        VERCEL_TOKEN: undefined
+      }
+    );
+
+    expect(childEnv).toEqual({
+      PATH: "C:\\node"
+    });
+    expect(Object.keys(childEnv)).not.toContain("=C:");
+    expect(Object.values(childEnv)).not.toContain(undefined);
   });
 });
