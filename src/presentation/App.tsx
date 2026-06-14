@@ -201,6 +201,22 @@ export function confirmSelectedChatbotDeletion(
   );
 }
 
+export function shouldLoadAdminWorkspaceResources(
+  profile: Pick<IdentityTeacherAccount, "status"> | null | undefined,
+): boolean {
+  return profile?.status === "admin";
+}
+
+export function shouldShowTeacherWorkspace(
+  view: AppView,
+  profile: Pick<IdentityTeacherAccount, "status"> | null | undefined,
+  shouldShowAuthPanel: boolean,
+): boolean {
+  if (shouldShowAuthPanel) return false;
+  if (view === "teacher") return true;
+  return view === "admin" && shouldLoadAdminWorkspaceResources(profile);
+}
+
 export function applyDeletedChatbotToList(
   current: ManagedChatbot[],
   deleted: ManagedChatbot,
@@ -563,6 +579,7 @@ export function App() {
     }
 
     setIsTeacherAuthSignedIn(true);
+    setWorkspaceStatus("로그인 정보를 확인하고 있습니다. 잠시만 기다려 주세요.");
     const email = user.email ?? "";
     if (email) setAuthEmail(email);
     if (user.displayName)
@@ -648,19 +665,25 @@ export function App() {
         .filter((teacher) => teacher.status === "pending")
         .map((teacher) => teacher.id),
     );
-    void api
-      .getAdminActionLogs()
-      .then(setAdminActionLogs)
-      .catch(() => setAdminActionLogs([]));
-    void api
-      .getAiSettings()
-      .then(setAiSettings)
-      .catch(() => setAiSettings(null));
+    if (shouldLoadAdminWorkspaceResources(profile)) {
+      void api
+        .getAdminActionLogs()
+        .then(setAdminActionLogs)
+        .catch(() => setAdminActionLogs([]));
+      void api
+        .getAiSettings()
+        .then(setAiSettings)
+        .catch(() => setAiSettings(null));
+    } else {
+      setAdminActionLogs([]);
+      setAiSettings(null);
+    }
   }
 
   async function signInWithTeacherEmail() {
     setIsSubmittingAuth(true);
     setAuthError("");
+    setWorkspaceStatus("로그인 정보를 확인하고 있습니다. 잠시만 기다려 주세요.");
     try {
       await signInTeacherWithEmail(
         getKkokkomuFirebaseAuth(),
@@ -1286,7 +1309,12 @@ export function App() {
         />
       ) : null}
 
-      {!isPrivacyPage && view === "teacher" && !shouldShowTeacherAuthPanel ? (
+      {!isPrivacyPage &&
+      shouldShowTeacherWorkspace(
+        view,
+        activeTeacherProfile,
+        shouldShowTeacherAuthPanel,
+      ) ? (
         <TeacherDashboardRoute
           workspaceStatus={workspaceStatus}
           chatbots={chatbots}
@@ -1401,19 +1429,6 @@ export function TopNav({
             >
               <UserCircle size={20} />
             </button>
-            {isAccountPanelOpen ? (
-              <div className="account-popover" role="menu">
-                <button
-                  className="account-popover-item"
-                  data-action="account-menu-sign-out"
-                  type="button"
-                  onClick={signOut}
-                  role="menuitem"
-                >
-                  <LogOut size={16} /> 로그아웃
-                </button>
-              </div>
-            ) : null}
           </div>
         </div>
       ) : null}

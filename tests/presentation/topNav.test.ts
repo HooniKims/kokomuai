@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { TopNav } from "../../src/presentation/App";
 
 describe("TopNav", () => {
-  it("shows logout next to the profile icon and inside the account menu", () => {
+  it("shows logout next to the profile icon without duplicating it inside the account menu", () => {
     const signOut = vi.fn();
     const tree = TopNav({
       showAccountMenu: true,
@@ -17,12 +17,11 @@ describe("TopNav", () => {
 
     expect(text).toContain("로그아웃");
     expect(topLogout).toBeDefined();
-    expect(menuLogout).toBeDefined();
+    expect(menuLogout).toBeUndefined();
 
     (topLogout?.props?.onClick as () => void)?.();
-    (menuLogout?.props?.onClick as () => void)?.();
 
-    expect(signOut).toHaveBeenCalledTimes(2);
+    expect(signOut).toHaveBeenCalledTimes(1);
   });
 
   it("hides logout controls when no account is signed in", () => {
@@ -70,5 +69,8 @@ function collectNodes(
     "props" in node
       ? ((node as { props?: { children?: unknown } }).props ?? {})
       : {};
-  return [node as { props?: Record<string, unknown> }, ...collectNodes(props.children)];
+  return [
+    node as { props?: Record<string, unknown> },
+    ...collectNodes(props.children),
+  ];
 }

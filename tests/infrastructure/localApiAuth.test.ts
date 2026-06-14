@@ -241,6 +241,36 @@ describe("localApi production auth", () => {
     });
   });
 
+  it("promotes an existing approved Firebase profile when its email is configured as admin", async () => {
+    const { baseUrl, store } = await createServer({
+      env: {
+        KKOKKOMU_ADMIN_EMAILS: "admin@example.com"
+      }
+    });
+    await store.saveTeacher(
+      approveTeacher(createTeacher("firebase-admin-1", "admin@example.com"), {
+        adminId: "local-admin",
+        now: "2026-06-13T01:30:00.000Z",
+        logId: "admin-log-1"
+      }).teacher
+    );
+
+    const teachersResponse = await fetch(`${baseUrl}/api/teachers`, {
+      headers: { Authorization: "Bearer bootstrap-admin-token" }
+    });
+    const settingsResponse = await fetch(`${baseUrl}/api/admin/ai-settings`, {
+      headers: { Authorization: "Bearer bootstrap-admin-token" }
+    });
+
+    expect(teachersResponse.status).toBe(200);
+    expect(settingsResponse.status).toBe(200);
+    await expect(store.getTeacher("firebase-admin-1")).resolves.toMatchObject({
+      status: "admin",
+      email: "admin@example.com",
+      promotedBy: "bootstrap-env"
+    });
+  });
+
   it("does not read every teacher document when a Firebase teacher lists their own profile", async () => {
     const readCounts = { listTeachers: 0 };
     const { baseUrl, store } = await createServer({

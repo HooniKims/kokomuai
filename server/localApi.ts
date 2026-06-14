@@ -883,6 +883,27 @@ async function resolveRequiredAuthContextFromRequest(
     verifyIdToken: dependencies.auth.verifyIdToken,
   });
   if (context.kind !== "teacher") throw new Error("auth_required");
+  if (
+    context.teacher.status !== "admin" &&
+    isBootstrapAdminEmail(context.teacher.email, dependencies.env)
+  ) {
+    const promoted = await dependencies.store.updateTeacherWithAdminAction(
+      context.teacher.id,
+      (existing) =>
+        existing.status === "admin"
+          ? { teacher: existing }
+          : promoteBootstrapAdminProfile(existing, {
+              now: new Date().toISOString(),
+              logId: createId("admin-log"),
+            }),
+    );
+    if (promoted?.teacher) {
+      return {
+        ...context,
+        teacher: promoted.teacher,
+      };
+    }
+  }
   return context;
 }
 
