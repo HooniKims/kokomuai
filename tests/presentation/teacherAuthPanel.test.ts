@@ -64,6 +64,22 @@ describe("TeacherAuthPanel", () => {
     expect(text).not.toContain("School Name");
   });
 
+  it("submits email login when Enter submits the login form", () => {
+    const onEmailSignIn = vi.fn();
+    const tree = TeacherAuthPanel(
+      createPanelProps({ mode: "login", onEmailSignIn }),
+    );
+    const loginForm = findNodeByAction(tree, "email-login-form");
+    const event = { preventDefault: vi.fn() };
+
+    (loginForm?.props?.onSubmit as (submitEvent: {
+      preventDefault: () => void;
+    }) => void)?.(event);
+
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(onEmailSignIn).toHaveBeenCalledTimes(1);
+  });
+
   it("does not show logout until a Firebase user is signed in", () => {
     const signedOutTree = TeacherAuthPanel(
       createPanelProps({ mode: "login", isSignedIn: false }),

@@ -5351,6 +5351,39 @@ TDD 기록:
   - `npm run build`
   - 결과: 통과
 
+### 운영 전환 55차: 로그인 Enter 제출과 Firebase 토큰 검증 진단 로그
+
+완료 시간: 2026-06-14 14:09:26 +09:00
+
+요청:
+
+- 로그인 창에서 이메일/비밀번호 입력 후 Enter를 누르면 이메일 로그인이 되게 한다.
+- Firebase Authentication에 사용자가 존재하는데도 가입 요청 시 `로그인 토큰을 확인하지 못했습니다`가 계속 뜨는 원인을 확인한다.
+
+변경:
+
+- 로그인 입력 영역과 로그인 버튼을 하나의 `<form>`으로 묶었다.
+- 로그인 모드에서 이메일 또는 비밀번호 입력 후 Enter로 form submit이 발생하면 `이메일 로그인`과 같은 핸들러를 실행한다.
+- Firebase Admin ID 토큰 검증 실패 시 Vercel 서버 로그에 오류 코드와 안전한 메시지만 남기도록 진단 로그를 추가했다.
+- 토큰, private key처럼 민감한 문자열은 로그에 남기지 않도록 마스킹 테스트를 추가했다.
+
+검증:
+
+- 인증 패널 테스트
+  - `npm test -- --run tests/presentation/teacherAuthPanel.test.ts`
+  - 결과: 통과
+  - 1개 테스트 파일, 12개 테스트 통과
+- Vercel API 테스트
+  - `npm test -- --run tests/infrastructure/vercelApi.test.ts`
+  - 결과: 통과
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 67개 테스트 파일, 284개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+
 ### 운영 전환 54차: 관리자 비밀번호 초기화 메일 문구 명확화
 
 완료 시간: 2026-06-14 12:38:23 +09:00

@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
-import { createVercelApiHandler } from "../../server/vercelApi";
+import { createVercelApiHandler, describeTokenVerificationError } from "../../server/vercelApi";
 import { createLocalStore } from "../../server/localStore";
 
 const tempRoots: string[] = [];
@@ -15,6 +15,18 @@ afterEach(async () => {
 });
 
 describe("vercelApi", () => {
+  it("logs Firebase token verification failures without leaking tokens or private keys", () => {
+    const message = describeTokenVerificationError({
+      code: "auth/argument-error",
+      message: "Decoding Firebase ID token failed. token=secret-token private_key=secret-key",
+    });
+
+    expect(message).toContain("auth/argument-error");
+    expect(message).toContain("Decoding Firebase ID token failed.");
+    expect(message).not.toContain("secret-token");
+    expect(message).not.toContain("secret-key");
+  });
+
   it("builds a Vercel-compatible API handler with injected store dependencies", async () => {
     const root = await mkdtemp(join(tmpdir(), "vercel-api-"));
     tempRoots.push(root);

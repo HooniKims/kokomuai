@@ -43,7 +43,13 @@ export async function createVercelApiHandler(dependencies: VercelApiDependencies
       : {
           requireFirebaseAuth: true,
           verifyIdToken: async (token: string) => {
-            const decoded = await (await getFirebaseAdminAuth(env)).verifyIdToken(token);
+            let decoded: { uid: string; email?: string };
+            try {
+              decoded = await (await getFirebaseAdminAuth(env)).verifyIdToken(token);
+            } catch (error) {
+              console.warn("firebase token verification failed", describeTokenVerificationError(error));
+              throw error;
+            }
             return {
               uid: decoded.uid,
               email: decoded.email
@@ -69,4 +75,21 @@ export async function createVercelApiHandler(dependencies: VercelApiDependencies
           { fetchImpl: dependencies.fetchImpl }
         ))
   });
+}
+
+export function describeTokenVerificationError(error: unknown): string {
+  if (!error || typeof error !== "object") return "unknown verification error";
+  const candidate = error as { code?: unknown; message?: unknown };
+  const code = typeof candidate.code === "string" ? candidate.code : "unknown";
+  const message =
+    typeof candidate.message === "string"
+      ? sanitizeVerificationMessage(candidate.message)
+      : "no message";
+  return `${code}: ${message}`;
+}
+
+function sanitizeVerificationMessage(message: string): string {
+  return message
+    .replace(/token=[^\s,;]+/gi, "token=[redacted]")
+    .replace(/private[_-]?key=[^\s,;]+/gi, "private_key=[redacted]");
 }

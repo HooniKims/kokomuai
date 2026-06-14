@@ -159,40 +159,13 @@ export function TeacherAuthPanel({
             onEmailChange={onEmailChange}
             onPasswordChange={onPasswordChange}
             onTogglePasswordVisibility={onTogglePasswordVisibility}
+            onEmailSignIn={onEmailSignIn}
+            onGoogleSignIn={onGoogleSignIn}
+            onModeChange={onModeChange}
+            canUseEmailAuth={canUseEmailAuth}
+            isSubmitting={isSubmitting}
           />
         )}
-
-        {!isSignup ? (
-          <div className="auth-actions">
-            <button
-              className="pill dark"
-              data-action="email-login"
-              type="button"
-              onClick={() => void onEmailSignIn()}
-              disabled={!canUseEmailAuth}
-            >
-              <LogIn size={16} /> 이메일 로그인
-            </button>
-            <button
-              className="pill google-auth-button"
-              data-action="google-login"
-              type="button"
-              onClick={() => void onGoogleSignIn()}
-              disabled={isSubmitting}
-            >
-              <GoogleIcon /> Google로 계속하기
-            </button>
-            <button
-              className="pill outline auth-mode-link"
-              data-action="switch-signup"
-              type="button"
-              onClick={() => onModeChange("signup")}
-              disabled={isSubmitting}
-            >
-              회원가입
-            </button>
-          </div>
-        ) : null}
 
         {isSignup ? (
           <>
@@ -238,35 +211,81 @@ function LoginForm({
   onEmailChange,
   onPasswordChange,
   onTogglePasswordVisibility,
+  onEmailSignIn,
+  onGoogleSignIn,
+  onModeChange,
+  canUseEmailAuth,
+  isSubmitting,
 }: Pick<TeacherAuthPanelProps, "email" | "password"> &
   PasswordVisibilityProps & {
     onEmailChange: (value: string) => void;
     onPasswordChange: (value: string) => void;
+    onEmailSignIn: () => void | Promise<void>;
+    onGoogleSignIn: () => void | Promise<void>;
+    onModeChange: (mode: AuthPanelMode) => void;
+    canUseEmailAuth: boolean;
+    isSubmitting: boolean;
   }) {
   return (
-    <div className="form-grid auth-form-grid login-form-grid">
-      <label>
-        이메일
-        <input
-          type="email"
-          value={email}
-          placeholder="teacher@example.com"
-          onChange={(event) => onEmailChange(event.target.value)}
-          autoComplete="email"
-        />
-      </label>
-      <label>
-        비밀번호
-        <PasswordInput
-          value={password}
-          placeholder="8자 이상"
-          showPassword={showPassword}
-          autoComplete="current-password"
-          onChange={onPasswordChange}
-          onTogglePasswordVisibility={onTogglePasswordVisibility}
-        />
-      </label>
-    </div>
+    <form
+      data-action="email-login-form"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (canUseEmailAuth) void onEmailSignIn();
+      }}
+    >
+      <div className="form-grid auth-form-grid login-form-grid">
+        <label>
+          이메일
+          <input
+            type="email"
+            value={email}
+            placeholder="teacher@example.com"
+            onChange={(event) => onEmailChange(event.target.value)}
+            autoComplete="email"
+          />
+        </label>
+        <label>
+          비밀번호
+          <PasswordInput
+            value={password}
+            placeholder="8자 이상"
+            showPassword={showPassword}
+            autoComplete="current-password"
+            onChange={onPasswordChange}
+            onTogglePasswordVisibility={onTogglePasswordVisibility}
+          />
+        </label>
+      </div>
+      <div className="auth-actions">
+        <button
+          className="pill dark"
+          data-action="email-login"
+          type="submit"
+          disabled={!canUseEmailAuth}
+        >
+          <LogIn size={16} /> 이메일 로그인
+        </button>
+        <button
+          className="pill google-auth-button"
+          data-action="google-login"
+          type="button"
+          onClick={() => void onGoogleSignIn()}
+          disabled={isSubmitting}
+        >
+          <GoogleIcon /> Google로 계속하기
+        </button>
+        <button
+          className="pill outline auth-mode-link"
+          data-action="switch-signup"
+          type="button"
+          onClick={() => onModeChange("signup")}
+          disabled={isSubmitting}
+        >
+          회원가입
+        </button>
+      </div>
+    </form>
   );
 }
 
