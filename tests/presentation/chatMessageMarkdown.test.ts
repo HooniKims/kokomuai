@@ -13,4 +13,15 @@ describe("chatMessageMarkdown", () => {
   it("keeps line breaks readable", () => {
     expect(renderChatMessageMarkdown("첫 줄\n둘째 줄")).toBe("첫 줄<br />둘째 줄");
   });
+  it("renders inline math markers without exposing dollar signs", () => {
+    expect(renderChatMessageMarkdown("입력값 $x$와 결과값 $y = 2x + 3$를 봐요.")).toBe(
+      '입력값 <span class="inline-math">x</span>와 결과값 <span class="inline-math">y = 2x + 3</span>를 봐요.'
+    );
+  });
+
+  it("escapes html inside inline math", () => {
+    expect(renderChatMessageMarkdown("값은 $<script>x</script>$입니다.")).toBe(
+      '값은 <span class="inline-math">&lt;script&gt;x&lt;/script&gt;</span>입니다.'
+    );
+  });
 });

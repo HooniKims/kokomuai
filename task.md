@@ -6818,3 +6818,30 @@ LLM 실구동 확인:
   - `npm run build`
   - 결과: 통과
 
+### 운영 전환 51차: 채팅 수식 inline markdown 표시 보정
+
+완료 시간: 2026-06-14 21:15:00 +09:00
+
+요청:
+
+- 챗봇 답변에서 `$x$`, `$y = 2x + 3$`처럼 달러 기호가 그대로 보이지 않고, 마크다운 효과가 적용되게 한다.
+
+수정:
+
+- 채팅 메시지 마크다운 렌더러에서 `$...$` inline math 표기를 `<span class="inline-math">...</span>`으로 변환하도록 했다.
+- 수식 내부 HTML은 기존 escape 처리를 거친 뒤 표시되므로 `<script>` 같은 내용이 실행되지 않는다.
+- inline math가 일반 문장 안에서 줄바꿈 없이 수식처럼 보이도록 serif italic 스타일을 추가했다.
+
+검증:
+
+- 관련 테스트
+  - `npm test -- --run tests/presentation/chatMessageMarkdown.test.ts`
+  - 결과: 통과
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 74개 테스트 파일, 316개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+

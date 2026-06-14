@@ -1454,6 +1454,12 @@ textarea:focus {
   text-underline-offset: 0.18em;
 }
 
+.message p .inline-math {
+  font-family: "Times New Roman", Georgia, serif;
+  font-style: italic;
+  white-space: nowrap;
+}
+
 .error-text {
   margin: 0;
   padding: 0 8px;
