@@ -6757,3 +6757,37 @@ LLM 실구동 확인:
   - `npm run build`
   - 결과: 통과
 
+### 운영 전환 49차: Vercel 함수 리전 보정으로 LM Studio fallback 원인 해결
+
+완료 시간: 2026-06-14 20:14:00 +09:00
+
+요청:
+
+- Nginx Origin 제한을 제거했는데도 운영 챗봇이 LM Studio가 아니라 OpenAI fallback으로 연결되는지 실제로 테스트한다.
+
+확인:
+
+- 운영 `/api/chat` 직접 호출 결과, 응답은 HTTP `200`이지만 스트림의 모델이 `gpt-5.4-nano-2026-03-17`로 표시되어 OpenAI fallback 상태임을 확인했다.
+- 같은 LM Studio 공개 주소를 로컬 PC에서 직접 호출하면 `unsloth/gemma-4-12b-it`가 HTTP `200`으로 응답했다.
+- Vercel 함수 진단 로그를 추가해 확인한 결과, `lm.alluser.site:443` 연결에서 `UND_ERR_CONNECT_TIMEOUT`이 발생했다.
+- 즉 HTTP 403, Origin 차단, API 키 오류가 아니라 Vercel 함수가 Washington(`iad1`)에서 LM Studio 서버까지 TCP 연결을 열지 못하는 문제였다.
+
+수정:
+
+- `vercel.json`에 `"regions": ["icn1"]`을 추가해 Vercel Function 실행 지역을 서울로 지정했다.
+- provider fallback이 발생하면 provider, modelId, HTTP status 또는 네트워크 cause만 남기도록 진단 로그를 추가했다. API 키와 요청 본문은 기록하지 않는다.
+
+검증:
+
+- 관련 테스트
+  - `npm test -- --run tests/infrastructure/productionPreflight.test.ts tests/infrastructure/apiHandler.test.ts`
+  - 결과: 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+- 운영 배포 후 `/api/chat` 직접 호출
+  - 응답: HTTP `200`
+  - `X-Vercel-Id`: `icn1::icn1...`
+  - 스트림 모델: `google/gemma-4-e2b`
+  - fallback 경고 로그: 없음
+

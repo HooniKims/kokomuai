@@ -1,6 +1,7 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "regions": ["icn1"],
   "headers": [
     {
       "source": "/api/(.*)",

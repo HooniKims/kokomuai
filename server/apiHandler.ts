@@ -131,7 +131,11 @@ async function proxyStreamToProvider(
   let upstream: Response;
   try {
     upstream = await requestProvider(activeModel, prepared.messages, dependencies, fetchImpl);
-  } catch {
+  } catch (error) {
+    logProviderFailureForDiagnostics(activeModel, {
+      code: "NETWORK_ERROR",
+      error,
+    });
     const fallback = await tryProviderFallback(activeModel, prepared.messages, dependencies, fetchImpl);
     if (fallback) {
       activeModel = fallback.model;
@@ -153,6 +157,10 @@ async function proxyStreamToProvider(
   }
 
   if (!upstream.ok || !upstream.body) {
+    logProviderFailureForDiagnostics(activeModel, {
+      code: `HTTP_${upstream.status}`,
+      status: upstream.status,
+    });
     const fallback = await tryProviderFallback(activeModel, prepared.messages, dependencies, fetchImpl);
     if (fallback) {
       activeModel = fallback.model;
@@ -252,14 +260,55 @@ async function tryProviderFallback(
   for (const fallbackModel of fallbackModels) {
     try {
       const response = await requestProvider(fallbackModel, messages, dependencies, fetchImpl);
-      if (!response.ok || !response.body) continue;
+      if (!response.ok || !response.body) {
+        logProviderFailureForDiagnostics(fallbackModel, {
+          code: `HTTP_${response.status}`,
+          status: response.status,
+        });
+        continue;
+      }
       return { model: fallbackModel, response };
-    } catch {
+    } catch (error) {
+      logProviderFailureForDiagnostics(fallbackModel, {
+        code: "NETWORK_ERROR",
+        error,
+      });
       continue;
     }
   }
 
   return null;
+}
+
+function logProviderFailureForDiagnostics(
+  model: AiModelOption,
+  input: {
+    code: string;
+    status?: number;
+    error?: unknown;
+  },
+) {
+  const errorName =
+    input.error instanceof Error ? input.error.name : typeof input.error;
+  const errorMessage = input.error instanceof Error ? input.error.message : undefined;
+  const errorCause =
+    input.error instanceof Error
+      ? (input.error as Error & {
+          cause?: { code?: string; name?: string; message?: string };
+        }).cause
+      : undefined;
+  console.warn("[provider-fallback]", {
+    provider: model.provider,
+    modelId: model.id,
+    apiModel: model.apiModel,
+    code: input.code,
+    status: input.status,
+    errorName,
+    errorMessage,
+    causeCode: errorCause?.code,
+    causeName: errorCause?.name,
+    causeMessage: errorCause?.message,
+  });
 }
 
 async function recordProviderFailure(
