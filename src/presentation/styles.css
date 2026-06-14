@@ -335,11 +335,49 @@ select {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.login-form-grid {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 520px;
+}
+
+.signup-form-grid {
+  align-items: start;
+}
+
+.auth-password-stack {
+  display: grid;
+  gap: 12px;
+}
+
 .auth-actions {
   margin-top: 16px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.auth-mode-link {
+  margin-top: 14px;
+}
+
+.text-action {
+  border: 0;
+  padding: 0;
+  color: var(--color-forest-ink);
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.text-action:hover:not(:disabled) {
+  color: #3367d6;
+}
+
+.text-action:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .auth-status {

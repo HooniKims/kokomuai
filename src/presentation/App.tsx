@@ -27,7 +27,10 @@ import {
   signUpTeacherWithEmail,
 } from "../infrastructure/firebase/client.js";
 import * as api from "./apiClient.js";
-import { TeacherAuthPanel } from "./auth/TeacherAuthPanel.js";
+import {
+  TeacherAuthPanel,
+  type AuthPanelMode,
+} from "./auth/TeacherAuthPanel.js";
 import { buildTeacherRegistrationPayload } from "./auth/teacherAuthForm.js";
 import { AdminDashboardRoute } from "./routes/AdminDashboardRoute.js";
 import { PrivacyPolicyRoute } from "./routes/PrivacyPolicyRoute.js";
@@ -165,7 +168,8 @@ function tokenFromPath(): string {
 }
 
 export function shouldShowRoleNavigation(pathname: string): boolean {
-  return !/^\/s\/[^/?#]+/.test(pathname);
+  void pathname;
+  return false;
 }
 
 export function shouldUseFirebaseTeacherAuth(
@@ -173,13 +177,16 @@ export function shouldUseFirebaseTeacherAuth(
   firebaseConfigured: boolean,
   authEnabled: boolean,
 ): boolean {
-  return (
-    authEnabled && firebaseConfigured && shouldShowRoleNavigation(pathname)
-  );
+  return authEnabled && firebaseConfigured && !isStudentSharePath(pathname);
 }
 
 export function resolveInitialView(pathname: string): AppView {
-  return shouldShowRoleNavigation(pathname) ? "teacher" : "student";
+  if (isStudentSharePath(pathname)) return "student";
+  return pathname === "/admin" ? "admin" : "teacher";
+}
+
+function isStudentSharePath(pathname: string): boolean {
+  return /^\/s\/[^/?#]+/.test(pathname);
 }
 
 export function confirmSelectedChatbotDeletion(
@@ -293,6 +300,8 @@ export function App() {
   const [authPasswordConfirmation, setAuthPasswordConfirmation] =
     useState("");
   const [showAuthPassword, setShowAuthPassword] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthPanelMode>("login");
+  const [isTeacherAuthSignedIn, setIsTeacherAuthSignedIn] = useState(false);
   const [authSchoolQuery, setAuthSchoolQuery] = useState("");
   const [authSchoolResults, setAuthSchoolResults] = useState<
     api.SchoolSearchResult[]
@@ -501,6 +510,8 @@ export function App() {
     setAuthError("");
 
     if (!user) {
+      setIsTeacherAuthSignedIn(false);
+      setAuthMode("login");
       setActiveTeacherId("");
       setChatbots([]);
       setTeachers([]);
@@ -509,6 +520,7 @@ export function App() {
       return;
     }
 
+    setIsTeacherAuthSignedIn(true);
     const email = user.email ?? "";
     if (email) setAuthEmail(email);
     if (user.displayName)
@@ -521,11 +533,13 @@ export function App() {
         nextTeachers.find((teacher) => teacher.email === email) ??
         nextTeachers[0];
       if (!ownProfile) {
+        setAuthMode("signup");
         setWorkspaceStatus("학교를 선택한 뒤 가입 요청을 보내 주세요.");
         return;
       }
 
       if (ownProfile.status === "approved" || ownProfile.status === "admin") {
+        setView(ownProfile.status === "admin" ? "admin" : "teacher");
         await refreshWorkspace(ownProfile.id);
         setWorkspaceStatus(
           ownProfile.status === "admin"
@@ -536,6 +550,7 @@ export function App() {
         setActiveTeacherId("");
         setChatbots([]);
         setUsageSummaries([]);
+        setAuthMode("signup");
         setWorkspaceStatus(
           "가입 요청이 접수됐습니다. 관리자 승인 후 사용할 수 있습니다.",
         );
@@ -544,6 +559,7 @@ export function App() {
       setActiveTeacherId("");
       setChatbots([]);
       setUsageSummaries([]);
+      setAuthMode("signup");
       setWorkspaceStatus(
         caught instanceof Error &&
           caught.message !== "teacher_profile_not_found"
@@ -698,6 +714,7 @@ export function App() {
           : "가입 요청이 접수됐습니다. 관리자 승인 후 사용할 수 있습니다.",
       );
       if (teacher.status === "approved" || teacher.status === "admin") {
+        setView(teacher.status === "admin" ? "admin" : "teacher");
         await refreshWorkspace(teacher.id);
       }
     } catch (caught) {
@@ -1065,7 +1082,6 @@ export function App() {
     }
   }
 
-  const showRoleNavigation = shouldShowRoleNavigation(window.location.pathname);
   const shouldShowTeacherAuthPanel =
     usesFirebaseTeacherAuth && view !== "student" && !activeTeacherId;
 
@@ -1074,24 +1090,6 @@ export function App() {
       <section className="hero-band">
         <nav className="top-nav">
           <div className="brand">꼬꼬무AI</div>
-          {showRoleNavigation ? (
-            <div className="nav-actions">
-              <button
-                className={`pill ghost ${view === "teacher" ? "active" : ""}`}
-                onClick={() => setView("teacher")}
-                type="button"
-              >
-                교사
-              </button>
-              <button
-                className={`pill ghost ${view === "admin" ? "active" : ""}`}
-                onClick={() => setView("admin")}
-                type="button"
-              >
-                관리자
-              </button>
-            </div>
-          ) : null}
         </nav>
         <div className="hero-copy">
           <h1>
@@ -1121,6 +1119,8 @@ export function App() {
 
       {!isPrivacyPage && shouldShowTeacherAuthPanel ? (
         <TeacherAuthPanel
+          mode={authMode}
+          isSignedIn={isTeacherAuthSignedIn}
           realName={authRealName}
           email={authEmail}
           password={authPassword}
@@ -1133,6 +1133,7 @@ export function App() {
           isSubmitting={isSubmittingAuth}
           authStatus={workspaceStatus}
           authError={authError}
+          onModeChange={setAuthMode}
           onRealNameChange={setAuthRealName}
           onEmailChange={setAuthEmail}
           onPasswordChange={setAuthPassword}

@@ -10,19 +10,19 @@ import {
 import type { SchoolSearchResult } from "../../src/presentation/apiClient";
 
 const selectedSchool: SchoolSearchResult = {
-  schoolName: "등촌중학교",
-  schoolKind: "중학교",
+  schoolName: "Deungchon Middle School",
+  schoolKind: "Middle School",
   officeCode: "B10",
   standardSchoolCode: "1234567",
-  region: "서울",
-  address: "서울특별시 강서구 등촌로 10",
+  region: "Seoul",
+  address: "Seoul Gangseo Deungchon-ro 10",
 };
 
 describe("TeacherAuthPanel", () => {
   it("requires a selected NEIS school before profile registration", () => {
     expect(
       canSubmitTeacherProfile({
-        realName: "김하늘",
+        realName: "Teacher Kim",
         email: "teacher@example.com",
         selectedSchool: null,
       }),
@@ -30,7 +30,7 @@ describe("TeacherAuthPanel", () => {
 
     expect(
       canSubmitTeacherProfile({
-        realName: "김하늘",
+        realName: "Teacher Kim",
         email: "teacher@example.com",
         selectedSchool,
       }),
@@ -40,47 +40,78 @@ describe("TeacherAuthPanel", () => {
   it("builds a server profile payload without sending the teacher password", () => {
     expect(
       buildTeacherRegistrationPayload({
-        realName: " 김하늘 ",
+        realName: " Teacher Kim ",
         email: " TEACHER@example.com ",
         selectedSchool,
       }),
     ).toEqual({
-      realName: "김하늘",
+      realName: "Teacher Kim",
       email: "teacher@example.com",
       passwordHash: "firebase-auth",
       school: selectedSchool,
     });
   });
 
-  it("renders selected school address and disables registration until a school is selected", () => {
-    const missingSchoolTree = TeacherAuthPanel(
-      createPanelProps({ selectedSchool: null }),
+  it("keeps the default login screen focused on login-only controls", () => {
+    const tree = TeacherAuthPanel(createPanelProps({ mode: "login" }));
+    const text = collectText(tree).join(" ");
+
+    expect(findNodeByAction(tree, "email-login")).toBeDefined();
+    expect(findNodeByAction(tree, "google-login")).toBeDefined();
+    expect(findNodeByAction(tree, "email-signup")).toBeUndefined();
+    expect(findNodeByAction(tree, "register-profile")).toBeUndefined();
+    expect(findNodeByAction(tree, "switch-signup")).toBeDefined();
+    expect(text).not.toContain("School Name");
+  });
+
+  it("does not show logout until a Firebase user is signed in", () => {
+    const signedOutTree = TeacherAuthPanel(
+      createPanelProps({ mode: "login", isSignedIn: false }),
     );
-    const missingSchoolText = collectText(missingSchoolTree).join(" ");
-    const registerButton = collectNodes(missingSchoolTree).find(
-      (node) => node.props?.["data-action"] === "register-profile",
+    const signedInTree = TeacherAuthPanel(
+      createPanelProps({ mode: "login", isSignedIn: true }),
     );
 
-    expect(missingSchoolText).toContain(
-      "학교를 직접 입력하지 말고 아래 목록에서 선택해 주세요.",
+    expect(collectText(signedOutTree).join(" ")).not.toContain("로그아웃");
+    expect(collectText(signedInTree).join(" ")).toContain("로그아웃");
+  });
+
+  it("renders school registration only in signup mode", () => {
+    const missingSchoolTree = TeacherAuthPanel(
+      createPanelProps({
+        mode: "signup",
+        isSignedIn: true,
+        selectedSchool: null,
+      }),
     );
+    const registerButton = findNodeByAction(missingSchoolTree, "register-profile");
+
     expect(registerButton?.props?.disabled).toBe(true);
 
     const selectedSchoolTree = TeacherAuthPanel(
-      createPanelProps({ selectedSchool }),
+      createPanelProps({
+        mode: "signup",
+        isSignedIn: true,
+        selectedSchool,
+      }),
     );
     const selectedSchoolText = collectText(selectedSchoolTree).join(" ");
-    const enabledRegisterButton = collectNodes(selectedSchoolTree).find(
-      (node) => node.props?.["data-action"] === "register-profile",
+    const enabledRegisterButton = findNodeByAction(
+      selectedSchoolTree,
+      "register-profile",
     );
 
-    expect(selectedSchoolText).toContain("서울특별시 강서구 등촌로 10");
+    expect(selectedSchoolText).toContain("Seoul Gangseo Deungchon-ro 10");
     expect(enabledRegisterButton?.props?.disabled).toBe(false);
   });
 
   it("shows school autocomplete state without a separate search button", () => {
     const tree = TeacherAuthPanel(
-      createPanelProps({ isSearchingSchools: true, selectedSchool: null }),
+      createPanelProps({
+        mode: "signup",
+        isSearchingSchools: true,
+        selectedSchool: null,
+      }),
     );
     const text = collectText(tree).join(" ");
     const buttons = collectNodes(tree).filter((node) => node.type === "button");
@@ -94,26 +125,26 @@ describe("TeacherAuthPanel", () => {
   it("requires matching confirmation only for email sign-up", () => {
     const mismatchTree = TeacherAuthPanel(
       createPanelProps({
+        mode: "signup",
         password: "password123",
         passwordConfirmation: "password456",
       }),
     );
     const mismatchText = collectText(mismatchTree).join(" ");
-    const mismatchSignUpButton = findButtonByText(mismatchTree, "이메일 가입");
-    const signInButton = findButtonByText(mismatchTree, "이메일 로그인");
+    const mismatchSignUpButton = findNodeByAction(mismatchTree, "email-signup");
 
     expect(mismatchText).toContain("비밀번호가 일치하지 않습니다.");
     expect(mismatchSignUpButton?.props?.disabled).toBe(true);
-    expect(signInButton?.props?.disabled).toBe(false);
 
     const matchTree = TeacherAuthPanel(
       createPanelProps({
+        mode: "signup",
         password: "password123",
         passwordConfirmation: "password123",
       }),
     );
     const matchText = collectText(matchTree).join(" ");
-    const matchSignUpButton = findButtonByText(matchTree, "이메일 가입");
+    const matchSignUpButton = findNodeByAction(matchTree, "email-signup");
 
     expect(matchText).toContain("비밀번호가 일치합니다.");
     expect(matchSignUpButton?.props?.disabled).toBe(false);
@@ -121,16 +152,15 @@ describe("TeacherAuthPanel", () => {
 
   it("renders auth errors in the side status and uses a Google-styled button", () => {
     const tree = TeacherAuthPanel(
-      createPanelProps({ authError: "가입 요청 처리 중 문제가 생겼습니다." }),
+      createPanelProps({ authError: "Signup request failed." }),
     );
     const text = collectText(tree).join(" ");
     const statusNode = collectNodes(tree).find((node) =>
       String(node.props?.className ?? "").includes("auth-status error"),
     );
-    const googleButton = findButtonByText(tree, "Google로 계속하기");
+    const googleButton = findNodeByAction(tree, "google-login");
 
-    expect(text).toContain("학교 확인 후");
-    expect(text).toContain("가입 요청 처리 중 문제가 생겼습니다.");
+    expect(text).toContain("Signup request failed.");
     expect(statusNode).toBeDefined();
     expect(String(googleButton?.props?.className)).toContain(
       "google-auth-button",
@@ -142,18 +172,21 @@ function createPanelProps(
   overrides: Partial<TeacherAuthPanelProps> = {},
 ): TeacherAuthPanelProps {
   return {
-    realName: "김하늘",
+    mode: "login",
+    isSignedIn: false,
+    realName: "Teacher Kim",
     email: "teacher@example.com",
     password: "password123",
     passwordConfirmation: "password123",
     showPassword: false,
-    schoolQuery: "등촌중",
+    schoolQuery: "Deungchon",
     schoolResults: [selectedSchool],
     selectedSchool,
     isSearchingSchools: false,
     isSubmitting: false,
-    authStatus: "교사 계정으로 로그인하거나 가입해 주세요.",
+    authStatus: "Sign in or create a teacher account.",
     authError: "",
+    onModeChange: vi.fn(),
     onRealNameChange: vi.fn(),
     onEmailChange: vi.fn(),
     onPasswordChange: vi.fn(),
@@ -170,13 +203,13 @@ function createPanelProps(
   };
 }
 
-function findButtonByText(
+function findNodeByAction(
   node: unknown,
-  text: string,
+  action: string,
 ): { type?: unknown; props?: Record<string, unknown> } | undefined {
-  return collectNodes(node)
-    .filter((candidate) => candidate.type === "button")
-    .find((candidate) => collectText(candidate).join(" ").includes(text));
+  return collectNodes(node).find(
+    (candidate) => candidate.props?.["data-action"] === action,
+  );
 }
 
 function collectText(node: unknown): string[] {
@@ -184,6 +217,16 @@ function collectText(node: unknown): string[] {
     return [String(node)];
   if (!node || typeof node !== "object") return [];
   if (Array.isArray(node)) return node.flatMap(collectText);
+  if (
+    "type" in node &&
+    typeof (node as { type?: unknown }).type === "function"
+  ) {
+    const element = node as {
+      type: (props: Record<string, unknown>) => unknown;
+      props?: Record<string, unknown>;
+    };
+    return collectText(element.type(element.props ?? {}));
+  }
 
   const props =
     "props" in node
@@ -197,6 +240,16 @@ function collectNodes(
 ): Array<{ type?: unknown; props?: Record<string, unknown> }> {
   if (!node || typeof node !== "object") return [];
   if (Array.isArray(node)) return node.flatMap(collectNodes);
+  if (
+    "type" in node &&
+    typeof (node as { type?: unknown }).type === "function"
+  ) {
+    const element = node as {
+      type: (props: Record<string, unknown>) => unknown;
+      props?: Record<string, unknown>;
+    };
+    return collectNodes(element.type(element.props ?? {}));
+  }
 
   const props =
     "props" in node

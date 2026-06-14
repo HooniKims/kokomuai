@@ -8,18 +8,17 @@ import {
 } from "../../src/presentation/App";
 
 describe("student share navigation", () => {
-  it("hides role navigation on student share links", () => {
+  it("hides role navigation because operator role is derived from the account", () => {
     expect(shouldShowRoleNavigation("/s/public-token")).toBe(false);
     expect(shouldShowRoleNavigation("/s/public-token?preview=1")).toBe(false);
-  });
-
-  it("shows role navigation on the local operator page", () => {
-    expect(shouldShowRoleNavigation("/")).toBe(true);
-    expect(shouldShowRoleNavigation("/teacher")).toBe(true);
+    expect(shouldShowRoleNavigation("/")).toBe(false);
+    expect(shouldShowRoleNavigation("/teacher")).toBe(false);
+    expect(shouldShowRoleNavigation("/admin")).toBe(false);
   });
 
   it("uses Firebase teacher auth only on operator pages when Firebase is configured", () => {
     expect(shouldUseFirebaseTeacherAuth("/", true, true)).toBe(true);
+    expect(shouldUseFirebaseTeacherAuth("/admin", true, true)).toBe(true);
     expect(shouldUseFirebaseTeacherAuth("/s/public-token", true, true)).toBe(
       false,
     );
@@ -27,9 +26,10 @@ describe("student share navigation", () => {
     expect(shouldUseFirebaseTeacherAuth("/", true, false)).toBe(false);
   });
 
-  it("opens the teacher workspace first and reserves the student view for share links", () => {
+  it("opens operator pages by path and reserves the student view for share links", () => {
     expect(resolveInitialView("/")).toBe("teacher");
     expect(resolveInitialView("/teacher")).toBe("teacher");
+    expect(resolveInitialView("/admin")).toBe("admin");
     expect(resolveInitialView("/s/public-token")).toBe("student");
   });
 
@@ -42,7 +42,7 @@ describe("student share navigation", () => {
     expect(
       toFriendlyFirebaseAuthError(
         { code: "auth/invalid-credential" },
-        "로그인 실패",
+        "Login failed",
       ),
     ).toBe("이메일 또는 비밀번호가 맞지 않습니다. 다시 확인해 주세요.");
   });

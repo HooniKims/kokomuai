@@ -1,9 +1,20 @@
-﻿import { LogIn, LogOut, Mail, School, UserPlus } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  LogIn,
+  LogOut,
+  Mail,
+  School,
+  UserPlus,
+} from "lucide-react";
 import type { SchoolSearchResult } from "../apiClient.js";
-import { Eye, EyeOff } from "lucide-react";
 import { canSubmitTeacherProfile } from "./teacherAuthForm.js";
 
+export type AuthPanelMode = "login" | "signup";
+
 export interface TeacherAuthPanelProps {
+  mode: AuthPanelMode;
+  isSignedIn: boolean;
   realName: string;
   email: string;
   password: string;
@@ -16,6 +27,7 @@ export interface TeacherAuthPanelProps {
   isSubmitting: boolean;
   authStatus: string;
   authError: string;
+  onModeChange: (mode: AuthPanelMode) => void;
   onRealNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
@@ -31,6 +43,8 @@ export interface TeacherAuthPanelProps {
 }
 
 export function TeacherAuthPanel({
+  mode,
+  isSignedIn,
   realName,
   email,
   password,
@@ -43,6 +57,7 @@ export function TeacherAuthPanel({
   isSubmitting,
   authStatus,
   authError,
+  onModeChange,
   onRealNameChange,
   onEmailChange,
   onPasswordChange,
@@ -56,7 +71,9 @@ export function TeacherAuthPanel({
   onRegisterProfile,
   onSignOut,
 }: TeacherAuthPanelProps) {
+  const isSignup = mode === "signup";
   const canRegisterProfile =
+    isSignedIn &&
     canSubmitTeacherProfile({ realName, email, selectedSchool }) &&
     !isSubmitting;
   const canUseEmailAuth =
@@ -88,201 +105,384 @@ export function TeacherAuthPanel({
           </p>
         </div>
         <div className="notice">
-          <strong>가입 기준</strong>
-          <p>학교는 직접 입력하지 않고 NEIS 검색 결과에서 선택해야 합니다.</p>
+          <strong>{isSignup ? "가입 기준" : "로그인 안내"}</strong>
+          <p>
+            {isSignup
+              ? "학교는 직접 입력하지 않고 NEIS 검색 결과에서 선택해야 합니다."
+              : "가입이 승인된 계정은 로그인 후 권한에 맞는 화면으로 이동합니다."}
+          </p>
         </div>
       </aside>
 
       <section className="dashboard-panel auth-panel">
         <div className="section-heading">
           <div>
-            <span className="soft-label">가입 및 로그인</span>
-            <h2>교사 계정으로 시작하기</h2>
+            <span className="soft-label">
+              {isSignup ? "가입 신청" : "로그인"}
+            </span>
+            <h2>
+              {isSignup ? "학교 확인을 신청합니다" : "교사 계정으로 로그인"}
+            </h2>
           </div>
-          <button
-            className="pill outline"
-            type="button"
-            onClick={() => void onSignOut()}
-            disabled={isSubmitting}
-          >
-            <LogOut size={16} /> 로그아웃
-          </button>
+          {isSignedIn ? (
+            <button
+              className="pill outline"
+              type="button"
+              onClick={() => void onSignOut()}
+              disabled={isSubmitting}
+            >
+              <LogOut size={16} /> 로그아웃
+            </button>
+          ) : null}
         </div>
 
-        <div className="form-grid auth-form-grid">
-          <label>
-            이름
-            <input
-              value={realName}
-              placeholder="김하늘"
-              onChange={(event) => onRealNameChange(event.target.value)}
-            />
-          </label>
-          <label>
-            이메일
-            <input
-              type="email"
-              value={email}
-              placeholder="teacher@example.com"
-              onChange={(event) => onEmailChange(event.target.value)}
-            />
-          </label>
-          <label>
-            비밀번호
-            <span className="password-field">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                placeholder="8자 이상"
-                onChange={(event) => onPasswordChange(event.target.value)}
-                autoComplete="current-password"
-              />
-              <button
-                aria-label={
-                  showPassword ? "비밀번호 숨기기" : "비밀번호 보기"
-                }
-                className="password-toggle"
-                type="button"
-                onClick={onTogglePasswordVisibility}
-              >
-                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-              </button>
-            </span>
-          </label>
-          <label>
-            비밀번호 확인
-            <span className="password-field">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={passwordConfirmation}
-                placeholder="가입할 때 한 번 더 입력"
-                onChange={(event) =>
-                  onPasswordConfirmationChange(event.target.value)
-                }
-                autoComplete="new-password"
-              />
-              <button
-                aria-label={
-                  showPassword ? "비밀번호 숨기기" : "비밀번호 보기"
-                }
-                className="password-toggle"
-                type="button"
-                onClick={onTogglePasswordVisibility}
-              >
-                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-              </button>
-            </span>
-            <small
-              className={`password-match-note ${passwordConfirmationState}`}
-            >
-              {passwordConfirmationState === "empty"
-                ? "가입할 때 비밀번호를 한 번 더 입력해 주세요."
-                : passwordConfirmationState === "match"
-                  ? "비밀번호가 일치합니다."
-                  : "비밀번호가 일치하지 않습니다."}
-            </small>
-          </label>
-        </div>
+        {isSignup ? (
+          <SignupForm
+            realName={realName}
+            email={email}
+            password={password}
+            passwordConfirmation={passwordConfirmation}
+            showPassword={showPassword}
+            passwordConfirmationState={passwordConfirmationState}
+            onRealNameChange={onRealNameChange}
+            onEmailChange={onEmailChange}
+            onPasswordChange={onPasswordChange}
+            onPasswordConfirmationChange={onPasswordConfirmationChange}
+            onTogglePasswordVisibility={onTogglePasswordVisibility}
+          />
+        ) : (
+          <LoginForm
+            email={email}
+            password={password}
+            showPassword={showPassword}
+            onEmailChange={onEmailChange}
+            onPasswordChange={onPasswordChange}
+            onTogglePasswordVisibility={onTogglePasswordVisibility}
+          />
+        )}
 
         <div className="auth-actions">
-          <button
-            className="pill dark"
-            type="button"
-            onClick={() => void onEmailSignIn()}
-            disabled={!canUseEmailAuth}
-          >
-            <LogIn size={16} /> 이메일 로그인
-          </button>
-          <button
-            className="pill outline"
-            type="button"
-            onClick={() => void onEmailSignUp()}
-            disabled={!canUseEmailSignUp}
-          >
-            <Mail size={16} /> 이메일 가입
-          </button>
-          <button
-            className="pill google-auth-button"
-            type="button"
-            onClick={() => void onGoogleSignIn()}
-            disabled={isSubmitting}
-          >
-            <GoogleIcon /> Google로 계속하기
-          </button>
-        </div>
-
-        <div className="school-search-panel">
-          <div className="section-heading compact">
-            <div>
-              <span className="soft-label">학교 선택</span>
-              <h2>학교명을 일부 입력한 뒤 목록에서 선택해 주세요.</h2>
-            </div>
-          </div>
-          <label className="school-query-label">
-            학교명
-            <input
-              value={schoolQuery}
-              placeholder="예: 등촌중"
-              onChange={(event) => onSchoolQueryChange(event.target.value)}
-            />
-          </label>
-          {isSearchingSchools ? (
-            <p className="selected-school-note">
-              학교 목록을 불러오는 중입니다.
-            </p>
-          ) : null}
-
-          <div className="school-result-list">
-            {schoolResults.map((school) => {
-              const isSelected =
-                selectedSchool?.standardSchoolCode ===
-                school.standardSchoolCode;
-              return (
-                <button
-                  aria-pressed={isSelected}
-                  className={`school-result ${isSelected ? "selected" : ""}`}
-                  key={`${school.officeCode}-${school.standardSchoolCode}`}
-                  onClick={() => onSelectSchool(school)}
-                  type="button"
-                >
-                  <School size={18} aria-hidden="true" />
-                  <span>
-                    <strong>{school.schoolName}</strong>
-                    <small>
-                      {[school.region, school.schoolKind, school.address]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </small>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {selectedSchool ? (
-            <p className="selected-school-note">
-              선택한 학교: {selectedSchool.schoolName}
-              {selectedSchool.address ? ` · ${selectedSchool.address}` : ""}
-            </p>
+          {isSignup ? (
+            <>
+              <button
+                className="pill outline"
+                data-action="email-signup"
+                type="button"
+                onClick={() => void onEmailSignUp()}
+                disabled={isSignedIn || !canUseEmailSignUp}
+              >
+                <Mail size={16} /> 이메일 계정 만들기
+              </button>
+              <button
+                className="pill ghost"
+                data-action="switch-login"
+                type="button"
+                onClick={() => onModeChange("login")}
+                disabled={isSubmitting}
+              >
+                로그인으로 돌아가기
+              </button>
+            </>
           ) : (
-            <p className="selected-school-note">
-              학교를 직접 입력하지 말고 아래 목록에서 선택해 주세요.
-            </p>
+            <>
+              <button
+                className="pill dark"
+                data-action="email-login"
+                type="button"
+                onClick={() => void onEmailSignIn()}
+                disabled={!canUseEmailAuth}
+              >
+                <LogIn size={16} /> 이메일 로그인
+              </button>
+              <button
+                className="pill google-auth-button"
+                data-action="google-login"
+                type="button"
+                onClick={() => void onGoogleSignIn()}
+                disabled={isSubmitting}
+              >
+                <GoogleIcon /> Google로 계속하기
+              </button>
+            </>
           )}
         </div>
 
-        {authError ? <p className="admin-log auth-error">{authError}</p> : null}
-        <button
-          className="pill dark auth-submit"
-          data-action="register-profile"
-          type="button"
-          onClick={() => void onRegisterProfile()}
-          disabled={!canRegisterProfile}
-        >
-          <UserPlus size={16} /> 학교 선택 후 가입 요청
-        </button>
+        {!isSignup ? (
+          <button
+            className="text-action auth-mode-link"
+            data-action="switch-signup"
+            type="button"
+            onClick={() => onModeChange("signup")}
+            disabled={isSubmitting}
+          >
+            처음 사용하는 선생님은 가입 신청하기
+          </button>
+        ) : null}
+
+        {isSignup ? (
+          <>
+            <SchoolSearchPanel
+              schoolQuery={schoolQuery}
+              schoolResults={schoolResults}
+              selectedSchool={selectedSchool}
+              isSearchingSchools={isSearchingSchools}
+              onSchoolQueryChange={onSchoolQueryChange}
+              onSelectSchool={onSelectSchool}
+            />
+
+            {authError ? (
+              <p className="admin-log auth-error">{authError}</p>
+            ) : null}
+            <button
+              className="pill dark auth-submit"
+              data-action="register-profile"
+              type="button"
+              onClick={() => void onRegisterProfile()}
+              disabled={!canRegisterProfile}
+            >
+              <UserPlus size={16} /> 학교 선택 후 가입 요청
+            </button>
+          </>
+        ) : authError ? (
+          <p className="admin-log auth-error">{authError}</p>
+        ) : null}
       </section>
     </section>
+  );
+}
+
+interface PasswordVisibilityProps {
+  showPassword: boolean;
+  onTogglePasswordVisibility: () => void;
+}
+
+function LoginForm({
+  email,
+  password,
+  showPassword,
+  onEmailChange,
+  onPasswordChange,
+  onTogglePasswordVisibility,
+}: Pick<TeacherAuthPanelProps, "email" | "password"> &
+  PasswordVisibilityProps & {
+    onEmailChange: (value: string) => void;
+    onPasswordChange: (value: string) => void;
+  }) {
+  return (
+    <div className="form-grid auth-form-grid login-form-grid">
+      <label>
+        이메일
+        <input
+          type="email"
+          value={email}
+          placeholder="teacher@example.com"
+          onChange={(event) => onEmailChange(event.target.value)}
+          autoComplete="email"
+        />
+      </label>
+      <label>
+        비밀번호
+        <PasswordInput
+          value={password}
+          placeholder="8자 이상"
+          showPassword={showPassword}
+          autoComplete="current-password"
+          onChange={onPasswordChange}
+          onTogglePasswordVisibility={onTogglePasswordVisibility}
+        />
+      </label>
+    </div>
+  );
+}
+
+function SignupForm({
+  realName,
+  email,
+  password,
+  passwordConfirmation,
+  showPassword,
+  passwordConfirmationState,
+  onRealNameChange,
+  onEmailChange,
+  onPasswordChange,
+  onPasswordConfirmationChange,
+  onTogglePasswordVisibility,
+}: Pick<
+  TeacherAuthPanelProps,
+  "realName" | "email" | "password" | "passwordConfirmation"
+> &
+  PasswordVisibilityProps & {
+    passwordConfirmationState: "empty" | "match" | "mismatch";
+    onRealNameChange: (value: string) => void;
+    onEmailChange: (value: string) => void;
+    onPasswordChange: (value: string) => void;
+    onPasswordConfirmationChange: (value: string) => void;
+  }) {
+  return (
+    <div className="form-grid auth-form-grid signup-form-grid">
+      <label>
+        이름
+        <input
+          value={realName}
+          placeholder="김하늘"
+          onChange={(event) => onRealNameChange(event.target.value)}
+          autoComplete="name"
+        />
+      </label>
+      <label>
+        이메일
+        <input
+          type="email"
+          value={email}
+          placeholder="teacher@example.com"
+          onChange={(event) => onEmailChange(event.target.value)}
+          autoComplete="email"
+        />
+      </label>
+      <div className="auth-password-stack">
+        <label>
+          비밀번호
+          <PasswordInput
+            value={password}
+            placeholder="8자 이상"
+            showPassword={showPassword}
+            autoComplete="new-password"
+            onChange={onPasswordChange}
+            onTogglePasswordVisibility={onTogglePasswordVisibility}
+          />
+        </label>
+        <label>
+          비밀번호 확인
+          <PasswordInput
+            value={passwordConfirmation}
+            placeholder="한 번 더 입력"
+            showPassword={showPassword}
+            autoComplete="new-password"
+            onChange={onPasswordConfirmationChange}
+            onTogglePasswordVisibility={onTogglePasswordVisibility}
+          />
+          <small
+            className={`password-match-note ${passwordConfirmationState}`}
+          >
+            {passwordConfirmationState === "empty"
+              ? "가입할 때 비밀번호를 한 번 더 입력해 주세요."
+              : passwordConfirmationState === "match"
+                ? "비밀번호가 일치합니다."
+                : "비밀번호가 일치하지 않습니다."}
+          </small>
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function PasswordInput({
+  value,
+  placeholder,
+  showPassword,
+  autoComplete,
+  onChange,
+  onTogglePasswordVisibility,
+}: PasswordVisibilityProps & {
+  value: string;
+  placeholder: string;
+  autoComplete: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <span className="password-field">
+      <input
+        type={showPassword ? "text" : "password"}
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        autoComplete={autoComplete}
+      />
+      <button
+        aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+        className="password-toggle"
+        type="button"
+        onClick={onTogglePasswordVisibility}
+      >
+        {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+      </button>
+    </span>
+  );
+}
+
+function SchoolSearchPanel({
+  schoolQuery,
+  schoolResults,
+  selectedSchool,
+  isSearchingSchools,
+  onSchoolQueryChange,
+  onSelectSchool,
+}: Pick<
+  TeacherAuthPanelProps,
+  | "schoolQuery"
+  | "schoolResults"
+  | "selectedSchool"
+  | "isSearchingSchools"
+  | "onSchoolQueryChange"
+  | "onSelectSchool"
+>) {
+  return (
+    <div className="school-search-panel">
+      <div className="section-heading compact">
+        <div>
+          <span className="soft-label">학교 선택</span>
+          <h2>학교명을 일부 입력한 뒤 목록에서 선택해 주세요.</h2>
+        </div>
+      </div>
+      <label className="school-query-label">
+        학교명
+        <input
+          value={schoolQuery}
+          placeholder="예: 등촌중"
+          onChange={(event) => onSchoolQueryChange(event.target.value)}
+        />
+      </label>
+      {isSearchingSchools ? (
+        <p className="selected-school-note">학교 목록을 불러오는 중입니다.</p>
+      ) : null}
+
+      <div className="school-result-list">
+        {schoolResults.map((school) => {
+          const isSelected =
+            selectedSchool?.standardSchoolCode === school.standardSchoolCode;
+          return (
+            <button
+              aria-pressed={isSelected}
+              className={`school-result ${isSelected ? "selected" : ""}`}
+              key={`${school.officeCode}-${school.standardSchoolCode}`}
+              onClick={() => onSelectSchool(school)}
+              type="button"
+            >
+              <School size={18} aria-hidden="true" />
+              <span>
+                <strong>{school.schoolName}</strong>
+                <small>
+                  {[school.region, school.schoolKind, school.address]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </small>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {selectedSchool ? (
+        <p className="selected-school-note">
+          선택한 학교: {selectedSchool.schoolName}
+          {selectedSchool.address ? ` · ${selectedSchool.address}` : ""}
+        </p>
+      ) : (
+        <p className="selected-school-note">
+          학교를 직접 입력하지 말고 아래 목록에서 선택해 주세요.
+        </p>
+      )}
+    </div>
   );
 }
 
