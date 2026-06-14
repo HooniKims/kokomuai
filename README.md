@@ -49,7 +49,7 @@
 - 학생 대화 원문은 관리자 화면에 장기 보관하거나 표시하지 않는 구조를 기본으로 합니다.
 - 교사와 관리자 인증은 Firebase Authentication을 사용합니다.
 - 운영 데이터는 Vercel API를 거쳐 Firestore에 저장됩니다.
-- Firebase Admin 인증 정보와 AI API 키는 서버 환경변수로만 사용하며 브라우저에 노출하지 않습니다.
+- Firebase Admin 인증 정보와 AI API 키는 서버에서만 관리하며 브라우저에 노출하지 않습니다.
 
 ## 운영 데이터 구조
 
@@ -110,32 +110,11 @@ npm run deployment:status
 npm run firebase:auth:check
 ```
 
-Vercel 환경변수 동기화는 먼저 dry-run으로 확인합니다.
-
-```powershell
-npm run vercel:env:dry-run
-```
-
-실제 반영은 다음 명령으로 진행합니다.
-
-```powershell
-npm run vercel:env:sync
-```
-
 Firestore rules와 indexes는 Firebase CLI로 배포합니다.
 
 ```powershell
 firebase deploy --only firestore:rules,firestore:indexes --project kkokkomu-d6a4c
 ```
-
-## 환경변수
-
-`.env.example`을 참고해 로컬 `.env`를 구성합니다.
-
-- `.env`는 Git에 올리지 않습니다.
-- OpenAI, NEIS, Firebase Admin 값은 서버 환경변수로만 사용합니다.
-- 브라우저에는 `VITE_FIREBASE_*`처럼 공개 가능한 Firebase Web SDK 설정만 노출합니다.
-- Vercel 배포 환경에서는 프로젝트 Settings의 Environment Variables에 동일한 값을 등록합니다.
 
 ## 저작권
 
