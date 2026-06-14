@@ -42,6 +42,23 @@ describe("chatExport", () => {
     expect(html).not.toContain("<script>alert(1)</script>");
   });
 
+  it("renders math and chemistry notation in printable html", () => {
+    const html = buildChatTranscriptHtml(
+      [
+        {
+          role: "assistant",
+          content: "다음 식을 봐요:\n\\[\ny = ax + b\n\\]\n물은 \\ce{H2O}예요.",
+        },
+      ],
+      chatbot,
+    );
+
+    expect(html).toContain('<span class="display-math">y = ax + b</span>');
+    expect(html).toContain('<span class="inline-math">H2O</span>');
+    expect(html).not.toContain("\\[");
+    expect(html).not.toContain("\\ce{H2O}");
+  });
+
   it("exposes pdf creation as a blob factory instead of triggering navigation", () => {
     expect(typeof createChatTranscriptPdfBlob).toBe("function");
   });

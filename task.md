@@ -5468,6 +5468,59 @@ TDD 기록:
   - 결과: 통과
   - SPA, 개인정보처리방침 경로, API health, 인증 차단, 보안 헤더, CORS preflight 확인
 
+### 운영 전환 62차: PDF 내보내기 수식 렌더링 일관화
+
+완료 시간: 2026-06-14 22:36:00 +09:00
+
+요청:
+
+- 코드 리뷰 1번 문제를 해결한다.
+- 학생 채팅 화면에서는 수식/화학식이 정리되어 보이지만, PDF 내보내기에서는 `\[` `\]`, `\ce{...}` 같은 원본 표기가 그대로 남는 문제를 수정한다.
+
+원인:
+
+- 화면 채팅은 `renderChatMessageMarkdown()`을 통해 LaTeX/화학식 표기를 변환한다.
+- PDF HTML 생성 경로는 메시지 내용을 `escapeHtml()`만 적용해 별도로 만들고 있어 화면 렌더링과 동작이 달랐다.
+
+수정:
+
+- `src/presentation/chatExport.ts`
+  - PDF 메시지 본문에서도 `renderChatMessageMarkdown()`을 재사용하도록 변경했다.
+  - 기존 HTML escape 기반 안전 처리는 `renderChatMessageMarkdown()` 내부의 escape 흐름을 통해 유지한다.
+- `tests/presentation/chatExport.test.ts`
+  - PDF용 HTML에서 `\[ y = ax + b \]`가 `display-math`로 변환되는지 확인하는 회귀 테스트를 추가했다.
+  - `\ce{H2O}`가 `inline-math`로 변환되는지 확인하는 회귀 테스트를 추가했다.
+
+검증:
+
+- RED 확인
+  - `npm test -- --run tests/presentation/chatExport.test.ts`
+  - 결과: 실패
+  - 실패 원인: PDF HTML에 `\[`와 `\ce{H2O}`가 그대로 남음
+- 대상 테스트
+  - `npm test -- --run tests/presentation/chatExport.test.ts`
+  - 결과: 통과
+  - 1개 테스트 파일, 4개 테스트 통과
+- 관련 테스트
+  - `npm test -- --run tests/presentation/chatMessageMarkdown.test.ts tests/presentation/chatExport.test.ts`
+  - 결과: 통과
+  - 2개 테스트 파일, 14개 테스트 통과
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 75개 테스트 파일, 331개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+- 운영 배포
+  - `npx vercel deploy --prod --yes`
+  - 결과: 통과
+  - 프로덕션 별칭: `https://kokomuai.vercel.app`
+- 배포 스모크 테스트
+  - `DEPLOY_URL=https://kokomuai.vercel.app npm run smoke:deploy`
+  - 결과: 통과
+  - SPA, 개인정보처리방침 경로, API health, 인증 차단, 보안 헤더, CORS preflight 확인
+
 ### 운영 전환 57차: LaTeX 블록 수식 표시와 PDF 다운로드 실패 보정
 
 완료 시간: 2026-06-14 22:15:00 +09:00

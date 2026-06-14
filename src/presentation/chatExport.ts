@@ -1,5 +1,6 @@
 import type { ChatbotPolicyInput } from "../domain/chatbot/types.js";
 import type { UiChatMessage } from "../infrastructure/ai/streamingChatClient.js";
+import { renderChatMessageMarkdown } from "./chatMessageMarkdown.js";
 import { formatSchoolLevelLabel } from "./schoolLevelLabel.js";
 
 export function makeChatTranscriptText(
@@ -35,7 +36,7 @@ export function buildChatTranscriptHtml(
       (message) => `
         <section class="pdf-message ${message.role}">
           <strong>${message.role === "user" ? "학생" : "챗봇"}</strong>
-          <p>${escapeHtml(message.content).replace(/\n/g, "<br />")}</p>
+          <p>${renderChatMessageMarkdown(message.content)}</p>
         </section>`,
     )
     .join("");
