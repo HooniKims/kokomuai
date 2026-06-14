@@ -5346,6 +5346,30 @@ TDD 기록:
 - `npm run build`
   - 결과: 통과
 
+### 운영 전환 43차: 로그인 후 워크스페이스 로딩까지 대기 오버레이 유지
+
+완료 시간: 2026-06-14 19:15 +09:00
+
+요청:
+
+- 로그인 버튼을 누른 직후뿐 아니라, 실제 챗봇 생성 화면으로 이동하기 직전까지 `잠시만 기다려 주세요.` 안내가 유지되도록 한다.
+
+원인:
+
+- 기존에는 이메일/구글 로그인 요청이 끝나는 순간 `isSubmittingAuth`가 꺼졌다.
+- 그 뒤 Firebase 인증 콜백에서 교사 프로필, 챗봇 목록, 사용량을 불러오는 동안은 별도 로딩 상태가 없어 대기 오버레이가 사라졌다.
+
+수정:
+
+- `isResolvingAuthSession` 상태를 추가해 로그인된 사용자 정보를 해석하고 워크스페이스 데이터를 불러오는 구간까지 로딩으로 처리했다.
+- `shouldKeepAuthWaitingOverlay()` 헬퍼를 추가해 `isSubmittingAuth` 또는 `isResolvingAuthSession` 중 하나라도 참이면 대기 오버레이가 유지되도록 했다.
+- 로그아웃/미로그인 상태에서는 세션 해석 로딩을 명시적으로 해제하도록 했다.
+
+검증:
+
+- `npm test -- --run tests/presentation/authLoadingState.test.ts tests/presentation/teacherAuthPanel.test.ts`
+  - 결과: 통과
+
 ### 운영 전환 58차: 상단 nav 로그아웃 버튼 추가
 
 완료 시간: 2026-06-14 14:29:28 +09:00

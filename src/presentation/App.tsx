@@ -34,6 +34,7 @@ import {
   TeacherAuthPanel,
   type AuthPanelMode,
 } from "./auth/TeacherAuthPanel.js";
+import { shouldKeepAuthWaitingOverlay } from "./auth/authLoadingState.js";
 import { buildTeacherRegistrationPayload } from "./auth/teacherAuthForm.js";
 import { AdminDashboardRoute } from "./routes/AdminDashboardRoute.js";
 import { PrivacyPolicyRoute } from "./routes/PrivacyPolicyRoute.js";
@@ -360,6 +361,7 @@ export function App() {
   const [authError, setAuthError] = useState("");
   const [isSearchingSchools, setIsSearchingSchools] = useState(false);
   const [isSubmittingAuth, setIsSubmittingAuth] = useState(false);
+  const [isResolvingAuthSession, setIsResolvingAuthSession] = useState(false);
   const [selectedCurriculumChunkIds, setSelectedCurriculumChunkIds] = useState<
     string[]
   >([]);
@@ -565,6 +567,7 @@ export function App() {
     setAuthError("");
 
     if (!user) {
+      setIsResolvingAuthSession(false);
       setIsTeacherAuthSignedIn(false);
       setAuthMode("login");
       setIsAccountPanelOpen(false);
@@ -582,6 +585,7 @@ export function App() {
       return;
     }
 
+    setIsResolvingAuthSession(true);
     setIsTeacherAuthSignedIn(true);
     setWorkspaceStatus("로그인 정보를 확인하고 있습니다. 잠시만 기다려 주세요.");
     const email = user.email ?? "";
@@ -629,6 +633,8 @@ export function App() {
           ? toFriendlySignupRequestError(caught)
           : "학교를 선택한 뒤 가입 요청을 보내 주세요.",
       );
+    } finally {
+      setIsResolvingAuthSession(false);
     }
   }
 
@@ -1219,6 +1225,10 @@ export function App() {
 
   const shouldShowTeacherAuthPanel =
     usesFirebaseTeacherAuth && view !== "student" && !activeTeacherId;
+  const shouldShowAuthWaitingOverlay = shouldKeepAuthWaitingOverlay({
+    isSubmittingAuth,
+    isResolvingAuthSession,
+  });
   const activeTeacherProfile =
     teachers.find((teacher) => teacher.id === activeTeacherId) ??
     teachers.find((teacher) => teacher.email === authEmail) ??
@@ -1296,7 +1306,7 @@ export function App() {
           schoolResults={authSchoolResults}
           selectedSchool={authSelectedSchool}
           isSearchingSchools={isSearchingSchools}
-          isSubmitting={isSubmittingAuth}
+          isSubmitting={shouldShowAuthWaitingOverlay}
           authStatus={workspaceStatus}
           authError={authError}
           onModeChange={setAuthMode}
