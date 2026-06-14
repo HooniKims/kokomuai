@@ -22,6 +22,7 @@ import {
   isFirebaseClientConfigured,
   isFirebaseTeacherAuthEnabled,
   listenToTeacherAuth,
+  reauthenticateCurrentTeacherWithPassword,
   signInTeacherWithEmail,
   signInTeacherWithGoogle,
   signOutTeacher,
@@ -325,6 +326,8 @@ export function App() {
   const [accountNewPassword, setAccountNewPassword] = useState("");
   const [accountNewPasswordConfirm, setAccountNewPasswordConfirm] =
     useState("");
+  const [accountCurrentPassword, setAccountCurrentPassword] = useState("");
+  const [isPasswordChangeOpen, setIsPasswordChangeOpen] = useState(false);
   const [accountNotice, setAccountNotice] = useState("");
   const [isUpdatingAccount, setIsUpdatingAccount] = useState(false);
   const [isConfirmingWithdrawal, setIsConfirmingWithdrawal] = useState(false);
@@ -547,6 +550,8 @@ export function App() {
       setIsAccountPanelOpen(false);
       setAccountNewPassword("");
       setAccountNewPasswordConfirm("");
+      setAccountCurrentPassword("");
+      setIsPasswordChangeOpen(false);
       setAccountNotice("");
       setIsConfirmingWithdrawal(false);
       setActiveTeacherId("");
@@ -773,6 +778,10 @@ export function App() {
   }
 
   async function updateAccountPassword() {
+    if (!accountCurrentPassword) {
+      setAccountNotice("현재 비밀번호를 먼저 입력해 주세요.");
+      return;
+    }
     if (accountNewPassword.length < 8) {
       setAccountNotice("새 비밀번호는 8자 이상으로 입력해 주세요.");
       return;
@@ -785,12 +794,18 @@ export function App() {
     setIsUpdatingAccount(true);
     setAccountNotice("");
     try {
+      await reauthenticateCurrentTeacherWithPassword(
+        getKkokkomuFirebaseAuth(),
+        accountCurrentPassword,
+      );
       await updateCurrentTeacherPassword(
         getKkokkomuFirebaseAuth(),
         accountNewPassword,
       );
       setAccountNewPassword("");
       setAccountNewPasswordConfirm("");
+      setAccountCurrentPassword("");
+      setIsPasswordChangeOpen(false);
       setAccountNotice("비밀번호를 변경했습니다.");
     } catch (caught) {
       setAccountNotice(
@@ -1205,13 +1220,17 @@ export function App() {
         <AccountPanel
           teacher={activeTeacherProfile}
           email={authEmail}
+          currentPassword={accountCurrentPassword}
           newPassword={accountNewPassword}
           newPasswordConfirm={accountNewPasswordConfirm}
           notice={accountNotice}
           isBusy={isUpdatingAccount}
           isConfirmingWithdrawal={isConfirmingWithdrawal}
+          isPasswordChangeOpen={isPasswordChangeOpen}
+          setCurrentPassword={setAccountCurrentPassword}
           setNewPassword={setAccountNewPassword}
           setNewPasswordConfirm={setAccountNewPasswordConfirm}
+          setIsPasswordChangeOpen={setIsPasswordChangeOpen}
           updatePassword={updateAccountPassword}
           withdrawAccount={withdrawAccount}
         />
@@ -1354,42 +1373,51 @@ export function App() {
   );
 }
 
-function AccountPanel({
+export function AccountPanel({
   teacher,
   email,
+  currentPassword,
   newPassword,
   newPasswordConfirm,
   notice,
   isBusy,
   isConfirmingWithdrawal,
+  isPasswordChangeOpen,
+  setCurrentPassword,
   setNewPassword,
   setNewPasswordConfirm,
+  setIsPasswordChangeOpen,
   updatePassword,
   withdrawAccount,
 }: {
   teacher: IdentityTeacherAccount | null;
   email: string;
+  currentPassword: string;
   newPassword: string;
   newPasswordConfirm: string;
   notice: string;
   isBusy: boolean;
   isConfirmingWithdrawal: boolean;
+  isPasswordChangeOpen: boolean;
+  setCurrentPassword: (value: string) => void;
   setNewPassword: (value: string) => void;
   setNewPasswordConfirm: (value: string) => void;
+  setIsPasswordChangeOpen: (value: boolean) => void;
   updatePassword: () => void | Promise<void>;
   withdrawAccount: () => void | Promise<void>;
 }) {
+  const primaryEmail = teacher?.email || email || "교사 계정";
+  const secondaryInfo = [teacher?.realName, teacher?.school.schoolName]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <section className="account-panel-shell" aria-label="나의 정보">
       <div className="account-panel">
         <div className="account-summary">
           <span className="soft-label">나의 정보</span>
-          <h2>{teacher?.realName || email || "교사 계정"}</h2>
-          <p>
-            {[teacher?.email || email, teacher?.school.schoolName]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
+          <h2>{primaryEmail}</h2>
+          {secondaryInfo ? <p>{secondaryInfo}</p> : null}
         </div>
 
         <div className="account-actions-grid">
@@ -1398,36 +1426,74 @@ function AccountPanel({
               <KeyRound size={18} aria-hidden="true" />
               <strong>비밀번호 변경</strong>
             </div>
-            <label>
-              새 비밀번호
-              <input
-                type="password"
-                value={newPassword}
-                placeholder="8자 이상"
-                onChange={(event) => setNewPassword(event.target.value)}
-                autoComplete="new-password"
-              />
-            </label>
-            <label>
-              새 비밀번호 확인
-              <input
-                type="password"
-                value={newPasswordConfirm}
-                placeholder="한 번 더 입력"
-                onChange={(event) =>
-                  setNewPasswordConfirm(event.target.value)
-                }
-                autoComplete="new-password"
-              />
-            </label>
-            <button
-              className="pill dark"
-              type="button"
-              onClick={() => void updatePassword()}
-              disabled={isBusy}
-            >
-              비밀번호 변경
-            </button>
+            {!isPasswordChangeOpen ? (
+              <>
+                <p>
+                  비밀번호를 바꿀 때는 현재 비밀번호를 먼저 확인합니다.
+                </p>
+                <button
+                  className="pill outline"
+                  data-action="open-password-change"
+                  type="button"
+                  onClick={() => setIsPasswordChangeOpen(true)}
+                  disabled={isBusy}
+                >
+                  비밀번호 변경
+                </button>
+              </>
+            ) : (
+              <>
+                <label>
+                  현재 비밀번호
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    placeholder="기존 비밀번호"
+                    onChange={(event) =>
+                      setCurrentPassword(event.target.value)
+                    }
+                    autoComplete="current-password"
+                  />
+                </label>
+                <label>
+                  새 비밀번호
+                  <input
+                    type="password"
+                    value={newPassword}
+                    placeholder="8자 이상"
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    autoComplete="new-password"
+                  />
+                </label>
+                <label>
+                  새 비밀번호 확인
+                  <input
+                    type="password"
+                    value={newPasswordConfirm}
+                    placeholder="한 번 더 입력"
+                    onChange={(event) =>
+                      setNewPasswordConfirm(event.target.value)
+                    }
+                    autoComplete="new-password"
+                  />
+                </label>
+                <p className="account-help-text">
+                  비밀번호를 잊었을 때는 관리자에게 이메일을 보내 주세요.{" "}
+                  <a href="mailto:greenguyhh@gmail.com">
+                    greenguyhh@gmail.com
+                  </a>
+                </p>
+                <button
+                  className="pill dark"
+                  data-action="submit-password-change"
+                  type="button"
+                  onClick={() => void updatePassword()}
+                  disabled={isBusy}
+                >
+                  비밀번호 변경
+                </button>
+              </>
+            )}
           </section>
 
           <section className="account-action-block danger-zone">
@@ -1440,7 +1506,8 @@ function AccountPanel({
               없습니다.
             </p>
             <button
-              className="pill danger"
+              className="pill danger compact-danger"
+              data-action="withdraw-account"
               type="button"
               onClick={() => void withdrawAccount()}
               disabled={isBusy}

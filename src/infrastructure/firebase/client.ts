@@ -2,9 +2,11 @@ import { getApps, initializeApp, type FirebaseApp, type FirebaseOptions } from "
 import {
   createUserWithEmailAndPassword,
   deleteUser,
+  EmailAuthProvider,
   getAuth,
   GoogleAuthProvider,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
@@ -82,6 +84,13 @@ export async function signInTeacherWithGoogle(auth: Auth): Promise<User> {
 export async function updateCurrentTeacherPassword(auth: Auth, newPassword: string): Promise<void> {
   if (!auth.currentUser) throw new Error("auth_required");
   await updatePassword(auth.currentUser, newPassword);
+}
+
+export async function reauthenticateCurrentTeacherWithPassword(auth: Auth, currentPassword: string): Promise<void> {
+  const email = auth.currentUser?.email;
+  if (!auth.currentUser || !email) throw new Error("auth_required");
+  const credential = EmailAuthProvider.credential(email, currentPassword);
+  await reauthenticateWithCredential(auth.currentUser, credential);
 }
 
 export async function deleteCurrentTeacherAuthUser(auth: Auth): Promise<void> {
