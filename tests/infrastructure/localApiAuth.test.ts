@@ -114,6 +114,36 @@ describe("localApi production auth", () => {
     expect(response.headers.get("Access-Control-Allow-Headers")).toContain("Authorization");
   });
 
+  it("lets a signed-in teacher withdraw their own account", async () => {
+    const { baseUrl, store } = await createServer();
+    await store.saveTeacher(
+      approveTeacher(createTeacher("teacher-1", "teacher@example.com"), {
+        adminId: "local-admin",
+        now: "2026-06-13T01:30:00.000Z",
+        logId: "admin-log-1"
+      }).teacher
+    );
+
+    const response = await fetch(`${baseUrl}/api/account/withdraw`, {
+      method: "POST",
+      headers: { Authorization: "Bearer teacher-token" }
+    });
+    const payload = (await response.json()) as {
+      teacher: { id: string; status: string; disabledBy?: string };
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.teacher).toMatchObject({
+      id: "teacher-1",
+      status: "disabled",
+      disabledBy: "teacher-1"
+    });
+    await expect(store.getTeacher("teacher-1")).resolves.toMatchObject({
+      status: "disabled",
+      disabledBy: "teacher-1"
+    });
+  });
+
   it("rejects preflight requests from untrusted browser origins", async () => {
     const { baseUrl } = await createServer();
 

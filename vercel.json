@@ -55,7 +55,7 @@
       "destination": "/index.html"
     },
     {
-      "source": "/((?!api/.*).*)",
+      "source": "/((?!api/.*|assets/.*|favicon\\.png).*)",
       "destination": "/index.html"
     }
   ]

@@ -62,6 +62,20 @@ describe("authContext", () => {
     expect(requireTeacherFeatureAuth(context).id).toBe("firebase-uid-1");
   });
 
+  it("normalizes token verifier failures to invalid_token", async () => {
+    const store = createLocalStore(await tempStorePath());
+
+    await expect(
+      resolveRequestAuthContext({
+        authorizationHeader: "Bearer broken-token",
+        store,
+        verifyIdToken: async () => {
+          throw new Error("Firebase token expired");
+        }
+      })
+    ).rejects.toThrow("invalid_token");
+  });
+
   it("rejects pending teachers from teacher features and non-admins from admin features", async () => {
     const store = createLocalStore(await tempStorePath());
     const pendingTeacher = registerLocalTeacher(

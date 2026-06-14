@@ -1,12 +1,14 @@
 import { getApps, initializeApp, type FirebaseApp, type FirebaseOptions } from "firebase/app";
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
   getAuth,
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  updatePassword,
   type Auth,
   type User
 } from "firebase/auth";
@@ -77,12 +79,22 @@ export async function signInTeacherWithGoogle(auth: Auth): Promise<User> {
   return credential.user;
 }
 
+export async function updateCurrentTeacherPassword(auth: Auth, newPassword: string): Promise<void> {
+  if (!auth.currentUser) throw new Error("auth_required");
+  await updatePassword(auth.currentUser, newPassword);
+}
+
+export async function deleteCurrentTeacherAuthUser(auth: Auth): Promise<void> {
+  if (!auth.currentUser) throw new Error("auth_required");
+  await deleteUser(auth.currentUser);
+}
+
 export function listenToTeacherAuth(auth: Auth, listener: (user: User | null) => void): () => void {
   return onAuthStateChanged(auth, listener);
 }
 
 export function createFirebaseAuthTokenProvider(auth: Auth = getKkokkomuFirebaseAuth()) {
-  return async () => auth.currentUser?.getIdToken() ?? null;
+  return async (forceRefresh = false) => auth.currentUser?.getIdToken(forceRefresh) ?? null;
 }
 
 export function signOutTeacher(auth: Auth): Promise<void> {

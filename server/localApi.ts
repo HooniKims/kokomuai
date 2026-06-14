@@ -156,6 +156,29 @@ export function createLocalApiHandler(
         return;
       }
 
+      if (request.method === "POST" && url.pathname === "/api/account/withdraw") {
+        const context = await resolveRequiredAuthContextFromRequest(
+          request,
+          dependencies,
+        );
+        const result = await dependencies.store.updateTeacherWithAdminAction(
+          context.teacher.id,
+          (teacher) =>
+            disableTeacher(teacher, {
+              adminId: teacher.id,
+              now: new Date().toISOString(),
+              logId: createId("admin-log"),
+            }),
+        );
+        if (!result) {
+          sendJson(response, 404, { error: "teacher_not_found" });
+          return;
+        }
+
+        sendJson(response, 200, { teacher: result.teacher });
+        return;
+      }
+
       if (request.method === "POST" && url.pathname === "/api/teachers") {
         const body = await readJson<RegisterLocalTeacherInput>(request);
         const verified = dependencies.auth?.requireFirebaseAuth

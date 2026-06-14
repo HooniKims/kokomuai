@@ -340,39 +340,35 @@ function SignupForm({
           autoComplete="email"
         />
       </label>
-      <div className="auth-password-stack">
-        <label>
-          비밀번호
-          <PasswordInput
-            value={password}
-            placeholder="8자 이상"
-            showPassword={showPassword}
-            autoComplete="new-password"
-            onChange={onPasswordChange}
-            onTogglePasswordVisibility={onTogglePasswordVisibility}
-          />
-        </label>
-        <label>
-          비밀번호 확인
-          <PasswordInput
-            value={passwordConfirmation}
-            placeholder="한 번 더 입력"
-            showPassword={showPassword}
-            autoComplete="new-password"
-            onChange={onPasswordConfirmationChange}
-            onTogglePasswordVisibility={onTogglePasswordVisibility}
-          />
-          <small
-            className={`password-match-note ${passwordConfirmationState}`}
-          >
-            {passwordConfirmationState === "empty"
-              ? "가입할 때 비밀번호를 한 번 더 입력해 주세요."
-              : passwordConfirmationState === "match"
-                ? "비밀번호가 일치합니다."
-                : "비밀번호가 일치하지 않습니다."}
-          </small>
-        </label>
-      </div>
+      <label>
+        비밀번호
+        <PasswordInput
+          value={password}
+          placeholder="8자 이상"
+          showPassword={showPassword}
+          autoComplete="new-password"
+          onChange={onPasswordChange}
+          onTogglePasswordVisibility={onTogglePasswordVisibility}
+        />
+      </label>
+      <label>
+        비밀번호 확인
+        <PasswordInput
+          value={passwordConfirmation}
+          placeholder="한 번 더 입력"
+          showPassword={showPassword}
+          autoComplete="new-password"
+          onChange={onPasswordConfirmationChange}
+          onTogglePasswordVisibility={onTogglePasswordVisibility}
+        />
+        <small className={`password-match-note ${passwordConfirmationState}`}>
+          {passwordConfirmationState === "empty"
+            ? "가입할 때 비밀번호를 한 번 더 입력해 주세요."
+            : passwordConfirmationState === "match"
+              ? "비밀번호가 일치합니다."
+              : "비밀번호가 일치하지 않습니다."}
+        </small>
+      </label>
     </div>
   );
 }

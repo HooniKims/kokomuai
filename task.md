@@ -5315,6 +5315,43 @@ TDD 기록:
 - Vite: `http://127.0.0.1:5173/`
 - API: `http://127.0.0.1:8787`
 
+### 운영 전환 42차: 가입 폼, 계정 패널, 배포 인증 오류 보정
+
+완료 시간: 2026-06-14 11:07:55 +09:00
+
+요청:
+
+- 가입 신청 단계에서 비밀번호와 비밀번호 확인 입력칸을 아래 행에 나란히 배치한다.
+- 학교명을 목록에서 선택하면 목록을 닫고 입력칸에는 학교명만 남긴다.
+- 상단 사람 아이콘으로 `나의 정보` 메뉴를 만들고, 같은 화면 안에서 비밀번호 변경과 회원탈퇴를 처리한다.
+- Vercel 배포 화면에서 발생한 `/api/teachers` 500/403, 오래된 CSS MIME 오류, 학교 선택 후 `invalid_token` 경고를 점검하고 보정한다.
+
+수정:
+
+- 가입 폼의 비밀번호 입력칸 구조를 2열 그리드 안에서 자연스럽게 보이도록 정리했다.
+- 학교 선택 시 검색 결과를 즉시 닫고 선택한 학교명만 입력값으로 유지하게 했다.
+- 상단 `나의 정보` 아이콘 버튼과 계정 패널을 추가했다.
+  - 비밀번호 변경
+  - 회원탈퇴 2단계 확인
+  - 현재 계정 이메일과 학교 정보 표시
+- Firebase ID 토큰이 만료되거나 서버에서 `invalid_token`을 반환하면 클라이언트가 토큰을 강제 갱신해 한 번 재시도하도록 했다.
+- 서버의 토큰 검증 실패를 `invalid_token`으로 정규화해 500으로 새지 않게 했다.
+- Vercel SPA fallback에서 `/assets/*`와 `favicon.png`를 제외해 없는 CSS 파일이 HTML로 응답되는 문제를 막았다.
+
+검증:
+
+- 대상 테스트
+  - `npm test -- --run tests/presentation/apiClient.test.ts tests/infrastructure/authContext.test.ts tests/infrastructure/localApiAuth.test.ts tests/infrastructure/vercelConfig.test.ts tests/presentation/teacherAuthPanel.test.ts`
+  - 결과: 통과
+  - 5개 테스트 파일, 36개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 65개 테스트 파일, 269개 테스트 통과
+
 ### 운영 전환 48차: 교사 인증 화면 UX 및 가입 오류 처리 개선
 
 완료 시간: 2026-06-14 10:21:26 +09:00

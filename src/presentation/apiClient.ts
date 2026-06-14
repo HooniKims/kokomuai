@@ -39,7 +39,9 @@ export interface SchoolSearchResult {
   address?: string;
 }
 
-export type ApiAuthTokenProvider = () => Promise<string | null> | string | null;
+export type ApiAuthTokenProvider = (
+  forceRefresh?: boolean,
+) => Promise<string | null> | string | null;
 
 let apiAuthTokenProvider: ApiAuthTokenProvider | null = null;
 
@@ -105,6 +107,13 @@ export async function disableTeacherAsAdmin(teacherId: string, adminId: string):
   const payload = await requestJson<{ teacher: IdentityTeacherAccount }>(`/api/admin/teachers/${teacherId}/disable`, {
     method: "POST",
     body: JSON.stringify({ adminId })
+  });
+  return payload.teacher;
+}
+
+export async function withdrawCurrentTeacherAccount(): Promise<IdentityTeacherAccount> {
+  const payload = await requestJson<{ teacher: IdentityTeacherAccount }>("/api/account/withdraw", {
+    method: "POST"
   });
   return payload.teacher;
 }
@@ -192,34 +201,57 @@ export async function getAdminActionLogs(): Promise<AdminActionLogEvent[]> {
 }
 
 async function requestJson<T>(url: string, init: RequestInit = {}): Promise<T> {
-  const headers = await buildRequestHeaders(init.headers);
-  const response = await fetch(url, {
-    ...init,
-    headers
-  });
+  const response = await fetchWithAuth(url, init);
   const payload = (await response.json().catch(() => null)) as { message?: string; error?: string } | T | null;
 
+  if (!response.ok && isInvalidTokenPayload(payload)) {
+    const retryResponse = await fetchWithAuth(url, init, true);
+    const retryPayload = (await retryResponse.json().catch(() => null)) as { message?: string; error?: string } | T | null;
+    if (!retryResponse.ok) throwApiError(retryPayload);
+    return retryPayload as T;
+  }
+
   if (!response.ok) {
-    const errorPayload = isRecord(payload) ? payload : {};
-    const message =
-      typeof errorPayload.message === "string" && errorPayload.message
-        ? errorPayload.message
-        : typeof errorPayload.error === "string" && errorPayload.error
-          ? errorPayload.error
-          : "요청을 처리하지 못했습니다.";
-    throw new Error(message);
+    throwApiError(payload);
   }
 
   return payload as T;
 }
 
-async function buildRequestHeaders(input: HeadersInit | undefined): Promise<Record<string, string>> {
+async function fetchWithAuth(
+  url: string,
+  init: RequestInit,
+  forceRefresh = false
+): Promise<Response> {
+  const headers = await buildRequestHeaders(init.headers, forceRefresh);
+  return fetch(url, {
+    ...init,
+    headers
+  });
+}
+
+function throwApiError(payload: unknown): never {
+  const errorPayload = isRecord(payload) ? payload : {};
+  const message =
+    typeof errorPayload.message === "string" && errorPayload.message
+      ? errorPayload.message
+      : typeof errorPayload.error === "string" && errorPayload.error
+        ? errorPayload.error
+        : "요청을 처리하지 못했습니다.";
+  throw new Error(message);
+}
+
+function isInvalidTokenPayload(payload: unknown): boolean {
+  return isRecord(payload) && payload.error === "invalid_token";
+}
+
+async function buildRequestHeaders(input: HeadersInit | undefined, forceRefresh = false): Promise<Record<string, string>> {
   const headers = normalizeHeaders(input);
   if (!hasHeader(headers, "content-type")) {
     headers["Content-Type"] = "application/json; charset=utf-8";
   }
 
-  const token = await apiAuthTokenProvider?.();
+  const token = await apiAuthTokenProvider?.(forceRefresh);
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }

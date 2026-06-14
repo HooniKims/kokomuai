@@ -4,6 +4,7 @@ import {
   loadLocalConversation,
   saveLocalConversation,
 } from "../infrastructure/storage/localConversationStore.js";
+import { KeyRound, Trash2, UserCircle } from "lucide-react";
 import {
   streamStudentChat,
   type UiChatMessage,
@@ -25,6 +26,7 @@ import {
   signInTeacherWithGoogle,
   signOutTeacher,
   signUpTeacherWithEmail,
+  updateCurrentTeacherPassword,
 } from "../infrastructure/firebase/client.js";
 import * as api from "./apiClient.js";
 import {
@@ -235,6 +237,10 @@ export function toFriendlyFirebaseAuthError(
     return "비밀번호는 8자 이상으로 입력해 주세요.";
   }
 
+  if (hasFirebaseAuthCode(error, "auth/requires-recent-login")) {
+    return "보안을 위해 다시 로그인한 뒤 시도해 주세요.";
+  }
+
   return error instanceof Error && error.message
     ? error.message
     : fallbackMessage;
@@ -302,6 +308,13 @@ export function App() {
   const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [authMode, setAuthMode] = useState<AuthPanelMode>("login");
   const [isTeacherAuthSignedIn, setIsTeacherAuthSignedIn] = useState(false);
+  const [isAccountPanelOpen, setIsAccountPanelOpen] = useState(false);
+  const [accountNewPassword, setAccountNewPassword] = useState("");
+  const [accountNewPasswordConfirm, setAccountNewPasswordConfirm] =
+    useState("");
+  const [accountNotice, setAccountNotice] = useState("");
+  const [isUpdatingAccount, setIsUpdatingAccount] = useState(false);
+  const [isConfirmingWithdrawal, setIsConfirmingWithdrawal] = useState(false);
   const [authSchoolQuery, setAuthSchoolQuery] = useState("");
   const [authSchoolResults, setAuthSchoolResults] = useState<
     api.SchoolSearchResult[]
@@ -420,6 +433,12 @@ export function App() {
     if (!usesFirebaseTeacherAuth) return;
 
     const query = authSchoolQuery.trim();
+    if (authSelectedSchool && query === authSelectedSchool.schoolName) {
+      setAuthSchoolResults([]);
+      setIsSearchingSchools(false);
+      return;
+    }
+
     if (query.length < 2) {
       setAuthSchoolResults([]);
       setIsSearchingSchools(false);
@@ -458,7 +477,7 @@ export function App() {
       cancelled = true;
       window.clearTimeout(timeout);
     };
-  }, [authSchoolQuery, usesFirebaseTeacherAuth]);
+  }, [authSchoolQuery, authSelectedSchool, usesFirebaseTeacherAuth]);
 
   useEffect(() => {
     setCurriculumRecommendations(fallbackCurriculumRecommendations);
@@ -512,6 +531,11 @@ export function App() {
     if (!user) {
       setIsTeacherAuthSignedIn(false);
       setAuthMode("login");
+      setIsAccountPanelOpen(false);
+      setAccountNewPassword("");
+      setAccountNewPasswordConfirm("");
+      setAccountNotice("");
+      setIsConfirmingWithdrawal(false);
       setActiveTeacherId("");
       setChatbots([]);
       setTeachers([]);
@@ -742,6 +766,62 @@ export function App() {
       );
     } finally {
       setIsSubmittingAuth(false);
+    }
+  }
+
+  async function updateAccountPassword() {
+    if (accountNewPassword.length < 8) {
+      setAccountNotice("새 비밀번호는 8자 이상으로 입력해 주세요.");
+      return;
+    }
+    if (accountNewPassword !== accountNewPasswordConfirm) {
+      setAccountNotice("새 비밀번호가 서로 일치하지 않습니다.");
+      return;
+    }
+
+    setIsUpdatingAccount(true);
+    setAccountNotice("");
+    try {
+      await updateCurrentTeacherPassword(
+        getKkokkomuFirebaseAuth(),
+        accountNewPassword,
+      );
+      setAccountNewPassword("");
+      setAccountNewPasswordConfirm("");
+      setAccountNotice("비밀번호를 변경했습니다.");
+    } catch (caught) {
+      setAccountNotice(
+        toFriendlyFirebaseAuthError(
+          caught,
+          "비밀번호를 변경하지 못했습니다. 다시 로그인한 뒤 시도해 주세요.",
+        ),
+      );
+    } finally {
+      setIsUpdatingAccount(false);
+    }
+  }
+
+  async function withdrawAccount() {
+    if (!isConfirmingWithdrawal) {
+      setIsConfirmingWithdrawal(true);
+      setAccountNotice("회원탈퇴를 계속하려면 한 번 더 눌러 주세요.");
+      return;
+    }
+
+    setIsUpdatingAccount(true);
+    setAccountNotice("");
+    try {
+      await api.withdrawCurrentTeacherAccount();
+      setAccountNotice("회원탈퇴가 처리됐습니다.");
+      await signOutTeacher(getKkokkomuFirebaseAuth());
+    } catch (caught) {
+      setAccountNotice(
+        caught instanceof Error
+          ? caught.message
+          : "회원탈퇴를 처리하지 못했습니다.",
+      );
+    } finally {
+      setIsUpdatingAccount(false);
     }
   }
 
@@ -1084,12 +1164,29 @@ export function App() {
 
   const shouldShowTeacherAuthPanel =
     usesFirebaseTeacherAuth && view !== "student" && !activeTeacherId;
+  const activeTeacherProfile =
+    teachers.find((teacher) => teacher.id === activeTeacherId) ??
+    teachers.find((teacher) => teacher.email === authEmail) ??
+    null;
+  const shouldShowAccountMenu =
+    !isPrivacyPage && view !== "student" && isTeacherAuthSignedIn;
 
   return (
     <main className="app-shell">
       <section className="hero-band">
         <nav className="top-nav">
           <div className="brand">꼬꼬무AI</div>
+          {shouldShowAccountMenu ? (
+            <button
+              aria-expanded={isAccountPanelOpen}
+              className="icon-pill account-menu-button"
+              type="button"
+              onClick={() => setIsAccountPanelOpen((current) => !current)}
+              title="나의 정보"
+            >
+              <UserCircle size={20} />
+            </button>
+          ) : null}
         </nav>
         <div className="hero-copy">
           <h1>
@@ -1100,6 +1197,22 @@ export function App() {
       </section>
 
       {isPrivacyPage ? <PrivacyPolicyRoute /> : null}
+
+      {!isPrivacyPage && shouldShowAccountMenu && isAccountPanelOpen ? (
+        <AccountPanel
+          teacher={activeTeacherProfile}
+          email={authEmail}
+          newPassword={accountNewPassword}
+          newPasswordConfirm={accountNewPasswordConfirm}
+          notice={accountNotice}
+          isBusy={isUpdatingAccount}
+          isConfirmingWithdrawal={isConfirmingWithdrawal}
+          setNewPassword={setAccountNewPassword}
+          setNewPasswordConfirm={setAccountNewPasswordConfirm}
+          updatePassword={updateAccountPassword}
+          withdrawAccount={withdrawAccount}
+        />
+      ) : null}
 
       {!isPrivacyPage && view === "student" ? (
         <StudentChatRoute
@@ -1145,7 +1258,11 @@ export function App() {
             setAuthSchoolQuery(value);
             setAuthSelectedSchool(null);
           }}
-          onSelectSchool={setAuthSelectedSchool}
+          onSelectSchool={(school) => {
+            setAuthSelectedSchool(school);
+            setAuthSchoolQuery(school.schoolName);
+            setAuthSchoolResults([]);
+          }}
           onEmailSignIn={signInWithTeacherEmail}
           onEmailSignUp={signUpWithTeacherEmail}
           onGoogleSignIn={signInWithTeacherGoogle}
@@ -1232,6 +1349,112 @@ export function App() {
         <a href="/privacy">개인정보처리방침</a>
       </footer>
     </main>
+  );
+}
+
+function AccountPanel({
+  teacher,
+  email,
+  newPassword,
+  newPasswordConfirm,
+  notice,
+  isBusy,
+  isConfirmingWithdrawal,
+  setNewPassword,
+  setNewPasswordConfirm,
+  updatePassword,
+  withdrawAccount,
+}: {
+  teacher: IdentityTeacherAccount | null;
+  email: string;
+  newPassword: string;
+  newPasswordConfirm: string;
+  notice: string;
+  isBusy: boolean;
+  isConfirmingWithdrawal: boolean;
+  setNewPassword: (value: string) => void;
+  setNewPasswordConfirm: (value: string) => void;
+  updatePassword: () => void | Promise<void>;
+  withdrawAccount: () => void | Promise<void>;
+}) {
+  return (
+    <section className="account-panel-shell" aria-label="나의 정보">
+      <div className="account-panel">
+        <div className="account-summary">
+          <span className="soft-label">나의 정보</span>
+          <h2>{teacher?.realName || email || "교사 계정"}</h2>
+          <p>
+            {[teacher?.email || email, teacher?.school.schoolName]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        </div>
+
+        <div className="account-actions-grid">
+          <section className="account-action-block">
+            <div>
+              <KeyRound size={18} aria-hidden="true" />
+              <strong>비밀번호 변경</strong>
+            </div>
+            <label>
+              새 비밀번호
+              <input
+                type="password"
+                value={newPassword}
+                placeholder="8자 이상"
+                onChange={(event) => setNewPassword(event.target.value)}
+                autoComplete="new-password"
+              />
+            </label>
+            <label>
+              새 비밀번호 확인
+              <input
+                type="password"
+                value={newPasswordConfirm}
+                placeholder="한 번 더 입력"
+                onChange={(event) =>
+                  setNewPasswordConfirm(event.target.value)
+                }
+                autoComplete="new-password"
+              />
+            </label>
+            <button
+              className="pill dark"
+              type="button"
+              onClick={() => void updatePassword()}
+              disabled={isBusy}
+            >
+              비밀번호 변경
+            </button>
+          </section>
+
+          <section className="account-action-block danger-zone">
+            <div>
+              <Trash2 size={18} aria-hidden="true" />
+              <strong>회원탈퇴</strong>
+            </div>
+            <p>
+              탈퇴하면 계정이 비활성화되어 더 이상 교사용 기능을 사용할 수
+              없습니다.
+            </p>
+            <button
+              className="pill danger"
+              type="button"
+              onClick={() => void withdrawAccount()}
+              disabled={isBusy}
+            >
+              {isConfirmingWithdrawal ? "정말 탈퇴하기" : "회원탈퇴"}
+            </button>
+          </section>
+        </div>
+
+        {notice ? (
+          <p className="admin-log account-notice" role="status">
+            {notice}
+          </p>
+        ) : null}
+      </div>
+    </section>
   );
 }
 

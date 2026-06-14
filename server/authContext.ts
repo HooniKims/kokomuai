@@ -28,7 +28,12 @@ export async function resolveRequestAuthContext(input: ResolveRequestAuthContext
   const token = parseBearerToken(input.authorizationHeader);
   if (!token) return { kind: "anonymous" };
 
-  const verified = await input.verifyIdToken(token);
+  let verified: VerifiedFirebaseToken;
+  try {
+    verified = await input.verifyIdToken(token);
+  } catch {
+    throw new Error("invalid_token");
+  }
   const teacher = await input.store.getTeacher(verified.uid);
   if (!teacher) {
     throw new Error("teacher_profile_not_found");

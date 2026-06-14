@@ -209,6 +209,10 @@ select {
   text-decoration: none;
 }
 
+.account-menu-button {
+  background: var(--color-cream-paper);
+}
+
 .pill.ghost {
   border-color: var(--color-forest-ink);
   background: rgb(252 250 245 / 60%);
@@ -283,6 +287,71 @@ select {
   color: var(--color-forest-ink);
   text-decoration-thickness: 1px;
   text-underline-offset: 4px;
+}
+
+.account-panel-shell {
+  position: relative;
+  z-index: 2;
+  max-width: min(980px, calc(100vw - 40px));
+  margin: 18px auto 0;
+  padding-inline: clamp(20px, 5vw, 56px);
+}
+
+.account-panel {
+  border: 1px solid var(--color-forest-ink);
+  border-radius: 12px;
+  padding: clamp(18px, 2.4vw, 28px);
+  background: var(--color-cream-paper);
+  box-shadow: var(--paper-shadow);
+}
+
+.account-summary h2 {
+  margin: 6px 0;
+  color: var(--color-forest-ink);
+  font-size: clamp(22px, 2.4vw, 30px);
+  line-height: 1.2;
+}
+
+.account-summary p,
+.account-action-block p {
+  margin: 0;
+  color: rgb(26 51 0 / 0.76);
+  line-height: var(--app-line-height);
+}
+
+.account-actions-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(240px, 0.75fr);
+  gap: 16px;
+}
+
+.account-action-block {
+  display: grid;
+  gap: 12px;
+}
+
+.account-action-block > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-forest-ink);
+}
+
+.account-action-block label {
+  display: grid;
+  gap: 6px;
+  color: var(--color-forest-ink);
+  font-weight: 700;
+}
+
+.danger-zone {
+  border-left: 1px solid var(--color-paper-line);
+  padding-left: 16px;
+}
+
+.account-notice {
+  margin-top: 16px;
 }
 
 .privacy-workspace {
@@ -1490,6 +1559,17 @@ textarea::placeholder {
 
   .auth-workspace-login .auth-actions {
     grid-template-columns: 1fr;
+  }
+
+  .account-actions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .danger-zone {
+    border-top: 1px solid var(--color-paper-line);
+    border-left: 0;
+    padding-top: 16px;
+    padding-left: 0;
   }
 
   .usage-row {

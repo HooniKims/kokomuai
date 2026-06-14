@@ -12,6 +12,7 @@ import {
   registerTeacher,
   searchSchools,
   disableTeacherAsAdmin,
+  withdrawCurrentTeacherAccount,
   rejectTeacherAsAdmin,
   sendTeacherPasswordResetEmail,
   setApiAuthTokenProvider,
@@ -45,6 +46,9 @@ describe("apiClient", () => {
         return mockJsonResponse({ action: { type: "send_password_reset_email", email: "teacher@example.com" } });
       }
       if (url === "/api/admin/teachers/teacher-1/disable") {
+        return mockJsonResponse({ teacher: { id: "teacher-1", status: "disabled" } });
+      }
+      if (url === "/api/account/withdraw") {
         return mockJsonResponse({ teacher: { id: "teacher-1", status: "disabled" } });
       }
       if (url === "/api/admin/teachers/teacher-1/reject") {
@@ -130,6 +134,10 @@ describe("apiClient", () => {
       id: "teacher-1",
       status: "disabled"
     });
+    await expect(withdrawCurrentTeacherAccount()).resolves.toEqual({
+      id: "teacher-1",
+      status: "disabled"
+    });
     await expect(rejectTeacherAsAdmin("teacher-1", "local-admin", "학교 정보 확인 필요")).resolves.toEqual({
       id: "teacher-1",
       status: "rejected",
@@ -161,6 +169,32 @@ describe("apiClient", () => {
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: "Bearer firebase-id-token"
+        })
+      })
+    );
+  });
+
+  it("refreshes the Firebase ID token once when the server rejects an invalid token", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(mockJsonResponse({ error: "invalid_token" }, { status: 403 }))
+      .mockResolvedValueOnce(mockJsonResponse({ teachers: [{ id: "teacher-1" }] }));
+    const tokenProvider = vi.fn(async (forceRefresh?: boolean) =>
+      forceRefresh ? "fresh-token" : "stale-token",
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+    setApiAuthTokenProvider(tokenProvider);
+
+    await expect(listTeachers()).resolves.toEqual([{ id: "teacher-1" }]);
+
+    expect(tokenProvider).toHaveBeenNthCalledWith(1, false);
+    expect(tokenProvider).toHaveBeenNthCalledWith(2, true);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "/api/teachers",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer fresh-token"
         })
       })
     );
