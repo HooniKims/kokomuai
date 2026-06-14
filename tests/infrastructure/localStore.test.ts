@@ -74,7 +74,7 @@ describe("localStore", () => {
     expect(raw.chatbots).toEqual([]);
     expect(raw.usageEvents).toEqual([]);
     expect(raw.aiSettings).toMatchObject({
-      activeModelId: "gemma4:e2b",
+      activeModelId: "lmstudio:gemma-4-12b-it",
       updatedBy: "system"
     });
   });

@@ -1,5 +1,5 @@
 ﻿import type http from "node:http";
-import { resolveAiModel } from "../src/domain/ai/modelCatalog.js";
+import { getDefaultAiModel, resolveAiModel, type AiModelOption } from "../src/domain/ai/modelCatalog.js";
 import { isShareLinkAccessible } from "../src/domain/chatbot/chatbotManagement.js";
 import { parseOpenAIStreamLine } from "../src/infrastructure/ai/lmStudioClient.js";
 import {
@@ -125,22 +125,18 @@ async function proxyStreamToProvider(
   }
 
   const aiSettings = await dependencies.store.getAiSettings();
-  const activeModel = resolveAiModel(aiSettings.activeModelId);
-  const providerRequest = createAiProviderRequest(
-    activeModel,
-    prepared.messages,
-    dependencies.env ?? process.env,
-  );
+  let activeModel = resolveAiModel(aiSettings.activeModelId);
   const fetchImpl = dependencies.fetchImpl ?? fetch;
 
   let upstream: Response;
   try {
-    upstream = await fetchImpl(providerRequest.url, {
-      method: "POST",
-      headers: providerRequest.headers,
-      body: providerRequest.body,
-    });
+    upstream = await requestProvider(activeModel, prepared.messages, dependencies, fetchImpl);
   } catch {
+    const fallback = await tryDefaultModelFallback(activeModel, prepared.messages, dependencies, fetchImpl);
+    if (fallback) {
+      activeModel = fallback.model;
+      upstream = fallback.response;
+    } else {
     await recordProviderFailure(authoritativeRequestBody, dependencies, {
       provider: activeModel.provider,
       modelId: activeModel.id,
@@ -150,12 +146,18 @@ async function proxyStreamToProvider(
     sendJson(response, 502, {
       error: "provider_error",
       message:
-        "?묐떟??遺덈윭?ㅼ? 紐삵뻽?댁슂. ?좎떆 ???ㅼ떆 ?쒕룄?섍굅???좎깮?섍퍡 ?뚮젮 二쇱꽭??",
+        "응답을 불러오지 못했어요. 잠시 후 다시 시도하거나 선생님께 알려 주세요.",
     });
     return;
+    }
   }
 
   if (!upstream.ok || !upstream.body) {
+    const fallback = await tryDefaultModelFallback(activeModel, prepared.messages, dependencies, fetchImpl);
+    if (fallback) {
+      activeModel = fallback.model;
+      upstream = fallback.response;
+    } else {
     await recordProviderFailure(authoritativeRequestBody, dependencies, {
       provider: activeModel.provider,
       modelId: activeModel.id,
@@ -166,14 +168,25 @@ async function proxyStreamToProvider(
     sendJson(response, 502, {
       error: "provider_error",
       message:
-        "?묐떟??遺덈윭?ㅼ? 紐삵뻽?댁슂. ?좎떆 ???ㅼ떆 ?쒕룄?섍굅???좎깮?섍퍡 ?뚮젮 二쇱꽭??",
+        "응답을 불러오지 못했어요. 잠시 후 다시 시도하거나 선생님께 알려 주세요.",
     });
     return;
+    }
   }
 
   writeSseHeaders(response);
 
-  const reader = upstream.body.getReader();
+  const upstreamBody = upstream.body;
+  if (!upstreamBody) {
+    sendJson(response, 502, {
+      error: "provider_error",
+      message:
+        "응답을 불러오지 못했어요. 잠시 후 다시 시도하거나 선생님께 알려 주세요.",
+    });
+    return;
+  }
+
+  const reader = upstreamBody.getReader();
   const decoder = new TextDecoder("utf-8");
   let buffer = "";
   let assistantText = "";
@@ -202,6 +215,42 @@ async function proxyStreamToProvider(
     await dependencies.store.appendUsageEvent(usageEvent);
   }
   response.end();
+}
+
+async function requestProvider(
+  model: AiModelOption,
+  messages: Parameters<typeof createAiProviderRequest>[1],
+  dependencies: ApiHandlerDependencies,
+  fetchImpl: typeof fetch,
+): Promise<Response> {
+  const providerRequest = createAiProviderRequest(
+    model,
+    messages,
+    dependencies.env ?? process.env,
+  );
+  return fetchImpl(providerRequest.url, {
+    method: "POST",
+    headers: providerRequest.headers,
+    body: providerRequest.body,
+  });
+}
+
+async function tryDefaultModelFallback(
+  currentModel: AiModelOption,
+  messages: Parameters<typeof createAiProviderRequest>[1],
+  dependencies: ApiHandlerDependencies,
+  fetchImpl: typeof fetch,
+): Promise<{ model: AiModelOption; response: Response } | null> {
+  const fallbackModel = getDefaultAiModel();
+  if (fallbackModel.id === currentModel.id) return null;
+
+  try {
+    const response = await requestProvider(fallbackModel, messages, dependencies, fetchImpl);
+    if (!response.ok || !response.body) return null;
+    return { model: fallbackModel, response };
+  } catch {
+    return null;
+  }
 }
 
 async function recordProviderFailure(

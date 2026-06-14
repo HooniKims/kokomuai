@@ -5370,6 +5370,62 @@ TDD 기록:
 - `npm test -- --run tests/presentation/authLoadingState.test.ts tests/presentation/teacherAuthPanel.test.ts`
   - 결과: 통과
 
+### 운영 전환 44차: 푸터 깨진 문자 제거와 학생 공유 챗봇 첫 화면 주제 불일치 수정
+
+완료 시간: 2026-06-14 19:28 +09:00
+
+요청:
+
+- 푸터에 `짤`로 보이는 깨진 문자를 제거한다.
+- 수학 챗봇을 만들었는데 첫 접속 시 국어 챗봇처럼 안내되고, `새 대화`를 눌러야 정상 주제로 바뀌는 문제를 고친다.
+
+원인:
+
+- 푸터 상수에 `짤 HoomiKim. All Rights Reserved.`가 그대로 남아 있었다.
+- 학생 대화 기록을 하나의 전역 localStorage 키에 저장해, 이전 국어 챗봇 대화가 새 수학 공유 링크에서도 복원될 수 있었다.
+- `/s/...` 공유 링크에서 실제 공유 챗봇 API 응답이 오기 전까지 국어 fallback 챗봇이 잠깐 렌더링될 수 있었다.
+
+수정:
+
+- 푸터 저작권 문구를 `© HoomiKim. All Rights Reserved.`로 변경했다.
+- 학생 대화 기록 저장 키를 챗봇 ID별 scope로 분리했다.
+- 현재 챗봇 scope의 기록을 로드한 뒤에만 저장하도록 해, 이전 챗봇 대화가 새 챗봇 기록을 덮어쓰지 않게 했다.
+- 공유 챗봇이 아직 로드되지 않은 동안에는 국어 fallback을 렌더링하지 않고 `챗봇을 불러오는 중입니다.` 안내를 표시하도록 했다.
+
+검증:
+
+- `npm test -- --run tests/presentation/conversationPersistence.test.ts tests/infrastructure/localConversationStore.test.ts tests/presentation/studentShareLoading.test.ts tests/presentation/privacyPolicyContent.test.ts`
+  - 결과: 통과
+
+### 운영 전환 45차: E2B 운영 실패 대응과 provider 오류 문구 복구
+
+완료 시간: 2026-06-14 19:34 +09:00
+
+요청:
+
+- 학생 챗봇 사용 시 `/api/chat`이 `502`로 실패하고, provider 오류 문구가 깨져 보이는 문제를 고친다.
+- E2B 로컬 모델이 배포에서 로드되지 않는 이유를 확인한다.
+
+확인:
+
+- 로컬 `.env` 기준 LM Studio 직접 호출에서는 `google/gemma-4-e2b`와 `gemma-4-12b-it` 모두 HTTP `200`으로 응답했다.
+- 배포 `https://kokomuai.vercel.app/api/chat`은 provider 호출 단계에서 HTTP `502`를 반환했다.
+- 따라서 E2B 모델 자체가 항상 실패하는 것은 아니고, Vercel production 환경의 E2B 모델 ID, API 키 권한, LM Studio 서버의 모델 로딩 상태 중 하나가 배포 호출에서 맞지 않는 상태로 판단했다.
+
+수정:
+
+- 운영 기본 모델을 검증된 `lmstudio:gemma-4-12b-it`로 복구했다.
+- system 기본값으로 저장된 `gemma4:e2b`는 읽을 때 12B 기본값으로 보정하도록 했다.
+- 관리자가 E2B를 선택해 둔 상태에서도 provider 호출이 실패하면 기본 12B 모델로 한 번 자동 재시도하도록 했다.
+- provider 오류 응답 문구를 `응답을 불러오지 못했어요. 잠시 후 다시 시도하거나 선생님께 알려 주세요.`로 정상 한글화했다.
+
+검증:
+
+- `npm test -- --run tests/infrastructure/apiHandler.test.ts tests/domain/aiModelCatalog.test.ts tests/domain/aiSettings.test.ts`
+  - 결과: 통과
+- `npm test -- --run tests/infrastructure/localStore.test.ts tests/infrastructure/localApi.test.ts tests/infrastructure/vercelApi.test.ts tests/infrastructure/storePortCompatibility.test.ts tests/infrastructure/aiProviderRequest.test.ts tests/presentation/adminDashboardAiSettings.test.ts tests/presentation/apiClient.test.ts`
+  - 결과: 통과
+
 ### 운영 전환 58차: 상단 nav 로그아웃 버튼 추가
 
 완료 시간: 2026-06-14 14:29:28 +09:00

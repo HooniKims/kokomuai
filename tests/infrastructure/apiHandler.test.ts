@@ -25,7 +25,7 @@ describe("apiHandler", () => {
     await expect(health.json()).resolves.toMatchObject({
       ok: true,
       provider: "lmstudio",
-      model: "google/gemma-4-e2b"
+      model: "gemma-4-12b-it"
     });
 
     const schools = await fetch(`${baseUrl}/api/schools/search?q=${encodeURIComponent("새빛중")}`);
@@ -312,7 +312,8 @@ describe("apiHandler", () => {
 
     expect(response.status).toBe(502);
     await expect(response.json()).resolves.toMatchObject({
-      error: "provider_error"
+      error: "provider_error",
+      message: "응답을 불러오지 못했어요. 잠시 후 다시 시도하거나 선생님께 알려 주세요."
     });
     await expect(store.listProviderErrorLogs()).resolves.toEqual([
       expect.objectContaining({
@@ -338,6 +339,61 @@ describe("apiHandler", () => {
       })
     ]);
     expect(JSON.stringify(await store.listUsageEvents())).not.toContain("학생 질문 원문");
+  });
+
+  it("falls back to the default 12B model when the selected E2B provider call fails", async () => {
+    const requestedModels: string[] = [];
+    const { baseUrl, store } = await createServer({
+      env: {
+        LMSTUDIO_API_KEY: "test-lmstudio-key"
+      },
+      fetchImpl: async (_url, init) => {
+        const request = JSON.parse(String(init?.body ?? "{}")) as { model?: string };
+        requestedModels.push(request.model ?? "");
+        if (request.model === "google/gemma-4-e2b") {
+          return new Response(JSON.stringify({ error: { message: "model not loaded" } }), {
+            status: 502,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        return new Response(
+          'data: {"choices":[{"delta":{"content":"도와줄게요."}}]}\n\ndata: [DONE]\n\n',
+          {
+            status: 200,
+            headers: { "Content-Type": "text/event-stream" }
+          }
+        );
+      }
+    });
+    await store.saveAiSettings({
+      activeModelId: "gemma4:e2b",
+      updatedAt: "2026-06-14T10:20:00.000Z",
+      updatedBy: "admin-1"
+    });
+
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "일차방정식이 뭐야?",
+        history: [],
+        chatbot: {
+          name: "수학 챗봇",
+          schoolLevel: "middle",
+          gradeBand: "1",
+          subject: "수학",
+          topic: "일차방정식",
+          learningGoal: "일차방정식을 이해한다.",
+          hintStrength: "medium",
+          persona: "질문으로 돕는 수학 선생님"
+        }
+      })
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toContain("도와줄게요.");
+    expect(requestedModels).toEqual(["google/gemma-4-e2b", "gemma-4-12b-it"]);
   });
 
   it("records provider network errors without exposing provider exception details", async () => {
@@ -391,7 +447,8 @@ describe("apiHandler", () => {
 
     expect(response.status).toBe(502);
     await expect(response.json()).resolves.toMatchObject({
-      error: "provider_error"
+      error: "provider_error",
+      message: "응답을 불러오지 못했어요. 잠시 후 다시 시도하거나 선생님께 알려 주세요."
     });
     await expect(store.listProviderErrorLogs()).resolves.toEqual([
       expect.objectContaining({

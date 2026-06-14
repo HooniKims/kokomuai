@@ -3,7 +3,7 @@ export interface PrivacyPolicySection {
   paragraphs: string[];
 }
 
-export const footerCopyrightText = "짤 HoomiKim. All Rights Reserved.";
+export const footerCopyrightText = "© HoomiKim. All Rights Reserved.";
 
 export const privacyPolicySections: PrivacyPolicySection[] = [
   {

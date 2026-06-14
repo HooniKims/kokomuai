@@ -46,6 +46,6 @@ describe("privacy policy content", () => {
   });
 
   it("uses the standard copyright wording", () => {
-    expect(footerCopyrightText).toBe("짤 HoomiKim. All Rights Reserved.");
+    expect(footerCopyrightText).toBe("© HoomiKim. All Rights Reserved.");
   });
 });

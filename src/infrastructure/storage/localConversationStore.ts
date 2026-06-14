@@ -1,9 +1,13 @@
-﻿import type { UiChatMessage } from "../ai/streamingChatClient.js";
+import type { UiChatMessage } from "../ai/streamingChatClient.js";
 
-const key = "curriculum-chatbot:student-conversation";
+const keyPrefix = "curriculum-chatbot:student-conversation";
 
-export function loadLocalConversation(): UiChatMessage[] {
-  const raw = localStorage.getItem(key);
+export function createConversationStorageKey(scope: string): string {
+  return `${keyPrefix}:${encodeURIComponent(scope.trim() || "default")}`;
+}
+
+export function loadLocalConversation(scope = "default"): UiChatMessage[] {
+  const raw = localStorage.getItem(createConversationStorageKey(scope));
   if (!raw) return [];
   try {
     return JSON.parse(raw) as UiChatMessage[];
@@ -12,11 +16,10 @@ export function loadLocalConversation(): UiChatMessage[] {
   }
 }
 
-export function saveLocalConversation(messages: UiChatMessage[]) {
-  localStorage.setItem(key, JSON.stringify(messages));
+export function saveLocalConversation(messages: UiChatMessage[], scope = "default") {
+  localStorage.setItem(createConversationStorageKey(scope), JSON.stringify(messages));
 }
 
-export function clearLocalConversation() {
-  localStorage.removeItem(key);
+export function clearLocalConversation(scope = "default") {
+  localStorage.removeItem(createConversationStorageKey(scope));
 }
-

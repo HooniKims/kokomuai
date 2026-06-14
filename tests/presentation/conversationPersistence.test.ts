@@ -3,7 +3,11 @@ import { shouldPersistConversation } from "../../src/presentation/conversationPe
 
 describe("conversationPersistence", () => {
   it("does not overwrite stored messages before the initial load finishes", () => {
-    expect(shouldPersistConversation(false)).toBe(false);
-    expect(shouldPersistConversation(true)).toBe(true);
+    expect(shouldPersistConversation({ hasLoadedConversation: false, loadedScope: "chatbot-1", currentScope: "chatbot-1" })).toBe(false);
+    expect(shouldPersistConversation({ hasLoadedConversation: true, loadedScope: "chatbot-1", currentScope: "chatbot-1" })).toBe(true);
+  });
+
+  it("does not persist stale messages into a newly opened chatbot scope", () => {
+    expect(shouldPersistConversation({ hasLoadedConversation: true, loadedScope: "chatbot-1", currentScope: "chatbot-2" })).toBe(false);
   });
 });

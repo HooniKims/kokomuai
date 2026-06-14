@@ -139,7 +139,7 @@ describe("localApi", () => {
     const readPayload = (await readJson(readResponse)) as { settings: { activeModelId: string }; models: Array<{ id: string }> };
 
     expect(readResponse.status).toBe(200);
-    expect(readPayload.settings.activeModelId).toBe("gemma4:e2b");
+    expect(readPayload.settings.activeModelId).toBe("lmstudio:gemma-4-12b-it");
     expect(readPayload.models.map((model) => model.id)).toContain("lmstudio:gemma-4-12b-it");
 
     const updateResponse = await fetch(`${baseUrl}/api/admin/ai-settings`, {

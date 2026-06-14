@@ -42,7 +42,7 @@ const availableAiModels: AiModelOption[] = [
     apiModel: "gemma-4-12b-it",
     displayName: "Gemma 4 12B",
     description: "로컬 LLM 기본값, 속도와 품질 균형",
-    isDefault: false,
+    isDefault: true,
     pricing: freeLocalPricing()
   },
   {
@@ -60,7 +60,7 @@ const availableAiModels: AiModelOption[] = [
     apiModel: "google/gemma-4-e2b",
     displayName: "Gemma 4 E2B",
     description: "가장 빠름, 간단 작업용",
-    isDefault: true,
+    isDefault: false,
     pricing: freeLocalPricing()
   },
   {
@@ -79,7 +79,7 @@ export function listAvailableAiModels(): AiModelOption[] {
 }
 
 export function getDefaultAiModel(): AiModelOption {
-  return resolveAiModel("gemma4:e2b");
+  return resolveAiModel("lmstudio:gemma-4-12b-it");
 }
 
 export function resolveAiModel(modelId: string | undefined): AiModelOption {

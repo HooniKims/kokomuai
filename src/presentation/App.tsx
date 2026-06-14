@@ -221,6 +221,14 @@ export function shouldShowTeacherWorkspace(
   return view === "admin" && shouldLoadAdminWorkspaceResources(profile);
 }
 
+export function shouldShowStudentShareLoading(
+  view: AppView,
+  isStudentShareRoute: boolean,
+  hasStudentChatbot: boolean,
+): boolean {
+  return view === "student" && isStudentShareRoute && !hasStudentChatbot;
+}
+
 export function applyDeletedChatbotToList(
   current: ManagedChatbot[],
   deleted: ManagedChatbot,
@@ -292,6 +300,7 @@ function hasFirebaseAuthCode(error: unknown, code: string): boolean {
 
 export function App() {
   const isPrivacyPage = window.location.pathname === "/privacy";
+  const isStudentShareRoute = isStudentSharePath(window.location.pathname);
   const [usesFirebaseTeacherAuth] = useState(() =>
     shouldUseFirebaseTeacherAuth(
       window.location.pathname,
@@ -304,6 +313,7 @@ export function App() {
   );
   const [messages, setMessages] = useState<UiChatMessage[]>([]);
   const [hasLoadedConversation, setHasLoadedConversation] = useState(false);
+  const [loadedConversationScope, setLoadedConversationScope] = useState("");
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState("");
@@ -384,6 +394,7 @@ export function App() {
     studentChatbot ??
     chatbots.find((chatbot) => chatbot.lifecycle.status === "active") ??
     fallbackChatbot;
+  const conversationScope = activeChatbot.id;
   const recommendationState = useMemo(
     () =>
       resolveCurriculumRecommendationState(chatbotForm, teacherChatbotSample),
@@ -429,14 +440,23 @@ export function App() {
   );
 
   useEffect(() => {
-    setMessages(loadLocalConversation());
+    setHasLoadedConversation(false);
+    setMessages(loadLocalConversation(conversationScope));
+    setLoadedConversationScope(conversationScope);
     setHasLoadedConversation(true);
-  }, []);
+  }, [conversationScope]);
 
   useEffect(() => {
-    if (!shouldPersistConversation(hasLoadedConversation)) return;
-    saveLocalConversation(messages);
-  }, [hasLoadedConversation, messages]);
+    if (
+      !shouldPersistConversation({
+        hasLoadedConversation,
+        loadedScope: loadedConversationScope,
+        currentScope: conversationScope,
+      })
+    )
+      return;
+    saveLocalConversation(messages, conversationScope);
+  }, [conversationScope, hasLoadedConversation, loadedConversationScope, messages]);
 
   useEffect(() => {
     if (!shareNotice) return;
@@ -933,7 +953,7 @@ export function App() {
   function resetConversation() {
     setMessages([]);
     setError("");
-    clearLocalConversation();
+    clearLocalConversation(conversationScope);
   }
 
   function downloadTxt() {
@@ -1235,6 +1255,11 @@ export function App() {
     null;
   const shouldShowAccountMenu =
     !isPrivacyPage && view !== "student" && isTeacherAuthSignedIn;
+  const shouldShowStudentLoading = shouldShowStudentShareLoading(
+    view,
+    isStudentShareRoute,
+    Boolean(studentChatbot),
+  );
 
   return (
     <main className="app-shell">
@@ -1277,7 +1302,25 @@ export function App() {
         />
       ) : null}
 
-      {!isPrivacyPage && view === "student" ? (
+      {!isPrivacyPage && shouldShowStudentLoading ? (
+        <section className="workspace student-workspace">
+          <aside className="info-panel">
+            <div className="panel-section">
+              <span className="soft-label">학생용 챗봇</span>
+              <h2>챗봇을 불러오는 중입니다.</h2>
+              <p>수업 주제와 대화 안내를 확인하고 있습니다.</p>
+            </div>
+          </aside>
+          <section className="chat-card" aria-busy="true" aria-label="학생 채팅 로딩">
+            <div className="auth-loading-message inline-loading">
+              <strong>잠시만 기다려 주세요.</strong>
+              <span>학생용 챗봇을 준비하고 있습니다.</span>
+            </div>
+          </section>
+        </section>
+      ) : null}
+
+      {!isPrivacyPage && view === "student" && !shouldShowStudentLoading ? (
         <StudentChatRoute
           chatbot={activeChatbot}
           messages={messages}
