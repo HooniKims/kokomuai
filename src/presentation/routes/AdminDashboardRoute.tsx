@@ -54,6 +54,7 @@ export function AdminDashboardRoute({
   const reviewTeacher = teachers.find((teacher) => teacher.id === reviewTeacherId);
   const visibleChatbots = reviewTeacherId ? chatbots.filter((chatbot) => chatbot.ownerTeacherId === reviewTeacherId) : chatbots;
   const selectedModelId = selectedAiModelId || aiSettings?.settings.activeModelId || "";
+  const isSelectedModelApplied = Boolean(selectedModelId && selectedModelId === aiSettings?.settings.activeModelId);
   const usageRows = summarizeUsageByTeacher(
     reviewTeacherId ? teachers.filter((teacher) => teacher.id === reviewTeacherId) : teachers,
     reviewTeacherId ? usageSummaries.filter((summary) => summary.teacherId === reviewTeacherId) : usageSummaries
@@ -94,11 +95,14 @@ export function AdminDashboardRoute({
             </label>
             <button
               className="pill dark"
-              onClick={() => void updateAiModel?.(selectedModelId)}
+              onClick={() => {
+                if (!selectedModelId || isSelectedModelApplied) return;
+                void updateAiModel?.(selectedModelId);
+              }}
               type="button"
-              disabled={!selectedModelId || selectedModelId === aiSettings.settings.activeModelId}
+              disabled={!selectedModelId || isSelectedModelApplied}
             >
-              적용
+              {isSelectedModelApplied ? "적용됨" : "적용"}
             </button>
           </div>
         ) : null}

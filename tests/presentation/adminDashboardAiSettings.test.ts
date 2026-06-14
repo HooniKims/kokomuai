@@ -110,6 +110,60 @@ describe("AdminDashboardRoute AI settings", () => {
     applyButton?.props?.onClick?.();
     expect(updateAiModel).toHaveBeenCalledWith("lmstudio:gemma-4-12b-it");
   });
+
+  it("marks the selected model as applied after it becomes the active model", () => {
+    const updateAiModel = vi.fn();
+    const tree = AdminDashboardRoute({
+      teachers: [],
+      selectedTeacherIds: [],
+      setSelectedTeacherIds: vi.fn(),
+      approveSelectedTeachers: vi.fn(),
+      createResetMailAction: vi.fn(),
+      resetLog: "",
+      aiSettings: {
+        settings: {
+          activeModelId: "lmstudio:gemma-4-12b-it",
+          updatedAt: "2026-06-13T00:00:00.000Z",
+          updatedBy: "local-admin"
+        },
+        models: [
+          {
+            id: "gemma4:e2b",
+            provider: "lmstudio",
+            apiModel: "google/gemma-4-e2b",
+            displayName: "Gemma 4 E2B",
+            description: "가벼운 기본 모델",
+            isDefault: true,
+            pricing: {
+              inputUsdPerMillionTokens: 0,
+              outputUsdPerMillionTokens: 0
+            }
+          },
+          {
+            id: "lmstudio:gemma-4-12b-it",
+            provider: "lmstudio",
+            apiModel: "gemma-4-12b-it",
+            displayName: "Gemma 4 12B",
+            description: "높은 품질 모델",
+            isDefault: false,
+            pricing: {
+              inputUsdPerMillionTokens: 0,
+              outputUsdPerMillionTokens: 0
+            }
+          }
+        ]
+      },
+      selectedAiModelId: "lmstudio:gemma-4-12b-it",
+      updateAiModel
+    });
+
+    const appliedButton = findButtonByText(tree, "적용됨");
+
+    expect(appliedButton).not.toBeNull();
+    expect(appliedButton?.props?.disabled).toBe(true);
+    appliedButton?.props?.onClick?.();
+    expect(updateAiModel).not.toHaveBeenCalled();
+  });
 });
 
 function collectText(node: unknown): string[] {
