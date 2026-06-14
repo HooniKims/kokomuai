@@ -778,6 +778,62 @@ describe("apiHandler", () => {
     expect(contentEventCount).toBeGreaterThanOrEqual(2);
   });
 
+  it("removes bullet-style student reaction planning before the final answer", async () => {
+    const { baseUrl, store } = await createServer({
+      env: {
+        LMSTUDIO_API_KEY: "test-lmstudio-key"
+      },
+      fetchImpl: async () =>
+        new Response(
+          [
+            'data: {"choices":[{"delta":{"content":"* 학생 반응: \\"5\\"\\n* 현재 상태: 학생은 x=2를 대입했다.\\n"}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"* 목표: 함수 개념을 확립한다.\\n* 다음 단계: 규칙으로 정리한다.\\n\\n"}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"계획:\\n1. 학생의 정답을 칭찬한다.\\n질문 생성: (칭찬 후 정리)"}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"와! 맞아요. 5가 나오네요! 정말 잘하셨어요."}}]}\n\n',
+            "data: [DONE]\n\n"
+          ].join(""),
+          {
+            status: 200,
+            headers: { "Content-Type": "text/event-stream" }
+          }
+        )
+    });
+    await store.saveAiSettings({
+      activeModelId: "gemma4:e2b",
+      updatedAt: "2026-06-14T10:20:00.000Z",
+      updatedBy: "admin-1"
+    });
+
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "5",
+        history: [{ role: "assistant", content: "x에 2를 넣으면 y는 얼마일까요?" }],
+        chatbot: {
+          name: "수학 챗봇",
+          schoolLevel: "middle",
+          gradeBand: "1",
+          subject: "수학",
+          topic: "1차 함수",
+          learningGoal: "1차 함수의 뜻과 식을 이해한다.",
+          hintStrength: "low",
+          persona: "질문으로 돕는 수학 선생님"
+        }
+      })
+    });
+
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(body).toContain("맞아요");
+    expect(body).not.toContain("학생 반응");
+    expect(body).not.toContain("현재 상태");
+    expect(body).not.toContain("목표");
+    expect(body).not.toContain("계획");
+    expect(body).not.toContain("질문 생성");
+  });
+
   it("records provider network errors without exposing provider exception details", async () => {
     const { baseUrl, store } = await createServer({
       env: {

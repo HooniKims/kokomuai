@@ -29,4 +29,10 @@ describe("chatMessageMarkdown", () => {
       'formula <span class="display-math">y = ax + b</span> next'
     );
   });
+
+  it("renders latex text commands as plain math text", () => {
+    expect(renderChatMessageMarkdown("when \\text{x}=2, \\text{y}=5")).toBe(
+      'when <span class="inline-math">x</span>=2, <span class="inline-math">y</span>=5'
+    );
+  });
 });

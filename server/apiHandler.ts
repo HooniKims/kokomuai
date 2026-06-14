@@ -504,8 +504,8 @@ function createThinkingTraceFilter() {
   const endTagPattern = /<\s*\/\s*(think|thinking|reasoning)\s*>/i;
   const channelMarkerPattern = /<channel\|>/i;
   const reasoningPreamblePattern =
-    /(학생은[\s\S]{0,160}(답변|용어|어렵|느꼈|의미)|학생이[\s\S]{0,160}대답|현재\s*(상황|목표)|다음\s*(사고\s*단계|행동\s*계획)|질문\s*방향|힌트\s*강도|수업\s*목표|\*\*계획:\*\*)/;
-  const finalAnswerStartPattern = /(아이고,|네,\s*그럼|좋아요[.!。]?|다시\s+아주\s+쉽게|그러면\s+이제)/;
+    /(학생은[\s\S]{0,160}(답변|용어|어렵|느꼈|의미)|학생이[\s\S]{0,160}대답|\*?\s*학생\s*반응|\*?\s*현재\s*(상태|상황|목표)|\*?\s*목표\s*:|\*?\s*다음\s*(단계|사고\s*단계|행동\s*계획)|질문\s*(방향|생성)|힌트\s*강도|수업\s*목표|\*\*계획:\*\*|계획\s*:)/;
+  const finalAnswerStartPattern = /(아이고,|네,\s*그럼|좋아요[.!。]?|와!\s*맞아요|맞아요[.!。]?|다시\s+아주\s+쉽게|그러면\s+이제)/;
 
   function push(token: string): string {
     if (probingInitialText) {

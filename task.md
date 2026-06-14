@@ -6906,3 +6906,33 @@ LLM 실구동 확인:
   - `npm run build`
   - 결과: 통과
 
+### 운영 전환 54차: bullet-style reasoning 제거와 LaTeX text 렌더링 보정
+
+완료 시간: 2026-06-14 21:47:00 +09:00
+
+요청:
+
+- E2B가 `* 학생 반응`, `* 현재 상태`, `* 목표`, `계획:`, `질문 생성:` 형태로 추론 과정을 출력하는 문제를 막는다.
+- `\text{x}`, `\text{y}` 같은 LaTeX text 명령이 그대로 보이지 않게 한다.
+
+수정:
+
+- 숨김 reasoning 패턴에 bullet-style 라벨을 추가했다.
+- 실제 답변 시작 패턴에 `와! 맞아요`, `맞아요`를 추가해 칭찬 답변이 추론 뒤에 붙어 있어도 해당 지점부터 보여주도록 했다.
+- 채팅 마크다운 렌더러에서 `\text{...}`를 inline math로 표시하도록 했다.
+
+검증:
+
+- 관련 테스트
+  - `npm test -- --run tests/infrastructure/apiHandler.test.ts`
+  - 결과: 통과
+  - `npm test -- --run tests/presentation/chatMessageMarkdown.test.ts`
+  - 결과: 통과
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 74개 테스트 파일, 324개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+
