@@ -1,13 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { footerCopyrightText, privacyPolicySections } from "../../src/presentation/legal/privacyPolicy";
+import {
+  footerCopyrightText,
+  privacyPolicySections
+} from "../../src/presentation/legal/privacyPolicy";
 
 describe("privacy policy content", () => {
   it("explains that student conversations stay local by default", () => {
-    const text = privacyPolicySections.flatMap((section) => [section.title, ...section.paragraphs]).join("\n");
+    const text = privacyPolicySections
+      .flatMap((section) => [section.title, ...section.paragraphs])
+      .join("\n");
 
     expect(text).toContain("학생은 회원가입 없이");
-    expect(text).toContain("학생 대화 내용은 기본적으로 서버에 장기 보관하지 않습니다");
-    expect(text).toContain("이름, 학번, 연락처, 주소");
+    expect(text).toContain(
+      "학생 대화 내용은 기본적으로 서버에 장기 보관하지 않습니다"
+    );
+    expect(text).toContain("이름, 학번, 연락처, 주소, 이메일");
   });
 
   it("covers the standard privacy policy sections used for Korean services", () => {
@@ -29,7 +36,16 @@ describe("privacy policy content", () => {
     );
   });
 
+  it("lists the privacy inquiry email", () => {
+    const text = privacyPolicySections
+      .flatMap((section) => [section.title, ...section.paragraphs])
+      .join("\n");
+
+    expect(text).toContain("개인정보 보호책임자 및 문의");
+    expect(text).toContain("문의 이메일: greenguyhh@gmail.com");
+  });
+
   it("uses the standard copyright wording", () => {
-    expect(footerCopyrightText).toBe("© HoomiKim. All Rights Reserved.");
+    expect(footerCopyrightText).toBe("짤 HoomiKim. All Rights Reserved.");
   });
 });

@@ -5345,6 +5345,27 @@ TDD 기록:
   - `npm run build`
   - 결과: 통과
 
+### 운영 전환 59차: 개인정보처리방침 문의 이메일 명시
+
+완료 시간: 2026-06-14 14:32:09 +09:00
+
+요청:
+
+- 개인정보처리방침의 `개인정보 보호책임자 및 문의` 항목에 `greenguyhh@gmail.com`을 명시한다.
+
+수정:
+
+- `src/presentation/legal/privacyPolicy.ts`의 깨진 한글 문구를 정상 한글 개인정보처리방침 문구로 복구했다.
+- `개인정보 보호책임자 및 문의` 항목에 `문의 이메일: greenguyhh@gmail.com`을 추가했다.
+- 개인정보처리방침 테스트를 정상 한글 문구와 문의 이메일 표시 기준으로 갱신했다.
+
+검증:
+
+- 개인정보처리방침 및 로그아웃 UI 단위 테스트
+  - `npm test -- --run tests/presentation/privacyPolicyContent.test.ts tests/presentation/topNav.test.ts`
+  - 결과: 통과
+  - 2개 테스트 파일, 6개 테스트 통과
+
 ### 운영 전환 53차: 나의 정보 패널 비밀번호 변경 UX 정리
 
 완료 시간: 2026-06-14 12:06:19 +09:00
