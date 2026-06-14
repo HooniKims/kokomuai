@@ -5351,6 +5351,41 @@ TDD 기록:
   - `npm run build`
   - 결과: 통과
 
+### 운영 전환 56차: Vercel Firebase Auth 토큰 검증 ESM 충돌 우회
+
+완료 시간: 2026-06-14 14:14:54 +09:00
+
+증상:
+
+- Firebase Authentication 사용자 목록에는 계정이 존재하지만 가입 요청 시 `로그인 토큰을 확인하지 못했습니다`가 반복됐다.
+
+원인:
+
+- Vercel 서버 로그에서 `firebase-admin/auth` 내부 의존성 충돌을 확인했다.
+- 오류: `ERR_REQUIRE_ESM: require() of ES Module ... jose/dist/webapi/index.js from ... jwks-rsa/src/utils.js not supported`
+- 따라서 Firebase 사용자/토큰 자체 문제가 아니라 Vercel Node 함수에서 `firebase-admin/auth`가 ID 토큰을 검증하는 과정에서 ESM/CJS 충돌이 난 것이 원인이었다.
+
+변경:
+
+- Vercel API의 Firebase ID 토큰 검증을 `firebase-admin/auth`에서 Firebase Identity Toolkit REST `accounts:lookup` 호출로 교체했다.
+- Firestore Admin SDK 사용은 유지하고, Auth 검증 경로에서만 `firebase-admin/auth` 의존을 제거했다.
+- ID 토큰은 URL에 넣지 않고 POST body로만 전달하도록 구현했다.
+- Firebase가 토큰 조회를 거부할 때 토큰 값을 로그에 노출하지 않는 회귀 테스트를 추가했다.
+
+검증:
+
+- Firebase ID 토큰 검증기 테스트
+  - `npm test -- --run tests/infrastructure/firebaseIdTokenVerifier.test.ts tests/infrastructure/vercelApi.test.ts`
+  - 결과: 통과
+  - 2개 테스트 파일, 5개 테스트 통과
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 68개 테스트 파일, 287개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+
 ### 운영 전환 55차: 로그인 Enter 제출과 Firebase 토큰 검증 진단 로그
 
 완료 시간: 2026-06-14 14:09:26 +09:00

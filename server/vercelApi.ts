@@ -4,7 +4,8 @@ import { createApiHandler } from "./apiHandler.js";
 import type { VerifyIdToken } from "./authContext.js";
 import type { CurriculumIndex } from "./curriculumIndex.js";
 import { getFileBackedCurriculumIndex } from "./curriculumRepository.js";
-import { getFirebaseAdminAuth, getFirebaseAdminFirestore } from "./firebaseAdmin.js";
+import { getFirebaseAdminFirestore } from "./firebaseAdmin.js";
+import { verifyFirebaseIdTokenWithIdentityToolkit } from "./firebaseIdTokenVerifier.js";
 import { parseFirebaseServerEnv } from "./firebaseEnv.js";
 import { createFirebaseStore, type FirestoreLike } from "./firebaseStore.js";
 import type { SchoolSearchDependency } from "./localApi.js";
@@ -43,17 +44,18 @@ export async function createVercelApiHandler(dependencies: VercelApiDependencies
       : {
           requireFirebaseAuth: true,
           verifyIdToken: async (token: string) => {
-            let decoded: { uid: string; email?: string };
             try {
-              decoded = await (await getFirebaseAdminAuth(env)).verifyIdToken(token);
+              return await verifyFirebaseIdTokenWithIdentityToolkit(
+                {
+                  apiKey: env.VITE_FIREBASE_API_KEY ?? "",
+                  token,
+                },
+                { fetchImpl: dependencies.fetchImpl },
+              );
             } catch (error) {
               console.warn("firebase token verification failed", describeTokenVerificationError(error));
               throw error;
             }
-            return {
-              uid: decoded.uid,
-              email: decoded.email
-            };
           }
         });
 
