@@ -41,4 +41,16 @@ describe("chatMessageMarkdown", () => {
       '예: <span class="inline-math">y=___x+___</span>'
     );
   });
+
+  it("renders bracketed latex display math without exposing delimiters", () => {
+    expect(renderChatMessageMarkdown("다음 식을 봐요:\n\\[\ny = ax + b\n\\]")).toBe(
+      '다음 식을 봐요:<br /><span class="display-math">y = ax + b</span>'
+    );
+  });
+
+  it("renders simple chemical notation commands as readable inline text", () => {
+    expect(renderChatMessageMarkdown("물은 \\ce{H2O}, 반응은 \\(2H2 + O2 \\rightarrow 2H2O\\)")).toBe(
+      '물은 <span class="inline-math">H2O</span>, 반응은 <span class="inline-math">2H2 + O2 → 2H2O</span>'
+    );
+  });
 });

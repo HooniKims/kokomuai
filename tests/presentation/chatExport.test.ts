@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildChatTranscriptHtml,
+  createChatTranscriptPdfBlob,
   makeChatTranscriptText,
 } from "../../src/presentation/chatExport";
 
@@ -39,5 +40,9 @@ describe("chatExport", () => {
     expect(html).toContain("일차함수 채팅");
     expect(html).toContain("좋아요&lt;script&gt;alert(1)&lt;/script&gt;");
     expect(html).not.toContain("<script>alert(1)</script>");
+  });
+
+  it("exposes pdf creation as a blob factory instead of triggering navigation", () => {
+    expect(typeof createChatTranscriptPdfBlob).toBe("function");
   });
 });

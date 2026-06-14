@@ -46,8 +46,8 @@ import {
 import { footerCopyrightText } from "./legal/privacyPolicy.js";
 import {
   buildChatTranscriptHtml,
+  createChatTranscriptPdfBlob,
   makeChatTranscriptText,
-  saveChatTranscriptPdfFromHtml,
 } from "./chatExport.js";
 import { teacherChatbotSample } from "./teacherChatbotSample.js";
 import { resolveCurriculumRecommendationState } from "./curriculumRecommendationState.js";
@@ -956,8 +956,14 @@ export function App() {
     setExportStatus("pdf");
     await waitForNextPaint();
     try {
-      await saveChatTranscriptPdfFromHtml(
+      const pdfBlob = await createChatTranscriptPdfBlob(
         buildChatTranscriptHtml(messages, activeChatbot),
+      );
+      downloadBlob("student-chat.pdf", "application/pdf", pdfBlob);
+    } catch (downloadError) {
+      console.error(downloadError);
+      setError(
+        "PDF 파일을 만들지 못했습니다. 잠시 후 다시 시도하거나 TXT로 내려받아 주세요.",
       );
     } finally {
       setExportStatus("");

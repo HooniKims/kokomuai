@@ -54,7 +54,7 @@ export function buildChatTranscriptHtml(
     </article>`;
 }
 
-export async function saveChatTranscriptPdfFromHtml(html: string) {
+export async function createChatTranscriptPdfBlob(html: string): Promise<Blob> {
   const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
     import("jspdf"),
     import("html2canvas"),
@@ -111,7 +111,7 @@ export async function saveChatTranscriptPdfFromHtml(html: string) {
       pageIndex += 1;
     }
 
-    pdf.save("student-chat.pdf");
+    return pdf.output("blob");
   } finally {
     host.remove();
   }

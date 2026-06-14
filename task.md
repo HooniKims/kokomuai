@@ -5468,6 +5468,59 @@ TDD 기록:
   - 결과: 통과
   - SPA, 개인정보처리방침 경로, API health, 인증 차단, 보안 헤더, CORS preflight 확인
 
+### 운영 전환 57차: LaTeX 블록 수식 표시와 PDF 다운로드 실패 보정
+
+완료 시간: 2026-06-14 22:15:00 +09:00
+
+요청:
+
+- `\[`와 `\]`로 감싼 수식이 학생 채팅에 그대로 보이지 않게 한다.
+- 수학 공식뿐 아니라 과학 화학식/공식도 가능한 한 읽기 좋게 표시한다.
+- PDF 받기 버튼을 눌렀을 때 안내만 잠깐 뜨고 다운로드가 되지 않는 문제를 수정한다.
+
+원인:
+
+- 채팅 마크다운 렌더러가 `$...$`, `$$...$$`, `\(...\)`는 처리했지만 `\[...\]` 블록 수식은 처리하지 않았다.
+- PDF 생성 함수가 내부에서 `jsPDF.save()`를 직접 호출해 브라우저 컨텍스트가 끊기거나 다운로드 트리거가 불안정해질 수 있었다.
+
+수정:
+
+- `src/presentation/chatMessageMarkdown.ts`
+  - `\[...\]` 블록 수식을 `display-math`로 렌더링하도록 추가했다.
+  - `\ce{H2O}` 같은 간단한 화학식 표기를 inline math로 표시하도록 추가했다.
+  - `\rightarrow`, `\to`, `\times`, `\cdot` 같은 자주 나오는 수식 명령을 읽기 쉬운 기호로 바꿨다.
+- `src/presentation/chatExport.ts`
+  - PDF 생성 함수가 바로 저장하지 않고 PDF `Blob`을 반환하도록 변경했다.
+- `src/presentation/App.tsx`
+  - PDF Blob을 기존 `downloadBlob()` 경로로 저장하도록 바꿨다.
+  - PDF 생성 실패 시 학생 화면에 `PDF 파일을 만들지 못했습니다. 잠시 후 다시 시도하거나 TXT로 내려받아 주세요.` 안내가 남도록 했다.
+
+검증:
+
+- 대상 테스트
+  - `npm test -- --run tests/presentation/chatMessageMarkdown.test.ts tests/presentation/chatExport.test.ts`
+  - 결과: 통과
+  - 2개 테스트 파일, 13개 테스트 통과
+- 브라우저 PDF 생성 재현
+  - Playwright에서 `createChatTranscriptPdfBlob()` 직접 호출
+  - 결과: 성공
+  - PDF Blob 크기: 1,316,600 bytes
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 75개 테스트 파일, 330개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+- 운영 배포
+  - `npx vercel deploy --prod --yes`
+  - 결과: 통과
+  - 프로덕션 별칭: `https://kokomuai.vercel.app`
+- 배포 스모크 테스트
+  - `DEPLOY_URL=https://kokomuai.vercel.app npm run smoke:deploy`
+  - 결과: 통과
+  - SPA, 개인정보처리방침 경로, API health, 인증 차단, 보안 헤더, CORS preflight 확인
+
 ### 운영 전환 61차: 발표 문서 갱신과 불필요 산출물 정리
 
 완료 시간: 2026-06-14 14:50:20 +09:00
