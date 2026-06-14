@@ -76,6 +76,21 @@ describe("chatbotManagement", () => {
     ).toThrow("수업 주제");
   });
 
+  it("accepts concise curriculum concepts as specific chatbot topics", () => {
+    expect(() =>
+      validateChatbotDraft({
+        ...chatbotInput,
+        name: "수학 일차함수 챗봇",
+        schoolLevel: "middle",
+        gradeBand: "1",
+        subject: "수학",
+        topic: "1차 함수",
+        learningGoal: "1차 함수의 뜻과 식을 이해한다.",
+        persona: "질문으로 돕는 수학 선생님"
+      })
+    ).not.toThrow();
+  });
+
   it("updates chatbot authoring fields while preserving identity and owner", () => {
     const chatbot = createChatbot(chatbotInput, {
       id: "chatbot-1",

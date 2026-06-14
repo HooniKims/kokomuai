@@ -4,6 +4,7 @@ import {
   loadLocalConversation,
   saveLocalConversation,
 } from "../infrastructure/storage/localConversationStore.js";
+import { useCallback } from "react";
 import { KeyRound, LogOut, Trash2, UserCircle } from "lucide-react";
 import {
   streamStudentChat,
@@ -36,7 +37,11 @@ import {
 } from "./auth/TeacherAuthPanel.js";
 import { shouldKeepAuthWaitingOverlay } from "./auth/authLoadingState.js";
 import { buildTeacherRegistrationPayload } from "./auth/teacherAuthForm.js";
-import { AdminDashboardRoute } from "./routes/AdminDashboardRoute.js";
+import {
+  AdminDashboardRoute,
+  type AdminOperationView,
+  type AdminTeacherCategory,
+} from "./routes/AdminDashboardRoute.js";
 import { PrivacyPolicyRoute } from "./routes/PrivacyPolicyRoute.js";
 import { StudentChatRoute } from "./routes/StudentChatRoute.js";
 import {
@@ -52,6 +57,7 @@ import {
 import { teacherChatbotSample } from "./teacherChatbotSample.js";
 import { resolveCurriculumRecommendationState } from "./curriculumRecommendationState.js";
 import {
+  mergePinnedCurriculumRecommendations,
   resolveSelectedCurriculumRecommendations,
   toCurriculumLink,
   toggleCurriculumSelection,
@@ -175,6 +181,22 @@ export function resolveInitialView(pathname: string): AppView {
 
 function isStudentSharePath(pathname: string): boolean {
   return /^\/s\/[^/?#]+/.test(pathname);
+}
+
+export function readAuthModeFromHistoryState(state: unknown): AuthPanelMode | null {
+  if (!isRecord(state)) return null;
+  return state.authMode === "login" || state.authMode === "signup" ? state.authMode : null;
+}
+
+export function createAuthModeHistoryState(state: unknown, mode: AuthPanelMode): Record<string, unknown> {
+  return {
+    ...(isRecord(state) ? state : {}),
+    authMode: mode,
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export function confirmSelectedChatbotDeletion(
@@ -304,6 +326,11 @@ export function App() {
   const [selectedChatbotIds, setSelectedChatbotIds] = useState<string[]>([]);
   const [activeTeacherId, setActiveTeacherId] = useState("");
   const [adminReviewTeacherId, setAdminReviewTeacherId] = useState("");
+  const [adminOperationView, setAdminOperationView] =
+    useState<AdminOperationView>("teacher");
+  const [adminOperationSearch, setAdminOperationSearch] = useState("");
+  const [adminTeacherCategory, setAdminTeacherCategory] =
+    useState<AdminTeacherCategory>("all");
   const [selectedTeacherIds, setSelectedTeacherIds] = useState<string[]>([]);
   const [resetLog, setResetLog] = useState("");
   const [rejectionReason, setRejectionReason] = useState("학교 정보 확인 필요");
@@ -358,6 +385,10 @@ export function App() {
     string[]
   >([]);
   const [
+    selectedCurriculumRecommendationCache,
+    setSelectedCurriculumRecommendationCache,
+  ] = useState<api.CurriculumRecommendationView[]>([]);
+  const [
     showAllCurriculumRecommendations,
     setShowAllCurriculumRecommendations,
   ] = useState(false);
@@ -408,10 +439,24 @@ export function App() {
   const [curriculumRecommendations, setCurriculumRecommendations] = useState<
     api.CurriculumRecommendationView[]
   >(fallbackCurriculumRecommendations);
+  const pinnedCurriculumRecommendations = useMemo(
+    () =>
+      mergePinnedCurriculumRecommendations(
+        curriculumRecommendations,
+        selectedCurriculumRecommendationCache,
+        selectedCurriculumChunkIds,
+      ),
+    [
+      curriculumRecommendations,
+      selectedCurriculumChunkIds,
+      selectedCurriculumRecommendationCache,
+    ],
+  );
   const selectedCurriculumRecommendations =
     resolveSelectedCurriculumRecommendations(
       curriculumRecommendations,
       selectedCurriculumChunkIds,
+      selectedCurriculumRecommendationCache,
     );
   const activeTeacherUsageTotals = summarizeUsageTotals(
     activeTeacherId
@@ -420,6 +465,21 @@ export function App() {
         )
       : usageSummaries,
   );
+  const changeAuthMode = useCallback((mode: AuthPanelMode) => {
+    setAuthMode(mode);
+    if (isStudentSharePath(window.location.pathname)) return;
+
+    const nextState = createAuthModeHistoryState(window.history.state, mode);
+    if (
+      mode === "signup" &&
+      readAuthModeFromHistoryState(window.history.state) !== "signup"
+    ) {
+      window.history.pushState(nextState, "", window.location.href);
+      return;
+    }
+
+    window.history.replaceState(nextState, "", window.location.href);
+  }, []);
 
   useEffect(() => {
     setHasLoadedConversation(false);
@@ -427,6 +487,17 @@ export function App() {
     setLoadedConversationScope(conversationScope);
     setHasLoadedConversation(true);
   }, [conversationScope]);
+
+  useEffect(() => {
+    if (isStudentShareRoute) return;
+
+    function handlePopState(event: PopStateEvent) {
+      setAuthMode(readAuthModeFromHistoryState(event.state) ?? "login");
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [isStudentShareRoute]);
 
   useEffect(() => {
     if (
@@ -1238,6 +1309,21 @@ export function App() {
     }
   }
 
+  function toggleSelectedCurriculumChunk(chunkId: string) {
+    setSelectedCurriculumChunkIds((current) => {
+      const next = toggleCurriculumSelection(current, chunkId);
+      const nextIdSet = new Set(next);
+      setSelectedCurriculumRecommendationCache((currentPinned) =>
+        mergePinnedCurriculumRecommendations(
+          curriculumRecommendations,
+          currentPinned,
+          next,
+        ).filter((item) => nextIdSet.has(item.chunkId)),
+      );
+      return next;
+    });
+  }
+
   const shouldShowTeacherAuthPanel =
     usesFirebaseTeacherAuth && view !== "student" && !activeTeacherId;
   const shouldShowAuthWaitingOverlay = shouldKeepAuthWaitingOverlay({
@@ -1366,7 +1452,7 @@ export function App() {
           isSubmitting={shouldShowAuthWaitingOverlay}
           authStatus={workspaceStatus}
           authError={authError}
-          onModeChange={setAuthMode}
+          onModeChange={changeAuthMode}
           onRealNameChange={setAuthRealName}
           onEmailChange={setAuthEmail}
           onPasswordChange={setAuthPassword}
@@ -1407,13 +1493,9 @@ export function App() {
           activeTeacherId={activeTeacherId}
           chatbotForm={chatbotForm}
           setChatbotForm={setChatbotForm}
-          curriculumRecommendations={curriculumRecommendations}
+          curriculumRecommendations={pinnedCurriculumRecommendations}
           selectedCurriculumChunkIds={selectedCurriculumChunkIds}
-          toggleCurriculumChunkSelection={(chunkId) =>
-            setSelectedCurriculumChunkIds((current) =>
-              toggleCurriculumSelection(current, chunkId),
-            )
-          }
+          toggleCurriculumChunkSelection={toggleSelectedCurriculumChunk}
           selectedChatbotIds={selectedChatbotIds}
           toggleChatbotSelection={(chatbotId) =>
             setSelectedChatbotIds((current) =>
@@ -1468,6 +1550,12 @@ export function App() {
           adminActionLogs={adminActionLogs}
           selectedReviewTeacherId={adminReviewTeacherId}
           setSelectedReviewTeacherId={setAdminReviewTeacherId}
+          adminOperationView={adminOperationView}
+          setAdminOperationView={setAdminOperationView}
+          adminOperationSearch={adminOperationSearch}
+          setAdminOperationSearch={setAdminOperationSearch}
+          adminTeacherCategory={adminTeacherCategory}
+          setAdminTeacherCategory={setAdminTeacherCategory}
         />
       ) : null}
       <footer className="app-footer">

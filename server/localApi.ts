@@ -2,6 +2,7 @@
 import { listAvailableAiModels } from "../src/domain/ai/modelCatalog.js";
 import { updateAiSettingsModel } from "../src/domain/ai/aiSettings.js";
 import {
+  ChatbotDraftValidationError,
   createChatbot,
   deleteChatbot,
   disableChatbotByAdmin,
@@ -443,16 +444,29 @@ export function createLocalApiHandler(
           return;
         }
 
-        const chatbot = createChatbot(
-          {
-            ...body,
-            ownerTeacherId: owner.id,
-          },
-          {
-            id: createId("chatbot"),
-            now: new Date().toISOString(),
-          },
-        );
+        let chatbot: ManagedChatbot;
+        try {
+          chatbot = createChatbot(
+            {
+              ...body,
+              ownerTeacherId: owner.id,
+            },
+            {
+              id: createId("chatbot"),
+              now: new Date().toISOString(),
+            },
+          );
+        } catch (error) {
+          if (error instanceof ChatbotDraftValidationError) {
+            sendJson(response, 400, {
+              error: "invalid_chatbot_draft",
+              message: error.message,
+            });
+            return;
+          }
+
+          throw error;
+        }
         await dependencies.store.saveChatbot(chatbot);
         sendJson(response, 201, { chatbot });
         return;

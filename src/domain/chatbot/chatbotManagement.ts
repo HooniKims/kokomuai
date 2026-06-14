@@ -35,6 +35,13 @@ export interface CreateChatbotInput extends ChatbotPolicyInput {
   curriculumLinks?: CurriculumLink[];
 }
 
+export class ChatbotDraftValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ChatbotDraftValidationError";
+  }
+}
+
 export function createChatbot(input: CreateChatbotInput, options: { id: string; now: string }): ManagedChatbot {
   validateChatbotDraft(input);
 
@@ -58,31 +65,31 @@ export function createChatbot(input: CreateChatbotInput, options: { id: string; 
 
 export function validateChatbotDraft(input: CreateChatbotInput): void {
   if (!input.name.trim()) {
-    throw new Error("챗봇 이름을 입력해 주세요.");
+    throw new ChatbotDraftValidationError("챗봇 이름을 입력해 주세요.");
   }
 
   if (!input.ownerTeacherId.trim()) {
-    throw new Error("교사 정보를 확인할 수 없습니다.");
+    throw new ChatbotDraftValidationError("교사 정보를 확인할 수 없습니다.");
   }
 
   if (!input.gradeBand.trim()) {
-    throw new Error("학년군/학년을 입력해 주세요.");
+    throw new ChatbotDraftValidationError("학년군/학년을 입력해 주세요.");
   }
 
   if (!input.subject.trim()) {
-    throw new Error("과목을 입력해 주세요.");
+    throw new ChatbotDraftValidationError("과목을 입력해 주세요.");
   }
 
   if (isOverlyBroadTopic(input.topic, input.subject)) {
-    throw new Error("수업 주제를 단원이나 개념이 드러나도록 조금 더 구체적으로 입력해 주세요.");
+    throw new ChatbotDraftValidationError("수업 주제를 단원이나 개념이 드러나도록 조금 더 구체적으로 입력해 주세요.");
   }
 
   if (!input.learningGoal.trim()) {
-    throw new Error("대화 목표를 입력해 주세요.");
+    throw new ChatbotDraftValidationError("대화 목표를 입력해 주세요.");
   }
 
   if (!input.persona.trim()) {
-    throw new Error("챗봇 페르소나를 입력해 주세요.");
+    throw new ChatbotDraftValidationError("챗봇 페르소나를 입력해 주세요.");
   }
 }
 
@@ -265,5 +272,5 @@ function isOverlyBroadTopic(topic: string, subject: string): boolean {
   if (broadTopics.has(normalized)) return true;
   if (normalized === subject.trim()) return true;
 
-  return normalized.length < 6;
+  return normalized.replace(/\s+/g, "").length < 2;
 }

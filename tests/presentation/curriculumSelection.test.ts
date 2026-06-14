@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getVisibleCurriculumRecommendations,
   formatCurriculumSelectionStatus,
+  mergePinnedCurriculumRecommendations,
   resolveSelectedCurriculumRecommendations,
   toggleCurriculumSelection,
   toCurriculumLink
@@ -20,6 +21,18 @@ describe("curriculumSelection", () => {
     expect(resolveSelectedCurriculumRecommendations(recommendations, ["korean-writing", "korean-literature"]).map((item) => item.chunkId)).toEqual([
       "korean-writing",
       "korean-literature"
+    ]);
+  });
+
+  it("keeps selected recommendations pinned when the recommendation query changes", () => {
+    const nextRecommendations = [recommendation("math-linear-function", "[9수03-04] 일차함수를 이해하고 그래프로 나타낸다.")];
+
+    expect(
+      resolveSelectedCurriculumRecommendations(nextRecommendations, ["korean-writing"], [recommendations[1]]).map((item) => item.chunkId)
+    ).toEqual(["korean-writing"]);
+    expect(mergePinnedCurriculumRecommendations(nextRecommendations, [recommendations[1]], ["korean-writing"]).map((item) => item.chunkId)).toEqual([
+      "korean-writing",
+      "math-linear-function"
     ]);
   });
 

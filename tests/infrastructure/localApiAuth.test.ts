@@ -400,6 +400,80 @@ describe("localApi production auth", () => {
     expect(payload.chatbot.ownerTeacherId).toBe("teacher-1");
   });
 
+  it("lets a signed-in teacher create a chatbot with a concise curriculum concept topic", async () => {
+    const { baseUrl, store } = await createServer();
+    await store.saveTeacher(
+      approveTeacher(createTeacher("teacher-1", "teacher@example.com"), {
+        adminId: "local-admin",
+        now: "2026-06-13T01:30:00.000Z",
+        logId: "admin-log-1"
+      }).teacher
+    );
+
+    const response = await fetch(`${baseUrl}/api/chatbots`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer teacher-token"
+      },
+      body: JSON.stringify({
+        ownerTeacherId: "teacher-1",
+        name: "수학 일차함수 챗봇",
+        schoolLevel: "middle",
+        gradeBand: "1",
+        subject: "수학",
+        topic: "1차 함수",
+        learningGoal: "1차 함수의 뜻과 식을 이해한다.",
+        hintStrength: "medium",
+        persona: "질문으로 돕는 수학 선생님"
+      })
+    });
+
+    expect(response.status).toBe(201);
+    const payload = (await response.json()) as { chatbot: { topic: string; ownerTeacherId: string } };
+    expect(payload.chatbot).toMatchObject({
+      topic: "1차 함수",
+      ownerTeacherId: "teacher-1"
+    });
+  });
+
+  it("returns a client validation error instead of 500 for overly broad chatbot topics", async () => {
+    const { baseUrl, store } = await createServer();
+    await store.saveTeacher(
+      approveTeacher(createTeacher("teacher-1", "teacher@example.com"), {
+        adminId: "local-admin",
+        now: "2026-06-13T01:30:00.000Z",
+        logId: "admin-log-1"
+      }).teacher
+    );
+
+    const response = await fetch(`${baseUrl}/api/chatbots`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer teacher-token"
+      },
+      body: JSON.stringify({
+        ownerTeacherId: "teacher-1",
+        name: "수학 챗봇",
+        schoolLevel: "middle",
+        gradeBand: "1",
+        subject: "수학",
+        topic: "수학",
+        learningGoal: "수학 개념을 이해한다.",
+        hintStrength: "medium",
+        persona: "질문으로 돕는 수학 선생님"
+      })
+    });
+    const payload = (await response.json()) as { error: string; message: string };
+
+    expect(response.status).toBe(400);
+    expect(payload).toMatchObject({
+      error: "invalid_chatbot_draft",
+      message: "수업 주제를 단원이나 개념이 드러나도록 조금 더 구체적으로 입력해 주세요."
+    });
+  });
+
   it("rejects admin mutations even when a body adminId is spoofed without an admin token", async () => {
     const { baseUrl, store } = await createServer();
     await store.saveTeacher(createTeacher("teacher-1", "teacher@example.com"));

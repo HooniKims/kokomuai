@@ -5,11 +5,36 @@ const DEFAULT_VISIBLE_RECOMMENDATION_COUNT = 3;
 
 export function resolveSelectedCurriculumRecommendations(
   recommendations: CurriculumRecommendationView[],
+  selectedChunkIds: string[],
+  pinnedRecommendations: CurriculumRecommendationView[] = []
+): CurriculumRecommendationView[] {
+  const selectedIdSet = new Set(selectedChunkIds);
+  const selected = mergePinnedCurriculumRecommendations(recommendations, pinnedRecommendations, selectedChunkIds).filter((item) => selectedIdSet.has(item.chunkId));
+  return selected.length > 0 ? selected : recommendations.slice(0, 1);
+}
+
+export function mergePinnedCurriculumRecommendations(
+  recommendations: CurriculumRecommendationView[],
+  pinnedRecommendations: CurriculumRecommendationView[],
   selectedChunkIds: string[]
 ): CurriculumRecommendationView[] {
   const selectedIdSet = new Set(selectedChunkIds);
-  const selected = recommendations.filter((item) => selectedIdSet.has(item.chunkId));
-  return selected.length > 0 ? selected : recommendations.slice(0, 1);
+  const merged: CurriculumRecommendationView[] = [];
+  const seen = new Set<string>();
+
+  for (const item of pinnedRecommendations) {
+    if (!selectedIdSet.has(item.chunkId) || seen.has(item.chunkId)) continue;
+    merged.push(item);
+    seen.add(item.chunkId);
+  }
+
+  for (const item of recommendations) {
+    if (seen.has(item.chunkId)) continue;
+    merged.push(item);
+    seen.add(item.chunkId);
+  }
+
+  return merged;
 }
 
 export function toggleCurriculumSelection(selectedChunkIds: string[], chunkId: string): string[] {

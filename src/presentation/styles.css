@@ -1008,6 +1008,154 @@ textarea:focus {
   border-top: 1px solid var(--color-paper-line);
 }
 
+.admin-operations-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-operation-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+}
+
+.admin-operation-toolbar h2 {
+  margin: 4px 0 0;
+}
+
+.admin-operation-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-operation-tabs .pill {
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.admin-filter-row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(180px, 240px);
+  align-items: end;
+  gap: 12px;
+}
+
+.admin-filter-row label,
+.admin-search-field {
+  display: grid;
+  gap: 7px;
+  color: var(--color-forest-ink);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.admin-search-field > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--color-forest-ink);
+  border-radius: 6px;
+  background: var(--color-cream-paper);
+}
+
+.admin-search-field input {
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.admin-search-field input:focus {
+  box-shadow: none;
+}
+
+.admin-filter-row select {
+  min-height: 44px;
+}
+
+.admin-operation-body {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-teacher-card-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-teacher-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--color-forest-ink);
+  border-radius: 8px;
+  background: var(--color-cream-paper);
+}
+
+.admin-teacher-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-teacher-card-header strong {
+  display: block;
+  font-size: 1.06rem;
+  color: var(--color-forest-ink);
+}
+
+.admin-teacher-card-header p,
+.admin-empty-text {
+  margin: 4px 0 0;
+  color: rgb(26 51 0 / 0.72);
+}
+
+.admin-teacher-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-teacher-metrics span,
+.usage-rank {
+  width: fit-content;
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid var(--color-forest-ink);
+  border-radius: 9999px;
+  background: var(--color-highlighter-yellow);
+  color: var(--color-forest-ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin-owned-chatbot-list {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-owned-chatbot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-paper-line);
+  border-radius: 8px;
+}
+
+.admin-owned-chatbot > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
 .usage-row-list {
   display: grid;
   gap: 10px;
@@ -1044,6 +1192,10 @@ textarea:focus {
   background: var(--color-highlighter-yellow);
   font-size: 14px;
   font-weight: 700;
+}
+
+.usage-rank-row {
+  grid-template-columns: max-content minmax(220px, 1fr) repeat(3, max-content);
 }
 
 .chatbot-list-toolbar {
@@ -1645,6 +1797,16 @@ textarea::placeholder {
     flex-direction: column;
   }
 
+  .admin-operation-toolbar,
+  .admin-filter-row,
+  .admin-owned-chatbot {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-operation-tabs {
+    grid-template-columns: 1fr;
+  }
+
   .recommendation-guide {
     grid-template-columns: 1fr;
   }
@@ -1699,6 +1861,10 @@ textarea::placeholder {
   .usage-row {
     grid-template-columns: 1fr;
     align-items: stretch;
+  }
+
+  .usage-rank-row {
+    grid-template-columns: 1fr;
   }
 }
 
