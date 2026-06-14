@@ -5,6 +5,7 @@ import {
   shouldShowRoleNavigation,
   shouldUseFirebaseTeacherAuth,
   toFriendlyFirebaseAuthError,
+  toFriendlySignupRequestError,
 } from "../../src/presentation/App";
 
 describe("student share navigation", () => {
@@ -45,5 +46,12 @@ describe("student share navigation", () => {
         "Login failed",
       ),
     ).toBe("이메일 또는 비밀번호가 맞지 않습니다. 다시 확인해 주세요.");
+  });
+
+  it("does not expose raw invalid_token errors during signup requests", () => {
+    const message = toFriendlySignupRequestError(new Error("invalid_token"));
+
+    expect(message).toContain("로그인 토큰");
+    expect(message).not.toContain("invalid_token");
   });
 });

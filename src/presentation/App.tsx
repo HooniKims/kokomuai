@@ -246,6 +246,19 @@ export function toFriendlyFirebaseAuthError(
     : fallbackMessage;
 }
 
+export function toFriendlySignupRequestError(error: unknown): string {
+  if (error instanceof Error && error.message === "invalid_token") {
+    return "로그인 토큰을 확인하지 못했습니다. 새로고침 후 다시 로그인한 뒤 가입 요청을 다시 보내 주세요.";
+  }
+
+  return error instanceof Error
+    ? error.message.replace(
+        "요청을 처리하는 중 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.",
+        "가입 요청 처리 중 문제가 생겼습니다. 이미 요청이 접수됐는지 관리자 화면에서 확인해 주세요.",
+      )
+    : "가입 요청을 저장하지 못했습니다.";
+}
+
 function hasFirebaseAuthCode(error: unknown, code: string): boolean {
   if (!error || typeof error !== "object") return false;
   const candidate = error as { code?: unknown; message?: unknown };
@@ -587,7 +600,7 @@ export function App() {
       setWorkspaceStatus(
         caught instanceof Error &&
           caught.message !== "teacher_profile_not_found"
-          ? caught.message
+          ? toFriendlySignupRequestError(caught)
           : "학교를 선택한 뒤 가입 요청을 보내 주세요.",
       );
     }
@@ -658,51 +671,6 @@ export function App() {
     }
   }
 
-  async function signUpWithTeacherEmail() {
-    if (authPassword !== authPasswordConfirmation) {
-      setAuthError("비밀번호가 일치하지 않습니다. 다시 확인해 주세요.");
-      return;
-    }
-
-    setIsSubmittingAuth(true);
-    setAuthError("");
-    try {
-      await signUpTeacherWithEmail(
-        getKkokkomuFirebaseAuth(),
-        authEmail.trim(),
-        authPassword,
-      );
-      setWorkspaceStatus(
-        "Firebase 계정이 생성됐습니다. 학교를 선택하고 가입 요청을 보내 주세요.",
-      );
-    } catch (caught) {
-      if (isFirebaseEmailAlreadyInUse(caught)) {
-        try {
-          await signInTeacherWithEmail(
-            getKkokkomuFirebaseAuth(),
-            authEmail.trim(),
-            authPassword,
-          );
-          setWorkspaceStatus(
-            "이미 가입된 이메일입니다. 로그인으로 이어졌습니다. 학교를 선택하고 가입 요청을 보내 주세요.",
-          );
-          return;
-        } catch {
-          setAuthError(
-            "이미 가입된 이메일입니다. 기존 비밀번호로 로그인하거나 Google로 계속하기를 사용해 주세요.",
-          );
-          return;
-        }
-      }
-
-      setAuthError(
-        toFriendlyFirebaseAuthError(caught, "이메일 가입에 실패했습니다."),
-      );
-    } finally {
-      setIsSubmittingAuth(false);
-    }
-  }
-
   async function signInWithTeacherGoogle() {
     setIsSubmittingAuth(true);
     setAuthError("");
@@ -724,6 +692,7 @@ export function App() {
     setIsSubmittingAuth(true);
     setAuthError("");
     try {
+      await prepareFirebaseUserForSignupRequest();
       const teacher = await api.registerTeacher(
         buildTeacherRegistrationPayload({
           realName: authRealName,
@@ -742,17 +711,51 @@ export function App() {
         await refreshWorkspace(teacher.id);
       }
     } catch (caught) {
-      setAuthError(
-        caught instanceof Error
-          ? caught.message.replace(
-              "요청을 처리하는 중 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.",
-              "가입 요청 처리 중 문제가 생겼습니다. 이미 요청이 접수됐는지 관리자 화면에서 확인해 주세요.",
-            )
-          : "가입 요청을 저장하지 못했습니다.",
-      );
+      setAuthError(toFriendlySignupRequestError(caught));
     } finally {
       setIsSubmittingAuth(false);
     }
+  }
+
+  async function prepareFirebaseUserForSignupRequest() {
+    const auth = getKkokkomuFirebaseAuth();
+    const requestedEmail = authEmail.trim().toLowerCase();
+    const currentEmail = auth.currentUser?.email?.trim().toLowerCase() ?? "";
+
+    if (auth.currentUser && currentEmail === requestedEmail) {
+      await auth.currentUser.getIdToken(true);
+      return;
+    }
+
+    if (auth.currentUser && currentEmail !== requestedEmail) {
+      throw new Error(
+        "현재 로그인된 계정과 입력한 이메일이 다릅니다. 로그아웃 후 다시 시도해 주세요.",
+      );
+    }
+
+    if (authPassword !== authPasswordConfirmation) {
+      throw new Error("비밀번호가 일치하지 않습니다. 다시 확인해 주세요.");
+    }
+
+    try {
+      await signUpTeacherWithEmail(auth, authEmail.trim(), authPassword);
+    } catch (caught) {
+      if (!isFirebaseEmailAlreadyInUse(caught)) {
+        throw new Error(
+          toFriendlyFirebaseAuthError(caught, "이메일 가입에 실패했습니다."),
+        );
+      }
+
+      try {
+        await signInTeacherWithEmail(auth, authEmail.trim(), authPassword);
+      } catch {
+        throw new Error(
+          "이미 가입된 이메일입니다. 기존 비밀번호를 확인한 뒤 가입 요청을 다시 보내 주세요.",
+        );
+      }
+    }
+
+    await auth.currentUser?.getIdToken(true);
   }
 
   async function signOutCurrentTeacher() {
@@ -1264,7 +1267,6 @@ export function App() {
             setAuthSchoolResults([]);
           }}
           onEmailSignIn={signInWithTeacherEmail}
-          onEmailSignUp={signUpWithTeacherEmail}
           onGoogleSignIn={signInWithTeacherGoogle}
           onRegisterProfile={registerFirebaseTeacherProfile}
           onSignOut={signOutCurrentTeacher}

@@ -3,7 +3,6 @@ import {
   EyeOff,
   LogIn,
   LogOut,
-  Mail,
   School,
   UserPlus,
 } from "lucide-react";
@@ -36,7 +35,6 @@ export interface TeacherAuthPanelProps {
   onSchoolQueryChange: (value: string) => void;
   onSelectSchool: (school: SchoolSearchResult) => void;
   onEmailSignIn: () => void | Promise<void>;
-  onEmailSignUp: () => void | Promise<void>;
   onGoogleSignIn: () => void | Promise<void>;
   onRegisterProfile: () => void | Promise<void>;
   onSignOut: () => void | Promise<void>;
@@ -66,16 +64,11 @@ export function TeacherAuthPanel({
   onSchoolQueryChange,
   onSelectSchool,
   onEmailSignIn,
-  onEmailSignUp,
   onGoogleSignIn,
   onRegisterProfile,
   onSignOut,
 }: TeacherAuthPanelProps) {
   const isSignup = mode === "signup";
-  const canRegisterProfile =
-    isSignedIn &&
-    canSubmitTeacherProfile({ realName, email, selectedSchool }) &&
-    !isSubmitting;
   const canUseEmailAuth =
     email.trim().length > 0 && password.length >= 8 && !isSubmitting;
   const passwordConfirmationState =
@@ -86,6 +79,10 @@ export function TeacherAuthPanel({
         : "mismatch";
   const canUseEmailSignUp =
     canUseEmailAuth && passwordConfirmationState === "match";
+  const canSubmitSignupRequest =
+    canSubmitTeacherProfile({ realName, email, selectedSchool }) &&
+    !isSubmitting &&
+    (isSignedIn || canUseEmailSignUp);
   const statusText = authError || authStatus;
 
   return (
@@ -165,60 +162,37 @@ export function TeacherAuthPanel({
           />
         )}
 
-        <div className="auth-actions">
-          {isSignup ? (
-            <>
-              <button
-                className="pill outline"
-                data-action="email-signup"
-                type="button"
-                onClick={() => void onEmailSignUp()}
-                disabled={isSignedIn || !canUseEmailSignUp}
-              >
-                <Mail size={16} /> 이메일 계정 만들기
-              </button>
-              <button
-                className="pill ghost"
-                data-action="switch-login"
-                type="button"
-                onClick={() => onModeChange("login")}
-                disabled={isSubmitting}
-              >
-                로그인으로 돌아가기
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                className="pill dark"
-                data-action="email-login"
-                type="button"
-                onClick={() => void onEmailSignIn()}
-                disabled={!canUseEmailAuth}
-              >
-                <LogIn size={16} /> 이메일 로그인
-              </button>
-              <button
-                className="pill google-auth-button"
-                data-action="google-login"
-                type="button"
-                onClick={() => void onGoogleSignIn()}
-                disabled={isSubmitting}
-              >
-                <GoogleIcon /> Google로 계속하기
-              </button>
-              <button
-                className="pill outline auth-mode-link"
-                data-action="switch-signup"
-                type="button"
-                onClick={() => onModeChange("signup")}
-                disabled={isSubmitting}
-              >
-                회원가입
-              </button>
-            </>
-          )}
-        </div>
+        {!isSignup ? (
+          <div className="auth-actions">
+            <button
+              className="pill dark"
+              data-action="email-login"
+              type="button"
+              onClick={() => void onEmailSignIn()}
+              disabled={!canUseEmailAuth}
+            >
+              <LogIn size={16} /> 이메일 로그인
+            </button>
+            <button
+              className="pill google-auth-button"
+              data-action="google-login"
+              type="button"
+              onClick={() => void onGoogleSignIn()}
+              disabled={isSubmitting}
+            >
+              <GoogleIcon /> Google로 계속하기
+            </button>
+            <button
+              className="pill outline auth-mode-link"
+              data-action="switch-signup"
+              type="button"
+              onClick={() => onModeChange("signup")}
+              disabled={isSubmitting}
+            >
+              회원가입
+            </button>
+          </div>
+        ) : null}
 
         {isSignup ? (
           <>
@@ -239,9 +213,9 @@ export function TeacherAuthPanel({
               data-action="register-profile"
               type="button"
               onClick={() => void onRegisterProfile()}
-              disabled={!canRegisterProfile}
+              disabled={!canSubmitSignupRequest}
             >
-              <UserPlus size={16} /> 학교 선택 후 가입 요청
+              <UserPlus size={16} /> 가입 요청
             </button>
           </>
         ) : authError ? (
@@ -399,6 +373,7 @@ function PasswordInput({
         aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
         className="password-toggle"
         type="button"
+        tabIndex={-1}
         onClick={onTogglePasswordVisibility}
       >
         {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}

@@ -105,6 +105,40 @@ describe("TeacherAuthPanel", () => {
     expect(enabledRegisterButton?.props?.disabled).toBe(false);
   });
 
+  it("uses one signup request action after email, password, and school are ready", () => {
+    const tree = TeacherAuthPanel(
+      createPanelProps({
+        mode: "signup",
+        isSignedIn: false,
+        selectedSchool,
+        password: "password123",
+        passwordConfirmation: "password123",
+      }),
+    );
+
+    expect(findNodeByAction(tree, "email-signup")).toBeUndefined();
+    expect(findNodeByAction(tree, "switch-login")).toBeUndefined();
+    expect(findNodeByAction(tree, "register-profile")?.props?.disabled).toBe(
+      false,
+    );
+  });
+
+  it("keeps the unified signup request disabled until passwords match", () => {
+    const tree = TeacherAuthPanel(
+      createPanelProps({
+        mode: "signup",
+        isSignedIn: false,
+        selectedSchool,
+        password: "password123",
+        passwordConfirmation: "password456",
+      }),
+    );
+
+    expect(findNodeByAction(tree, "register-profile")?.props?.disabled).toBe(
+      true,
+    );
+  });
+
   it("shows school autocomplete state without a separate search button", () => {
     const tree = TeacherAuthPanel(
       createPanelProps({
@@ -122,7 +156,7 @@ describe("TeacherAuthPanel", () => {
     ).not.toContain("검색");
   });
 
-  it("requires matching confirmation only for email sign-up", () => {
+  it("requires matching confirmation before the unified signup request", () => {
     const mismatchTree = TeacherAuthPanel(
       createPanelProps({
         mode: "signup",
@@ -131,7 +165,10 @@ describe("TeacherAuthPanel", () => {
       }),
     );
     const mismatchText = collectText(mismatchTree).join(" ");
-    const mismatchSignUpButton = findNodeByAction(mismatchTree, "email-signup");
+    const mismatchSignUpButton = findNodeByAction(
+      mismatchTree,
+      "register-profile",
+    );
 
     expect(mismatchText).toContain("비밀번호가 일치하지 않습니다.");
     expect(mismatchSignUpButton?.props?.disabled).toBe(true);
@@ -144,10 +181,33 @@ describe("TeacherAuthPanel", () => {
       }),
     );
     const matchText = collectText(matchTree).join(" ");
-    const matchSignUpButton = findNodeByAction(matchTree, "email-signup");
+    const matchSignUpButton = findNodeByAction(matchTree, "register-profile");
 
     expect(matchText).toContain("비밀번호가 일치합니다.");
     expect(matchSignUpButton?.props?.disabled).toBe(false);
+  });
+
+  it("keeps password visibility toggles out of the tab order", () => {
+    const loginTree = TeacherAuthPanel(createPanelProps({ mode: "login" }));
+    const signupTree = TeacherAuthPanel(createPanelProps({ mode: "signup" }));
+    const loginToggleButtons = findNodesByClassName(
+      loginTree,
+      "password-toggle",
+    );
+    const signupToggleButtons = findNodesByClassName(
+      signupTree,
+      "password-toggle",
+    );
+
+    expect(loginToggleButtons).toHaveLength(1);
+    expect(signupToggleButtons).toHaveLength(2);
+    for (const toggleButton of [
+      ...loginToggleButtons,
+      ...signupToggleButtons,
+    ]) {
+      expect(toggleButton.type).toBe("button");
+      expect(toggleButton.props?.tabIndex).toBe(-1);
+    }
   });
 
   it("renders auth errors in the side status and uses a Google-styled button", () => {
@@ -195,7 +255,6 @@ function createPanelProps(
     onSchoolQueryChange: vi.fn(),
     onSelectSchool: vi.fn(),
     onEmailSignIn: vi.fn(),
-    onEmailSignUp: vi.fn(),
     onGoogleSignIn: vi.fn(),
     onRegisterProfile: vi.fn(),
     onSignOut: vi.fn(),
@@ -209,6 +268,17 @@ function findNodeByAction(
 ): { type?: unknown; props?: Record<string, unknown> } | undefined {
   return collectNodes(node).find(
     (candidate) => candidate.props?.["data-action"] === action,
+  );
+}
+
+function findNodesByClassName(
+  node: unknown,
+  className: string,
+): Array<{ type?: unknown; props?: Record<string, unknown> }> {
+  return collectNodes(node).filter((candidate) =>
+    String(candidate.props?.className ?? "")
+      .split(/\s+/)
+      .includes(className),
   );
 }
 
