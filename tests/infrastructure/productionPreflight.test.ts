@@ -48,7 +48,7 @@ VITE_FIREBASE_API_KEY=client
         "vercel.json": true,
         "firebase.json": false,
         "firestore.rules": true,
-        "api/[...path].ts": true,
+        "api/index.ts": true,
         ".firebaserc": true,
         ".gitignore": true
       }
@@ -91,6 +91,37 @@ VERCEL_TOKEN=token
 
     expect(result.ok).toBe(true);
     expect(result.warnings).toContain("NEXT_PUBLIC_NEIS_API_KEY가 남아 있습니다. 운영 배포에는 서버 전용 NEIS_API_KEY만 등록하세요.");
+  });
+
+  it("fails when client and server Firebase project ids differ", () => {
+    const env = parseEnvText(`
+OPENAI_API_KEY=openai
+NEIS_API_KEY=neis
+FIREBASE_PROJECT_ID=server-project
+FIREBASE_SERVICE_ACCOUNT={"client_email":"firebase@example.com","private_key":"secret"}
+KKOKKOMU_ADMIN_EMAILS=admin@example.com
+LMSTUDIO_API_URL=https://lm.example.test
+LMSTUDIO_API_KEY=lm-key
+LMSTUDIO_GEMMA_E4B_MODEL=google/gemma-4-e4b
+LMSTUDIO_GEMMA_E2B_MODEL=google/gemma-4-e2b
+LMSTUDIO_GEMMA_12B_MODEL=gemma-4-12b-it
+LMSTUDIO_GEMMA_26B_MODEL=gemma-4-26b-a4b-it
+VITE_FIREBASE_API_KEY=client
+VITE_FIREBASE_AUTH_ENABLED=true
+VITE_FIREBASE_AUTH_DOMAIN=client-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=client-project
+VITE_FIREBASE_APP_ID=app
+VITE_FIREBASE_STORAGE_BUCKET=client-project.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=965823913795
+VERCEL_TOKEN=token
+`);
+
+    const result = evaluateProductionPreflight({ env, files: existingFiles() });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain(
+      "Firebase client/server project ids must match: FIREBASE_PROJECT_ID=server-project, VITE_FIREBASE_PROJECT_ID=client-project",
+    );
   });
 
   it("fails when the secret-protecting gitignore file is missing", () => {
@@ -170,7 +201,7 @@ function existingFiles() {
     "vercel.json": true,
     "firebase.json": true,
     "firestore.rules": true,
-    "api/[...path].ts": true,
+    "api/index.ts": true,
     ".firebaserc": true,
     ".gitignore": true
   };

@@ -14,7 +14,7 @@ export interface ProductionPreflightResult {
   warnings: string[];
 }
 
-const requiredFiles = ["vercel.json", "firebase.json", "firestore.rules", "api/[...path].ts", ".firebaserc", ".gitignore"];
+const requiredFiles = ["vercel.json", "firebase.json", "firestore.rules", "api/index.ts", ".firebaserc", ".gitignore"];
 const requiredServerEnv = [
   "OPENAI_API_KEY",
   "NEIS_API_KEY",
@@ -73,6 +73,18 @@ export function evaluateProductionPreflight(input: ProductionPreflightInput): Pr
 
   for (const name of [...requiredServerEnv, ...requiredClientEnv]) {
     if (!hasValue(input.env, name)) errors.push(`필수 환경변수가 없습니다: ${name}`);
+  }
+
+  const serverFirebaseProjectId = input.env.FIREBASE_PROJECT_ID?.trim();
+  const clientFirebaseProjectId = input.env.VITE_FIREBASE_PROJECT_ID?.trim();
+  if (
+    serverFirebaseProjectId &&
+    clientFirebaseProjectId &&
+    serverFirebaseProjectId !== clientFirebaseProjectId
+  ) {
+    errors.push(
+      `Firebase client/server project ids must match: FIREBASE_PROJECT_ID=${serverFirebaseProjectId}, VITE_FIREBASE_PROJECT_ID=${clientFirebaseProjectId}`,
+    );
   }
 
   if (!hasValue(input.env, "FIREBASE_SERVICE_ACCOUNT") && !(hasValue(input.env, "FIREBASE_CLIENT_EMAIL") && hasValue(input.env, "FIREBASE_PRIVATE_KEY"))) {

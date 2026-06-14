@@ -211,7 +211,7 @@ function readCurrentEnv(): Record<string, string | undefined> {
 }
 
 function readCurrentFiles(): Record<string, boolean> {
-  const requiredFiles = ["vercel.json", "firebase.json", "firestore.rules", "api/[...path].ts", ".firebaserc", ".gitignore", ".vercel/project.json"];
+  const requiredFiles = ["vercel.json", "firebase.json", "firestore.rules", "api/index.ts", ".firebaserc", ".gitignore", ".vercel/project.json"];
   return Object.fromEntries(requiredFiles.map((file) => [file, existsSync(join(process.cwd(), file))]));
 }
 

@@ -5315,6 +5315,53 @@ TDD 기록:
 - Vite: `http://127.0.0.1:5173/`
 - API: `http://127.0.0.1:8787`
 
+### 운영 전환 48차: 로그인 화면 정렬과 Firebase 토큰 환경 점검 보강
+
+완료 시간: 2026-06-14 11:23:48 +09:00
+
+요청:
+
+- 메인 로그인 화면에서 `이메일 로그인`, `Google로 계속하기`, `회원가입` 버튼 크기를 맞춘다.
+- 이메일과 비밀번호 입력칸은 나란히 두되, 전체 폭을 하단 버튼 줄과 맞춘다.
+- 관리자 이메일 로그인 후 가입 신청 단계에서 `invalid_token`이 뜨는 원인과 관리자 계정 진행 방식을 확인한다.
+
+수정:
+
+- 로그인 폼의 2열 입력칸이 일반 `.form-grid` 3열 규칙에 밀리지 않도록 `.form-grid.auth-form-grid` 규칙을 더 높은 우선순위로 보정했다.
+- 로그인 버튼 3개가 같은 그리드 칸을 사용하도록 `min-width: 0`, 동일 높이, 중앙 정렬을 고정하고 `회원가입` 버튼의 별도 위쪽 여백을 제거했다.
+- 배포 전 점검에서 현재 Vercel API 진입점인 `api/index.ts`를 확인하도록 파일 계약을 최신화했다.
+- `FIREBASE_PROJECT_ID`와 `VITE_FIREBASE_PROJECT_ID`가 다르면 배포 전 점검이 실패하도록 추가했다.
+  - 두 값이 다르면 브라우저에서 받은 Firebase ID 토큰을 서버가 다른 프로젝트 토큰으로 검증해 `invalid_token`이 발생할 수 있다.
+
+검증:
+
+- 대상 테스트
+  - `npm test -- --run tests/presentation/authLayoutStyle.test.ts tests/infrastructure/productionPreflight.test.ts tests/infrastructure/deploymentReadiness.test.ts`
+  - 결과: 통과
+  - 3개 테스트 파일, 16개 테스트 통과
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 66개 테스트 파일, 272개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+- 배포 전 점검
+  - `npm run preflight:production`
+  - 결과: 통과
+- Firebase Auth 제공자 점검
+  - `npm run firebase:auth:check`
+  - 결과: 이메일/비밀번호, Google 모두 enabled
+- 배포 준비 리포트
+  - `npm run deployment:status`
+  - 결과: `ready_to_deploy`
+- 브라우저 렌더링 확인
+  - Vite: `http://127.0.0.1:5175/`
+  - 스크린샷: `artifacts/auth-layout-1280.png`
+  - 로그인 입력칸 줄 폭: 690px
+  - 로그인 버튼 줄 폭: 690px
+  - 버튼 3개 폭: 각각 223px
+
 ### 운영 전환 42차: 가입 폼, 계정 패널, 배포 인증 오류 보정
 
 완료 시간: 2026-06-14 11:07:55 +09:00

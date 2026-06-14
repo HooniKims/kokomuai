@@ -157,12 +157,12 @@ describe("deployment readiness report", () => {
     expect(
       scanCorsWildcardIssues({
         "server/apiHandler.ts": 'response.writeHead(200, { "Access-Control-Allow-Origin": "*" });',
-        "api/[...path].ts": 'response.setHeader("Access-Control-Allow-Origin", "*");',
+        "api/index.ts": 'response.setHeader("Access-Control-Allow-Origin", "*");',
         "docs/production-security-checklist.md": "Access-Control-Allow-Origin: * 사용 금지"
       })
     ).toEqual([
       "server/apiHandler.ts:1 wildcard Access-Control-Allow-Origin",
-      "api/[...path].ts:1 wildcard Access-Control-Allow-Origin"
+      "api/index.ts:1 wildcard Access-Control-Allow-Origin"
     ]);
   });
 
