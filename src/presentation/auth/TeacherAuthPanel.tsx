@@ -207,21 +207,18 @@ export function TeacherAuthPanel({
               >
                 <GoogleIcon /> Google로 계속하기
               </button>
+              <button
+                className="pill outline auth-mode-link"
+                data-action="switch-signup"
+                type="button"
+                onClick={() => onModeChange("signup")}
+                disabled={isSubmitting}
+              >
+                회원가입
+              </button>
             </>
           )}
         </div>
-
-        {!isSignup ? (
-          <button
-            className="pill outline auth-mode-link"
-            data-action="switch-signup"
-            type="button"
-            onClick={() => onModeChange("signup")}
-            disabled={isSubmitting}
-          >
-            회원가입
-          </button>
-        ) : null}
 
         {isSignup ? (
           <>
