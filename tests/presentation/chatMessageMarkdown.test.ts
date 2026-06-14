@@ -35,4 +35,10 @@ describe("chatMessageMarkdown", () => {
       'when <span class="inline-math">x</span>=2, <span class="inline-math">y</span>=5'
     );
   });
+
+  it("renders parenthesized latex inline math and escaped blanks", () => {
+    expect(renderChatMessageMarkdown("예: \\(y=\\_\\_\\_x+\\_\\_\\_\\)")).toBe(
+      '예: <span class="inline-math">y=___x+___</span>'
+    );
+  });
 });

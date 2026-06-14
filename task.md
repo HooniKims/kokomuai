@@ -6936,3 +6936,29 @@ LLM 실구동 확인:
   - `npm run build`
   - 결과: 통과
 
+### 운영 전환 55차: parenthesized LaTeX inline math 렌더링 보정
+
+완료 시간: 2026-06-14 21:58:00 +09:00
+
+요청:
+
+- `\(y=\_\_\_x+\_\_\_\)`처럼 보이는 수식 표현을 학생 화면에서 자연스럽게 표시한다.
+
+수정:
+
+- 채팅 마크다운 렌더러에서 `\(...\)` inline LaTeX 수식을 inline math로 렌더링하도록 했다.
+- 수식 안의 `\_` escape는 `_`로 풀어 `y=___x+___`처럼 보이게 했다.
+
+검증:
+
+- 관련 테스트
+  - `npm test -- --run tests/presentation/chatMessageMarkdown.test.ts`
+  - 결과: 통과
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 74개 테스트 파일, 325개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+
