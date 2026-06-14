@@ -965,13 +965,13 @@ export function App() {
         "local-admin",
       );
       setResetLog(
-        `${action.email} 주소로 비밀번호 재설정 메일을 발송했습니다.`,
+        `${action.email} 주소로 비밀번호 초기화 메일을 발송했습니다.`,
       );
     } catch (caught) {
       setResetLog(
         caught instanceof Error
           ? caught.message
-          : "비밀번호 재설정 메일을 발송하지 못했습니다.",
+          : "비밀번호 초기화 메일을 발송하지 못했습니다.",
       );
     }
   }

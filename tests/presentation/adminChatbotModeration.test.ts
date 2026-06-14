@@ -4,6 +4,21 @@ import type { IdentityTeacherAccount } from "../../src/domain/identity/identityA
 import { AdminDashboardRoute } from "../../src/presentation/routes/AdminDashboardRoute";
 
 describe("AdminDashboardRoute chatbot moderation", () => {
+  it("labels the admin password reset email action clearly", () => {
+    const tree = AdminDashboardRoute({
+      teachers: [teacher("teacher-1", "김하늘")],
+      selectedTeacherIds: [],
+      setSelectedTeacherIds: vi.fn(),
+      approveSelectedTeachers: vi.fn(),
+      createResetMailAction: vi.fn(),
+      resetLog: ""
+    });
+
+    const text = normalizeText(collectText(tree).join(" "));
+
+    expect(text).toContain("비밀번호 초기화 메일");
+  });
+
   it("renders active chatbots with an admin disable action", () => {
     const disableChatbotAsAdmin = vi.fn();
     const tree = AdminDashboardRoute({

@@ -129,7 +129,7 @@ export function AdminDashboardRoute({
                 챗봇 보기
               </button>
               <button className="pill outline" onClick={() => createResetMailAction(teacher)} type="button">
-                <KeyRound size={16} /> 재설정 메일
+                <KeyRound size={16} /> 비밀번호 초기화 메일
               </button>
               <button
                 className="pill danger"
