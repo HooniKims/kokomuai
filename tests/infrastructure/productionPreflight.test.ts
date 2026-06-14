@@ -98,6 +98,40 @@ VERCEL_TOKEN=token
     expect(result.errors).toContain("필수 파일이 없습니다: api/chat.ts");
   });
 
+  it("accepts the current Vercel repo link file as deployment connection evidence", () => {
+    const env = parseEnvText(`
+OPENAI_API_KEY=openai
+NEIS_API_KEY=neis
+FIREBASE_PROJECT_ID=kkokkomu-d6a4c
+FIREBASE_SERVICE_ACCOUNT={"client_email":"firebase@example.com","private_key":"secret"}
+KKOKKOMU_ADMIN_EMAILS=admin@example.com
+LMSTUDIO_API_URL=https://lm.example.test
+LMSTUDIO_API_KEY=lm-key
+LMSTUDIO_GEMMA_E4B_MODEL=google/gemma-4-e4b
+LMSTUDIO_GEMMA_E2B_MODEL=google/gemma-4-e2b
+LMSTUDIO_GEMMA_12B_MODEL=gemma-4-12b-it
+LMSTUDIO_GEMMA_26B_MODEL=gemma-4-26b-a4b-it
+VITE_FIREBASE_API_KEY=client
+VITE_FIREBASE_AUTH_ENABLED=true
+VITE_FIREBASE_AUTH_DOMAIN=kkokkomu-d6a4c.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=kkokkomu-d6a4c
+VITE_FIREBASE_APP_ID=app
+VITE_FIREBASE_STORAGE_BUCKET=kkokkomu-d6a4c.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=965823913795
+`);
+
+    const result = evaluateProductionPreflight({
+      env,
+      files: {
+        ...existingFiles(),
+        ".vercel/repo.json": true
+      }
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.errors).toEqual([]);
+  });
+
   it("warns when legacy public NEIS keys remain in the local environment", () => {
     const env = parseEnvText(`
 OPENAI_API_KEY=openai

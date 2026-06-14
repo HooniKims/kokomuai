@@ -91,7 +91,12 @@ export function evaluateProductionPreflight(input: ProductionPreflightInput): Pr
     errors.push("Firebase Admin 인증 정보가 없습니다. FIREBASE_SERVICE_ACCOUNT 또는 FIREBASE_CLIENT_EMAIL/FIREBASE_PRIVATE_KEY를 설정해야 합니다.");
   }
 
-  if (!hasValue(input.env, "VERCEL_TOKEN") && !(hasValue(input.env, "VERCEL_ORG_ID") && hasValue(input.env, "VERCEL_PROJECT_ID")) && !input.files[".vercel/project.json"]) {
+  if (
+    !hasValue(input.env, "VERCEL_TOKEN") &&
+    !(hasValue(input.env, "VERCEL_ORG_ID") && hasValue(input.env, "VERCEL_PROJECT_ID")) &&
+    !input.files[".vercel/project.json"] &&
+    !input.files[".vercel/repo.json"]
+  ) {
     errors.push("Vercel 인증/프로젝트 연결 정보가 없습니다. VERCEL_TOKEN 또는 .vercel/project.json이 필요합니다.");
   }
 
@@ -158,7 +163,7 @@ function readCurrentEnv(): Record<string, string | undefined> {
 
 function readCurrentFiles(): Record<string, boolean> {
   return Object.fromEntries(
-    [...requiredFiles, ".vercel/project.json"].map((file) => [file, existsSync(join(process.cwd(), file))])
+    [...requiredFiles, ".vercel/project.json", ".vercel/repo.json"].map((file) => [file, existsSync(join(process.cwd(), file))])
   );
 }
 
