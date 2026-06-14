@@ -25,7 +25,7 @@ describe("apiHandler", () => {
     await expect(health.json()).resolves.toMatchObject({
       ok: true,
       provider: "lmstudio",
-      model: "gemma-4-12b-it"
+      model: "google/gemma-4-e2b"
     });
 
     const schools = await fetch(`${baseUrl}/api/schools/search?q=${encodeURIComponent("새빛중")}`);

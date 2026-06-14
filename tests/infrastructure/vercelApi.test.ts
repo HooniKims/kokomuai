@@ -49,7 +49,7 @@ describe("vercelApi", () => {
     await expect(response.json()).resolves.toMatchObject({
       ok: true,
       provider: "lmstudio",
-      model: "gemma-4-12b-it"
+      model: "google/gemma-4-e2b"
     });
   });
 });

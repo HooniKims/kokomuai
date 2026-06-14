@@ -230,7 +230,7 @@ export function TeacherDashboardRoute({
 
         <div className="chatbot-list">
           {chatbots.map((chatbot) => (
-            <div className="chatbot-list-item" key={chatbot.id}>
+            <div className="chatbot-list-item" data-chatbot-id={chatbot.id} key={chatbot.id}>
               <article className="chatbot-row">
                 <label className="check-line chatbot-check">
                   <input
@@ -288,6 +288,14 @@ export function TeacherDashboardRoute({
       </section>
     </section>
   );
+}
+
+export function scrollCreatedChatbotIntoView(
+  chatbotId: string,
+  doc: Pick<Document, "querySelector"> = document,
+): void {
+  const target = doc.querySelector(`[data-chatbot-id="${chatbotId}"]`);
+  target?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function DeletionPrompt({ message, onCancel, onConfirm }: { message: string; onCancel: () => void; onConfirm: () => void }) {

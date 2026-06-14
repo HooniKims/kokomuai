@@ -3,6 +3,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   createDefaultAiSettings,
+  normalizeAiSettings,
   type AiSettings,
 } from "../src/domain/ai/aiSettings.js";
 import type { ManagedChatbot } from "../src/domain/chatbot/chatbotManagement.js";
@@ -157,7 +158,7 @@ export function createLocalStore(filePath = defaultStorePath): LocalStore {
 
     async getAiSettings() {
       const data = await readStore(storePath);
-      return cloneJson(data.aiSettings);
+      return cloneJson(normalizeAiSettings(data.aiSettings));
     },
 
     async saveAiSettings(settings) {

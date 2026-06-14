@@ -17,6 +17,8 @@ export interface AdminDashboardRouteProps {
   disableTeacherAsAdmin?: (teacher: IdentityTeacherAccount) => void | Promise<void>;
   resetLog: string;
   aiSettings?: AiSettingsPayload | null;
+  selectedAiModelId?: string;
+  setSelectedAiModelId?: (modelId: string) => void;
   updateAiModel?: (modelId: string) => void | Promise<void>;
   usageSummaries?: MonthlyUsageSummary[];
   chatbots?: ManagedChatbot[];
@@ -38,6 +40,8 @@ export function AdminDashboardRoute({
   disableTeacherAsAdmin,
   resetLog,
   aiSettings,
+  selectedAiModelId,
+  setSelectedAiModelId,
   updateAiModel,
   usageSummaries = [],
   chatbots = [],
@@ -49,6 +53,7 @@ export function AdminDashboardRoute({
   const reviewTeacherId = selectedReviewTeacherId || "";
   const reviewTeacher = teachers.find((teacher) => teacher.id === reviewTeacherId);
   const visibleChatbots = reviewTeacherId ? chatbots.filter((chatbot) => chatbot.ownerTeacherId === reviewTeacherId) : chatbots;
+  const selectedModelId = selectedAiModelId || aiSettings?.settings.activeModelId || "";
   const usageRows = summarizeUsageByTeacher(
     reviewTeacherId ? teachers.filter((teacher) => teacher.id === reviewTeacherId) : teachers,
     reviewTeacherId ? usageSummaries.filter((summary) => summary.teacherId === reviewTeacherId) : usageSummaries
@@ -79,7 +84,7 @@ export function AdminDashboardRoute({
             </div>
             <label>
               <span>사용 모델</span>
-              <select value={aiSettings.settings.activeModelId} onChange={(event) => void updateAiModel?.(event.target.value)}>
+              <select value={selectedModelId} onChange={(event) => setSelectedAiModelId?.(event.target.value)}>
                 {aiSettings.models.map((model) => (
                   <option key={model.id} value={model.id}>
                     {model.displayName} · {model.description}
@@ -87,6 +92,14 @@ export function AdminDashboardRoute({
                 ))}
               </select>
             </label>
+            <button
+              className="pill dark"
+              onClick={() => void updateAiModel?.(selectedModelId)}
+              type="button"
+              disabled={!selectedModelId || selectedModelId === aiSettings.settings.activeModelId}
+            >
+              적용
+            </button>
           </div>
         ) : null}
         <div className="section-heading">

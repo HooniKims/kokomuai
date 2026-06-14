@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   createDefaultAiSettings,
+  normalizeAiSettings,
   updateAiSettingsModel
 } from "../../src/domain/ai/aiSettings";
 
 describe("ai settings", () => {
-  it("defaults traffic to the local Gemma 4 12B model", () => {
+  it("defaults traffic to the local Gemma 4 E2B model", () => {
     expect(createDefaultAiSettings("2026-06-13T00:00:00.000Z")).toMatchObject({
-      activeModelId: "lmstudio:gemma-4-12b-it",
+      activeModelId: "gemma4:e2b",
       updatedAt: "2026-06-13T00:00:00.000Z",
       updatedBy: "system"
     });
@@ -24,6 +25,30 @@ describe("ai settings", () => {
     expect(next).toMatchObject({
       activeModelId: "lmstudio:gemma-4-12b-it",
       updatedAt: "2026-06-13T01:00:00.000Z",
+      updatedBy: "admin-1"
+    });
+  });
+
+  it("migrates the previous system default to Gemma 4 E2B without overwriting admin choices", () => {
+    expect(
+      normalizeAiSettings({
+        activeModelId: "lmstudio:gemma-4-12b-it",
+        updatedAt: "2026-06-11T00:00:00.000Z",
+        updatedBy: "system"
+      })
+    ).toMatchObject({
+      activeModelId: "gemma4:e2b",
+      updatedBy: "system"
+    });
+
+    expect(
+      normalizeAiSettings({
+        activeModelId: "lmstudio:gemma-4-12b-it",
+        updatedAt: "2026-06-13T01:00:00.000Z",
+        updatedBy: "admin-1"
+      })
+    ).toMatchObject({
+      activeModelId: "lmstudio:gemma-4-12b-it",
       updatedBy: "admin-1"
     });
   });

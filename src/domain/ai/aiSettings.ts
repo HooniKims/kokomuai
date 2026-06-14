@@ -14,6 +14,20 @@ export function createDefaultAiSettings(now: string): AiSettings {
   };
 }
 
+export function normalizeAiSettings(settings: AiSettings): AiSettings {
+  if (
+    settings.updatedBy === "system" &&
+    settings.activeModelId === "lmstudio:gemma-4-12b-it"
+  ) {
+    return {
+      ...settings,
+      activeModelId: getDefaultAiModel().id
+    };
+  }
+
+  return settings;
+}
+
 export function updateAiSettingsModel(
   current: AiSettings,
   input: {

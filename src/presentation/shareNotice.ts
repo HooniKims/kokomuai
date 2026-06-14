@@ -10,6 +10,15 @@ export function formatShareNotice(message: string): ShareNoticeView {
   const detail = normalizeSentence(detailPart.trim());
   const url = urlParts.join(": ").trim();
 
+  if (detail.includes("챗봇 생성")) {
+    return {
+      title: "챗봇 생성 완료",
+      detail,
+      url,
+      tone: "success"
+    };
+  }
+
   if (detail.includes("복사")) {
     return {
       title: "복사 완료",

@@ -242,6 +242,42 @@ describe("TeacherAuthPanel", () => {
       "google-auth-button",
     );
   });
+
+  it("emphasizes the submitted signup request status", () => {
+    const tree = TeacherAuthPanel(
+      createPanelProps({
+        mode: "signup",
+        authStatus: "가입 요청이 접수됐습니다. 관리자 승인 후 사용할 수 있습니다.",
+      }),
+    );
+    const text = collectText(tree).join(" ");
+    const statusNode = collectNodes(tree).find((node) =>
+      String(node.props?.className ?? "").includes("auth-status success"),
+    );
+
+    expect(text).toContain(
+      "가입 요청이 접수됐습니다. 관리자 승인 후 사용할 수 있습니다.",
+    );
+    expect(statusNode).toBeDefined();
+  });
+
+  it("blocks auth screen interaction with a waiting overlay while submitting", () => {
+    const tree = TeacherAuthPanel(
+      createPanelProps({
+        isSubmitting: true,
+        authStatus: "로그인 정보를 확인하고 있습니다. 잠시만 기다려 주세요.",
+      }),
+    );
+    const text = collectText(tree).join(" ");
+    const workspace = collectNodes(tree).find((node) =>
+      String(node.props?.className ?? "").includes("auth-workspace"),
+    );
+    const overlay = findNodeByAction(tree, "auth-loading-overlay");
+
+    expect(text).toContain("잠시만 기다려 주세요.");
+    expect(workspace?.props?.["aria-busy"]).toBe(true);
+    expect(overlay).toBeDefined();
+  });
 });
 
 function createPanelProps(

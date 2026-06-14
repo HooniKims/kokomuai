@@ -1,4 +1,4 @@
-﻿import { createDefaultAiSettings, type AiSettings } from "../src/domain/ai/aiSettings.js";
+import { createDefaultAiSettings, normalizeAiSettings, type AiSettings } from "../src/domain/ai/aiSettings.js";
 import type { AiProvider } from "../src/domain/ai/modelCatalog.js";
 import type { ManagedChatbot } from "../src/domain/chatbot/chatbotManagement.js";
 import type { AdminActionLogEvent, IdentityTeacherAccount } from "../src/domain/identity/identityAccess.js";
@@ -164,7 +164,8 @@ export function createFirebaseStore(firestore: FirestoreLike): StorePort {
     },
 
     async getAiSettings() {
-      return (await getDocument<AiSettings>(firestore, "settings/ai")) ?? createDefaultAiSettings("2026-06-11T00:00:00.000Z");
+      const settings = (await getDocument<AiSettings>(firestore, "settings/ai")) ?? createDefaultAiSettings("2026-06-11T00:00:00.000Z");
+      return normalizeAiSettings(settings);
     },
 
     async saveAiSettings(settings) {

@@ -38,7 +38,10 @@ import { buildTeacherRegistrationPayload } from "./auth/teacherAuthForm.js";
 import { AdminDashboardRoute } from "./routes/AdminDashboardRoute.js";
 import { PrivacyPolicyRoute } from "./routes/PrivacyPolicyRoute.js";
 import { StudentChatRoute } from "./routes/StudentChatRoute.js";
-import { TeacherDashboardRoute } from "./routes/TeacherDashboardRoute.js";
+import {
+  scrollCreatedChatbotIntoView,
+  TeacherDashboardRoute,
+} from "./routes/TeacherDashboardRoute.js";
 import { footerCopyrightText } from "./legal/privacyPolicy.js";
 import { formatSchoolLevelLabel } from "./schoolLevelLabel.js";
 import { teacherChatbotSample } from "./teacherChatbotSample.js";
@@ -327,6 +330,7 @@ export function App() {
   const [aiSettings, setAiSettings] = useState<api.AiSettingsPayload | null>(
     null,
   );
+  const [selectedAiModelId, setSelectedAiModelId] = useState("");
   const [studentChatbot, setStudentChatbot] = useState<ManagedChatbot | null>(
     null,
   );
@@ -672,11 +676,15 @@ export function App() {
         .catch(() => setAdminActionLogs([]));
       void api
         .getAiSettings()
-        .then(setAiSettings)
+        .then((settings) => {
+          setAiSettings(settings);
+          setSelectedAiModelId(settings.settings.activeModelId);
+        })
         .catch(() => setAiSettings(null));
     } else {
       setAdminActionLogs([]);
       setAiSettings(null);
+      setSelectedAiModelId("");
     }
   }
 
@@ -1077,8 +1085,13 @@ export function App() {
       ]);
       const shareUrl = `${window.location.origin}/s/${shared.share.publicToken}`;
       setShareNoticeChatbotId(shared.id);
-      setShareNotice(`학생용 링크가 준비됐습니다: ${shareUrl}`);
-      setWorkspaceStatus("챗봇을 생성하고 학생용 바로가기를 준비했습니다.");
+      setShareNotice(
+        `챗봇 생성이 완료됐습니다. 학생용 링크가 준비됐습니다: ${shareUrl}`,
+      );
+      setWorkspaceStatus(
+        "챗봇 생성이 완료됐습니다. 아래 목록에서 학생용 챗봇을 확인해 주세요.",
+      );
+      window.setTimeout(() => scrollCreatedChatbotIntoView(shared.id), 0);
     } catch (caught) {
       setWorkspaceStatus(
         caught instanceof Error
@@ -1193,6 +1206,7 @@ export function App() {
     try {
       const updated = await api.updateAiSettings("local-admin", modelId);
       setAiSettings(updated);
+      setSelectedAiModelId(updated.settings.activeModelId);
       setResetLog("AI 모델 설정을 저장했습니다.");
     } catch (caught) {
       setResetLog(
@@ -1378,6 +1392,8 @@ export function App() {
           disableTeacherAsAdmin={disableTeacherAsAdmin}
           resetLog={resetLog}
           aiSettings={aiSettings}
+          selectedAiModelId={selectedAiModelId}
+          setSelectedAiModelId={setSelectedAiModelId}
           updateAiModel={updateAiModel}
           usageSummaries={usageSummaries}
           chatbots={chatbots}

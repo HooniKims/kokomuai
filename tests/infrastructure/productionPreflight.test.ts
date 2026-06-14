@@ -49,6 +49,7 @@ VITE_FIREBASE_API_KEY=client
         "firebase.json": false,
         "firestore.rules": true,
         "api/index.ts": true,
+        "api/chat.ts": true,
         ".firebaserc": true,
         ".gitignore": true
       }
@@ -60,6 +61,41 @@ VITE_FIREBASE_API_KEY=client
     expect(result.errors).toContain("필수 파일이 없습니다: firebase.json");
     expect(result.errors).toContain("필수 환경변수가 없습니다: KKOKKOMU_ADMIN_EMAILS");
     expect(result.errors).toContain("필수 환경변수가 없습니다: VITE_FIREBASE_AUTH_DOMAIN");
+  });
+
+  it("requires the direct Vercel chat API function so /api/chat does not 404", () => {
+    const env = parseEnvText(`
+OPENAI_API_KEY=openai
+NEIS_API_KEY=neis
+FIREBASE_PROJECT_ID=kkokkomu-d6a4c
+FIREBASE_SERVICE_ACCOUNT={"client_email":"firebase@example.com","private_key":"secret"}
+KKOKKOMU_ADMIN_EMAILS=admin@example.com
+LMSTUDIO_API_URL=https://lm.example.test
+LMSTUDIO_API_KEY=lm-key
+LMSTUDIO_GEMMA_E4B_MODEL=google/gemma-4-e4b
+LMSTUDIO_GEMMA_E2B_MODEL=google/gemma-4-e2b
+LMSTUDIO_GEMMA_12B_MODEL=gemma-4-12b-it
+LMSTUDIO_GEMMA_26B_MODEL=gemma-4-26b-a4b-it
+VITE_FIREBASE_API_KEY=client
+VITE_FIREBASE_AUTH_ENABLED=true
+VITE_FIREBASE_AUTH_DOMAIN=kkokkomu-d6a4c.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=kkokkomu-d6a4c
+VITE_FIREBASE_APP_ID=app
+VITE_FIREBASE_STORAGE_BUCKET=kkokkomu-d6a4c.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=965823913795
+VERCEL_TOKEN=token
+`);
+
+    const result = evaluateProductionPreflight({
+      env,
+      files: {
+        ...existingFiles(),
+        "api/chat.ts": false
+      }
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain("필수 파일이 없습니다: api/chat.ts");
   });
 
   it("warns when legacy public NEIS keys remain in the local environment", () => {
@@ -202,6 +238,7 @@ function existingFiles() {
     "firebase.json": true,
     "firestore.rules": true,
     "api/index.ts": true,
+    "api/chat.ts": true,
     ".firebaserc": true,
     ".gitignore": true
   };

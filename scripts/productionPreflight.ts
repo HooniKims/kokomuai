@@ -14,7 +14,7 @@ export interface ProductionPreflightResult {
   warnings: string[];
 }
 
-const requiredFiles = ["vercel.json", "firebase.json", "firestore.rules", "api/index.ts", ".firebaserc", ".gitignore"];
+const requiredFiles = ["vercel.json", "firebase.json", "firestore.rules", "api/index.ts", "api/chat.ts", ".firebaserc", ".gitignore"];
 const requiredServerEnv = [
   "OPENAI_API_KEY",
   "NEIS_API_KEY",

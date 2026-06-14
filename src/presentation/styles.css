@@ -553,6 +553,57 @@ select {
   font-weight: 700;
 }
 
+.auth-status.success {
+  margin-top: 12px;
+  padding: 13px 15px;
+  border: 1px solid rgb(41 124 55 / 0.45);
+  border-left-width: 5px;
+  border-radius: 14px;
+  color: #174d22;
+  background: #f0fff2;
+  box-shadow: 3px 3px 0 rgb(41 124 55 / 0.14);
+  font-weight: 850;
+}
+
+.auth-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(255 252 242 / 0.78);
+  backdrop-filter: blur(3px);
+  cursor: wait;
+}
+
+.auth-loading-message {
+  width: min(420px, calc(100vw - 48px));
+  border: 1px solid var(--color-forest-ink);
+  border-radius: 14px;
+  background: var(--color-cream-paper);
+  box-shadow: 6px 6px 0 rgb(26 51 0 / 0.16);
+  padding: 22px 24px;
+  color: var(--color-forest-ink);
+  text-align: center;
+}
+
+.auth-loading-message strong,
+.auth-loading-message span {
+  display: block;
+}
+
+.auth-loading-message strong {
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.auth-loading-message span {
+  margin-top: 8px;
+  color: #4b5f2b;
+  font-weight: 700;
+}
+
 .password-field {
   position: relative;
   display: block;

@@ -84,13 +84,36 @@ export function TeacherAuthPanel({
     !isSubmitting &&
     (isSignedIn || canUseEmailSignUp);
   const statusText = authError || authStatus;
+  const isSubmittedSignupStatus =
+    !authError && statusText.includes("가입 요청이 접수됐습니다");
+  const statusClassName = [
+    "auth-status",
+    authError ? "error" : "",
+    isSubmittedSignupStatus ? "success" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <section
       className={`workspace auth-workspace ${
         isSignup ? "auth-workspace-signup" : "auth-workspace-login"
       }`}
+      aria-busy={isSubmitting}
     >
+      {isSubmitting ? (
+        <div
+          className="auth-loading-overlay"
+          data-action="auth-loading-overlay"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="auth-loading-message">
+            <strong>잠시만 기다려 주세요.</strong>
+            <span>로그인 정보를 확인하고 있습니다.</span>
+          </div>
+        </div>
+      ) : null}
       <aside className="info-panel">
         <div className="panel-section">
           <span className="soft-label">교사 계정</span>
@@ -101,9 +124,7 @@ export function TeacherAuthPanel({
             <br />
             있습니다.
           </h2>
-          <p className={`auth-status ${authError ? "error" : ""}`}>
-            {statusText}
-          </p>
+          <p className={statusClassName}>{statusText}</p>
         </div>
         <div className="notice">
           <strong>{isSignup ? "가입 기준" : "로그인 안내"}</strong>
@@ -150,6 +171,7 @@ export function TeacherAuthPanel({
             onPasswordChange={onPasswordChange}
             onPasswordConfirmationChange={onPasswordConfirmationChange}
             onTogglePasswordVisibility={onTogglePasswordVisibility}
+            isSubmitting={isSubmitting}
           />
         ) : (
           <LoginForm
@@ -176,6 +198,7 @@ export function TeacherAuthPanel({
               isSearchingSchools={isSearchingSchools}
               onSchoolQueryChange={onSchoolQueryChange}
               onSelectSchool={onSelectSchool}
+              isSubmitting={isSubmitting}
             />
 
             {authError ? (
@@ -243,6 +266,7 @@ function LoginForm({
             placeholder="teacher@example.com"
             onChange={(event) => onEmailChange(event.target.value)}
             autoComplete="email"
+            disabled={isSubmitting}
           />
         </label>
         <label>
@@ -254,6 +278,7 @@ function LoginForm({
             autoComplete="current-password"
             onChange={onPasswordChange}
             onTogglePasswordVisibility={onTogglePasswordVisibility}
+            disabled={isSubmitting}
           />
         </label>
       </div>
@@ -301,6 +326,7 @@ function SignupForm({
   onPasswordChange,
   onPasswordConfirmationChange,
   onTogglePasswordVisibility,
+  isSubmitting,
 }: Pick<
   TeacherAuthPanelProps,
   "realName" | "email" | "password" | "passwordConfirmation"
@@ -311,6 +337,7 @@ function SignupForm({
     onEmailChange: (value: string) => void;
     onPasswordChange: (value: string) => void;
     onPasswordConfirmationChange: (value: string) => void;
+    isSubmitting: boolean;
   }) {
   return (
     <div className="form-grid auth-form-grid signup-form-grid">
@@ -321,6 +348,7 @@ function SignupForm({
           placeholder="김하늘"
           onChange={(event) => onRealNameChange(event.target.value)}
           autoComplete="name"
+          disabled={isSubmitting}
         />
       </label>
       <label>
@@ -331,6 +359,7 @@ function SignupForm({
           placeholder="teacher@example.com"
           onChange={(event) => onEmailChange(event.target.value)}
           autoComplete="email"
+          disabled={isSubmitting}
         />
       </label>
       <label>
@@ -342,6 +371,7 @@ function SignupForm({
           autoComplete="new-password"
           onChange={onPasswordChange}
           onTogglePasswordVisibility={onTogglePasswordVisibility}
+          disabled={isSubmitting}
         />
       </label>
       <label>
@@ -353,6 +383,7 @@ function SignupForm({
           autoComplete="new-password"
           onChange={onPasswordConfirmationChange}
           onTogglePasswordVisibility={onTogglePasswordVisibility}
+          disabled={isSubmitting}
         />
         <small className={`password-match-note ${passwordConfirmationState}`}>
           {passwordConfirmationState === "empty"
@@ -373,11 +404,13 @@ function PasswordInput({
   autoComplete,
   onChange,
   onTogglePasswordVisibility,
+  disabled = false,
 }: PasswordVisibilityProps & {
   value: string;
   placeholder: string;
   autoComplete: string;
   onChange: (value: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <span className="password-field">
@@ -387,6 +420,7 @@ function PasswordInput({
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
         autoComplete={autoComplete}
+        disabled={disabled}
       />
       <button
         aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
@@ -394,6 +428,7 @@ function PasswordInput({
         type="button"
         tabIndex={-1}
         onClick={onTogglePasswordVisibility}
+        disabled={disabled}
       >
         {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
       </button>
@@ -408,6 +443,7 @@ function SchoolSearchPanel({
   isSearchingSchools,
   onSchoolQueryChange,
   onSelectSchool,
+  isSubmitting,
 }: Pick<
   TeacherAuthPanelProps,
   | "schoolQuery"
@@ -416,7 +452,9 @@ function SchoolSearchPanel({
   | "isSearchingSchools"
   | "onSchoolQueryChange"
   | "onSelectSchool"
->) {
+> & {
+  isSubmitting: boolean;
+}) {
   return (
     <div className="school-search-panel">
       <div className="section-heading compact">
@@ -431,6 +469,7 @@ function SchoolSearchPanel({
           value={schoolQuery}
           placeholder="예: 등촌중"
           onChange={(event) => onSchoolQueryChange(event.target.value)}
+          disabled={isSubmitting}
         />
       </label>
       {isSearchingSchools ? (
@@ -448,6 +487,7 @@ function SchoolSearchPanel({
               key={`${school.officeCode}-${school.standardSchoolCode}`}
               onClick={() => onSelectSchool(school)}
               type="button"
+              disabled={isSubmitting}
             >
               <School size={18} aria-hidden="true" />
               <span>
