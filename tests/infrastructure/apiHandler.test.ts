@@ -452,6 +452,61 @@ describe("apiHandler", () => {
     expect(requestedModels).toEqual(["google/gemma-4-e2b", "gemma-4-12b-it", "gpt-5.4-nano"]);
   });
 
+  it("removes streamed thinking traces before sending provider tokens to students", async () => {
+    const { baseUrl, store } = await createServer({
+      env: {
+        LMSTUDIO_API_KEY: "test-lmstudio-key"
+      },
+      fetchImpl: async () =>
+        new Response(
+          [
+            'data: {"choices":[{"delta":{"content":"<thi"}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"nk>private chain"}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":" of thought</think>학생에게는 "}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"질문만 보여요."}}]}\n\n',
+            "data: [DONE]\n\n"
+          ].join(""),
+          {
+            status: 200,
+            headers: { "Content-Type": "text/event-stream" }
+          }
+        )
+    });
+    await store.saveAiSettings({
+      activeModelId: "gemma4:e2b",
+      updatedAt: "2026-06-14T10:20:00.000Z",
+      updatedBy: "admin-1"
+    });
+
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "일차방정식이 뭐야?",
+        history: [],
+        chatbot: {
+          name: "수학 챗봇",
+          schoolLevel: "middle",
+          gradeBand: "1",
+          subject: "수학",
+          topic: "일차방정식",
+          learningGoal: "일차방정식을 이해한다.",
+          hintStrength: "medium",
+          persona: "질문으로 돕는 수학 선생님"
+        }
+      })
+    });
+
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(body).toContain("학생에게는");
+    expect(body).toContain("질문만 보여요.");
+    expect(body).not.toContain("<think>");
+    expect(body).not.toContain("private chain");
+    expect(JSON.stringify(await store.listUsageEvents())).not.toContain("private chain");
+  });
+
   it("records provider network errors without exposing provider exception details", async () => {
     const { baseUrl, store } = await createServer({
       env: {

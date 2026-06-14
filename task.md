@@ -6791,3 +6791,30 @@ LLM 실구동 확인:
   - 스트림 모델: `google/gemma-4-e2b`
   - fallback 경고 로그: 없음
 
+### 운영 전환 50차: E2B/E4B 생각 과정 노출 방지
+
+완료 시간: 2026-06-14 21:09:00 +09:00
+
+요청:
+
+- E2B와 E4B 모델이 생각의 과정까지 채팅에 노출하지 않도록 막는다.
+
+수정:
+
+- 서버 `/api/chat` 프록시가 LM Studio SSE 원본을 그대로 전달하지 않고, `delta.content`만 읽어 새 SSE로 재구성하도록 바꿨다.
+- `<think>...</think>`, `<thinking>...</thinking>`, `<reasoning>...</reasoning>` 구간은 스트림 조각이 여러 번에 나뉘어 들어와도 제거한다.
+- 제거된 생각 과정은 학생 화면에도 보내지 않고, 사용량 기록의 assistantText에도 남기지 않는다.
+
+검증:
+
+- 관련 테스트
+  - `npm test -- --run tests/infrastructure/apiHandler.test.ts`
+  - 결과: 통과
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 74개 테스트 파일, 314개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+

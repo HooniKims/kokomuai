@@ -196,21 +196,30 @@ async function proxyStreamToProvider(
 
   const reader = upstreamBody.getReader();
   const decoder = new TextDecoder("utf-8");
+  const thinkingFilter = createThinkingTraceFilter();
   let buffer = "";
   let assistantText = "";
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-    response.write(Buffer.from(value));
     buffer += decoder.decode(value, { stream: true });
     const lines = buffer.split(/\r?\n/);
     buffer = lines.pop() ?? "";
     for (const line of lines) {
       const token = parseSseTokenSafely(line);
       if (!token || token === "[DONE]") continue;
-      assistantText += token;
+      const visibleToken = thinkingFilter.push(token);
+      if (!visibleToken) continue;
+      writeSseDelta(response, visibleToken);
+      assistantText += visibleToken;
     }
   }
+  const trailingToken = thinkingFilter.flush();
+  if (trailingToken) {
+    writeSseDelta(response, trailingToken);
+    assistantText += trailingToken;
+  }
+  response.write("data: [DONE]\n\n");
 
   const usageEvent = createChatUsageEventFromRequest(authoritativeRequestBody, {
     id: createId("usage"),
@@ -472,6 +481,65 @@ function writeSseDelta(response: http.ServerResponse, content: string) {
   response.write(
     `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`,
   );
+}
+
+function createThinkingTraceFilter() {
+  let carry = "";
+  let hidden = false;
+  const holdbackCharacters = 32;
+  const startTagPattern = /<\s*(think|thinking|reasoning)\b[^>]*>/i;
+  const endTagPattern = /<\s*\/\s*(think|thinking|reasoning)\s*>/i;
+
+  function push(token: string): string {
+    carry += token;
+    let output = "";
+
+    while (carry) {
+      if (hidden) {
+        const end = findTag(carry, endTagPattern);
+        if (!end) {
+          carry = carry.slice(-holdbackCharacters);
+          return output;
+        }
+        carry = carry.slice(end.index + end.text.length);
+        hidden = false;
+        continue;
+      }
+
+      const start = findTag(carry, startTagPattern);
+      if (start) {
+        output += carry.slice(0, start.index);
+        carry = carry.slice(start.index + start.text.length);
+        hidden = true;
+        continue;
+      }
+
+      if (carry.length <= holdbackCharacters) return output;
+      output += carry.slice(0, -holdbackCharacters);
+      carry = carry.slice(-holdbackCharacters);
+      return output;
+    }
+
+    return output;
+  }
+
+  function flush(): string {
+    if (hidden) {
+      carry = "";
+      return "";
+    }
+    const output = carry;
+    carry = "";
+    return output;
+  }
+
+  return { push, flush };
+}
+
+function findTag(value: string, pattern: RegExp): { index: number; text: string } | null {
+  const match = pattern.exec(value);
+  if (!match || match.index < 0) return null;
+  return { index: match.index, text: match[0] };
 }
 
 function parseSseTokenSafely(line: string): string | null {
