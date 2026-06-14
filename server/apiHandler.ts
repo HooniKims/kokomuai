@@ -132,7 +132,7 @@ async function proxyStreamToProvider(
   try {
     upstream = await requestProvider(activeModel, prepared.messages, dependencies, fetchImpl);
   } catch {
-    const fallback = await tryDefaultModelFallback(activeModel, prepared.messages, dependencies, fetchImpl);
+    const fallback = await tryProviderFallback(activeModel, prepared.messages, dependencies, fetchImpl);
     if (fallback) {
       activeModel = fallback.model;
       upstream = fallback.response;
@@ -153,7 +153,7 @@ async function proxyStreamToProvider(
   }
 
   if (!upstream.ok || !upstream.body) {
-    const fallback = await tryDefaultModelFallback(activeModel, prepared.messages, dependencies, fetchImpl);
+    const fallback = await tryProviderFallback(activeModel, prepared.messages, dependencies, fetchImpl);
     if (fallback) {
       activeModel = fallback.model;
       upstream = fallback.response;
@@ -235,22 +235,31 @@ async function requestProvider(
   });
 }
 
-async function tryDefaultModelFallback(
+async function tryProviderFallback(
   currentModel: AiModelOption,
   messages: Parameters<typeof createAiProviderRequest>[1],
   dependencies: ApiHandlerDependencies,
   fetchImpl: typeof fetch,
 ): Promise<{ model: AiModelOption; response: Response } | null> {
-  const fallbackModel = getDefaultAiModel();
-  if (fallbackModel.id === currentModel.id) return null;
+  const fallbackModels = [
+    getDefaultAiModel(),
+    resolveAiModel("openai:gpt-5.4-nano"),
+  ].filter((model, index, models) =>
+    model.id !== currentModel.id &&
+    models.findIndex((candidate) => candidate.id === model.id) === index
+  );
 
-  try {
-    const response = await requestProvider(fallbackModel, messages, dependencies, fetchImpl);
-    if (!response.ok || !response.body) return null;
-    return { model: fallbackModel, response };
-  } catch {
-    return null;
+  for (const fallbackModel of fallbackModels) {
+    try {
+      const response = await requestProvider(fallbackModel, messages, dependencies, fetchImpl);
+      if (!response.ok || !response.body) continue;
+      return { model: fallbackModel, response };
+    } catch {
+      continue;
+    }
   }
+
+  return null;
 }
 
 async function recordProviderFailure(

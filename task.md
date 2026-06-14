@@ -5417,7 +5417,9 @@ TDD 기록:
 - 운영 기본 모델을 검증된 `lmstudio:gemma-4-12b-it`로 복구했다.
 - system 기본값으로 저장된 `gemma4:e2b`는 읽을 때 12B 기본값으로 보정하도록 했다.
 - 관리자가 E2B를 선택해 둔 상태에서도 provider 호출이 실패하면 기본 12B 모델로 한 번 자동 재시도하도록 했다.
+- Vercel production에서 LM Studio 호출이 계속 실패하는 경우를 대비해, 12B 재시도까지 실패하면 OpenAI nano로 한 번 더 재시도하도록 했다.
 - provider 오류 응답 문구를 `응답을 불러오지 못했어요. 잠시 후 다시 시도하거나 선생님께 알려 주세요.`로 정상 한글화했다.
+- Vercel production 환경변수는 로컬 `.env` 기준으로 다시 동기화했다.
 
 검증:
 
@@ -5425,6 +5427,8 @@ TDD 기록:
   - 결과: 통과
 - `npm test -- --run tests/infrastructure/localStore.test.ts tests/infrastructure/localApi.test.ts tests/infrastructure/vercelApi.test.ts tests/infrastructure/storePortCompatibility.test.ts tests/infrastructure/aiProviderRequest.test.ts tests/presentation/adminDashboardAiSettings.test.ts tests/presentation/apiClient.test.ts`
   - 결과: 통과
+- `npm run vercel:env:sync`
+  - 결과: production 환경변수 재등록 완료
 
 ### 운영 전환 58차: 상단 nav 로그아웃 버튼 추가
 

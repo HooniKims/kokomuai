@@ -396,6 +396,62 @@ describe("apiHandler", () => {
     expect(requestedModels).toEqual(["google/gemma-4-e2b", "gemma-4-12b-it"]);
   });
 
+  it("falls back to OpenAI when local LM Studio models are unavailable from production", async () => {
+    const requestedModels: string[] = [];
+    const { baseUrl, store } = await createServer({
+      env: {
+        LMSTUDIO_API_KEY: "test-lmstudio-key",
+        OPENAI_API_KEY: "test-openai-key"
+      },
+      fetchImpl: async (_url, init) => {
+        const request = JSON.parse(String(init?.body ?? "{}")) as { model?: string };
+        requestedModels.push(request.model ?? "");
+        if (request.model?.includes("gemma")) {
+          return new Response(JSON.stringify({ error: { message: "local model unavailable" } }), {
+            status: 502,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        return new Response(
+          'data: {"choices":[{"delta":{"content":"OpenAI fallback answer."}}]}\n\ndata: [DONE]\n\n',
+          {
+            status: 200,
+            headers: { "Content-Type": "text/event-stream" }
+          }
+        );
+      }
+    });
+    await store.saveAiSettings({
+      activeModelId: "gemma4:e2b",
+      updatedAt: "2026-06-14T10:20:00.000Z",
+      updatedBy: "admin-1"
+    });
+
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "일차방정식이 뭐야?",
+        history: [],
+        chatbot: {
+          name: "수학 챗봇",
+          schoolLevel: "middle",
+          gradeBand: "1",
+          subject: "수학",
+          topic: "일차방정식",
+          learningGoal: "일차방정식을 이해한다.",
+          hintStrength: "medium",
+          persona: "질문으로 돕는 수학 선생님"
+        }
+      })
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toContain("OpenAI fallback answer.");
+    expect(requestedModels).toEqual(["google/gemma-4-e2b", "gemma-4-12b-it", "gpt-5.4-nano"]);
+  });
+
   it("records provider network errors without exposing provider exception details", async () => {
     const { baseUrl, store } = await createServer({
       env: {
