@@ -71,7 +71,7 @@ export function createLocalApiHandler(
     try {
       if (request.method === "GET" && url.pathname === "/api/teachers") {
         if (dependencies.auth?.requireFirebaseAuth) {
-          const context = await resolveRequiredAuthContextFromRequest(
+          const context = await resolveTeacherListAuthContextFromRequest(
             request,
             dependencies,
           );
@@ -786,6 +786,90 @@ async function requireTeacherFromRequest(
     dependencies,
   );
   return requireTeacherFeatureAuth(context);
+}
+
+async function resolveTeacherListAuthContextFromRequest(
+  request: http.IncomingMessage,
+  dependencies: LocalApiDependencies,
+) {
+  try {
+    return await resolveRequiredAuthContextFromRequest(request, dependencies);
+  } catch (error) {
+    if (
+      !(error instanceof Error) ||
+      error.message !== "teacher_profile_not_found"
+    ) {
+      throw error;
+    }
+
+    const verified = await requireVerifiedFirebaseTokenFromRequest(
+      request,
+      dependencies,
+    );
+    if (!isBootstrapAdminEmail(verified.email, dependencies.env)) {
+      throw error;
+    }
+
+    const teacher = await ensureBootstrapAdminProfile(verified, dependencies);
+    return {
+      kind: "teacher" as const,
+      uid: teacher.id,
+      teacher,
+    };
+  }
+}
+
+async function ensureBootstrapAdminProfile(
+  verified: { uid: string; email?: string },
+  dependencies: LocalApiDependencies,
+): Promise<IdentityTeacherAccount> {
+  const now = new Date().toISOString();
+  const teacher = registerLocalTeacher(
+    {
+      realName: verified.email ?? "관리자",
+      email: verified.email ?? "",
+      passwordHash: "firebase-auth",
+      school: {
+        schoolName: "관리자 계정",
+        schoolKind: "관리자",
+        officeCode: "ADMIN",
+        standardSchoolCode: "ADMIN",
+        region: "운영",
+      },
+    },
+    { id: verified.uid, now },
+  );
+  const profile = promoteBootstrapAdminProfile(teacher, {
+    now,
+    logId: createId("admin-log"),
+  });
+  const result = await dependencies.store.saveTeacherIfEmailAbsent(profile.teacher);
+
+  if (result.created) {
+    try {
+      await dependencies.store.appendAdminActionLog(profile.event);
+    } catch (error) {
+      console.warn(
+        "admin action log write failed after bootstrap admin profile creation",
+        error,
+      );
+    }
+    return result.teacher;
+  }
+
+  if (result.teacher.status === "admin") return result.teacher;
+
+  const promoted = await dependencies.store.updateTeacherWithAdminAction(
+    result.teacher.id,
+    (existing) =>
+      existing.status === "admin"
+        ? { teacher: existing }
+        : promoteBootstrapAdminProfile(existing, {
+            now,
+            logId: createId("admin-log"),
+          }),
+  );
+  return promoted?.teacher ?? result.teacher;
 }
 
 async function resolveRequiredAuthContextFromRequest(

@@ -214,6 +214,33 @@ describe("localApi production auth", () => {
     expect(adminPayload.teachers.map((teacher) => teacher.id).sort()).toEqual(["local-admin", "teacher-1", "teacher-2"]);
   });
 
+  it("bootstraps a configured admin email when the signed-in admin first lists teachers", async () => {
+    const { baseUrl, store } = await createServer({
+      env: {
+        KKOKKOMU_ADMIN_EMAILS: "admin@example.com"
+      }
+    });
+
+    const response = await fetch(`${baseUrl}/api/teachers`, {
+      headers: { Authorization: "Bearer bootstrap-admin-token" }
+    });
+    const payload = (await response.json()) as { teachers: Array<{ id: string; email: string; status: string; promotedBy?: string }> };
+
+    expect(response.status).toBe(200);
+    expect(payload.teachers).toContainEqual(
+      expect.objectContaining({
+        id: "firebase-admin-1",
+        email: "admin@example.com",
+        status: "admin",
+        promotedBy: "bootstrap-env"
+      })
+    );
+    await expect(store.getTeacher("firebase-admin-1")).resolves.toMatchObject({
+      status: "admin",
+      email: "admin@example.com"
+    });
+  });
+
   it("does not read every teacher document when a Firebase teacher lists their own profile", async () => {
     const readCounts = { listTeachers: 0 };
     const { baseUrl, store } = await createServer({
