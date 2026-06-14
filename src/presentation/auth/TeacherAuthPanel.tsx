@@ -89,7 +89,11 @@ export function TeacherAuthPanel({
   const statusText = authError || authStatus;
 
   return (
-    <section className="workspace auth-workspace">
+    <section
+      className={`workspace auth-workspace ${
+        isSignup ? "auth-workspace-signup" : "auth-workspace-login"
+      }`}
+    >
       <aside className="info-panel">
         <div className="panel-section">
           <span className="soft-label">교사 계정</span>
@@ -209,13 +213,13 @@ export function TeacherAuthPanel({
 
         {!isSignup ? (
           <button
-            className="text-action auth-mode-link"
+            className="pill outline auth-mode-link"
             data-action="switch-signup"
             type="button"
             onClick={() => onModeChange("signup")}
             disabled={isSubmitting}
           >
-            처음 사용하는 선생님은 가입 신청하기
+            회원가입
           </button>
         ) : null}
 

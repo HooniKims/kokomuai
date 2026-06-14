@@ -327,8 +327,31 @@ select {
   justify-content: center;
 }
 
+.auth-workspace-login {
+  grid-template-columns: minmax(320px, 520px);
+  justify-content: center;
+}
+
+.auth-workspace-login .info-panel {
+  display: none;
+}
+
 .auth-panel {
   min-height: auto;
+}
+
+.auth-workspace-login .auth-panel {
+  width: 100%;
+  padding: clamp(28px, 4vw, 44px);
+}
+
+.auth-workspace-login .section-heading {
+  align-items: flex-start;
+  margin-bottom: 22px;
+}
+
+.auth-workspace-login .section-heading h2 {
+  font-size: clamp(28px, 3vw, 38px);
 }
 
 .auth-form-grid {
@@ -337,7 +360,8 @@ select {
 
 .login-form-grid {
   grid-template-columns: minmax(0, 1fr);
-  max-width: 520px;
+  width: 100%;
+  max-width: none;
 }
 
 .signup-form-grid {
@@ -354,6 +378,23 @@ select {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.auth-workspace-login .auth-actions,
+.auth-workspace-login .auth-mode-link {
+  width: 100%;
+}
+
+.auth-workspace-login .auth-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.auth-workspace-login .auth-actions .pill,
+.auth-workspace-login .auth-mode-link {
+  justify-content: center;
+  min-height: 48px;
 }
 
 .auth-mode-link {
