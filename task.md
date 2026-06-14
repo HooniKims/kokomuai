@@ -5459,6 +5459,53 @@ TDD 기록:
 - 빌드
   - `npm run build`
   - 결과: 통과
+
+### 운영 전환 63차: 로그인 패널 하단 여백 축소
+
+완료 시간: 2026-06-14 22:46:00 +09:00
+
+요청:
+
+- 메인 로그인 페이지의 `#root > main > section.workspace.auth-workspace.auth-workspace-login > section` 영역이 내용에 비해 아래로 길게 보이는 문제를 조정한다.
+
+원인:
+
+- 로그인 패널은 `dashboard-panel auth-panel` 클래스를 함께 사용한다.
+- 기존 `.auth-panel { min-height: auto; }` 규칙이 있었지만, 뒤쪽의 `.dashboard-panel { min-height: min(720px, calc(100vh - 120px)); }` 규칙에 의해 덮일 수 있었다.
+- 짧은 로그인 폼에도 대시보드용 큰 최소 높이가 적용되어 카드 하단에 빈 공간이 많이 생겼다.
+
+수정:
+
+- `src/presentation/styles.css`
+  - 로그인 모드의 `.auth-workspace-login .auth-panel`에 `min-height: auto`를 명시해 대시보드 최소 높이를 무효화했다.
+  - 로그인 카드가 내용 높이에 맞춰 시작되도록 `align-self: start`를 추가했다.
+  - 로그인 카드 세로 패딩을 `clamp(28px, 4vw, 44px)`에서 `clamp(22px, 3vw, 32px)`로 줄였다.
+  - 로그인 제목 아래 여백을 `22px`에서 `16px`로 줄였다.
+- `tests/presentation/authLayoutStyle.test.ts`
+  - 로그인 패널이 compact padding과 `min-height: auto`를 유지하는지 확인하는 회귀 테스트를 추가했다.
+
+검증:
+
+- RED 확인
+  - `npm test -- --run tests/presentation/authLayoutStyle.test.ts`
+  - 결과: 실패
+  - 실패 원인: 로그인 패널 compact padding/min-height 규칙이 없음
+- 대상 테스트
+  - `npm test -- --run tests/presentation/authLayoutStyle.test.ts`
+  - 결과: 통과
+  - 1개 테스트 파일, 3개 테스트 통과
+- 브라우저 렌더링 확인
+  - Playwright 데스크톱 viewport `1365x900`
+  - 로그인 패널 높이: `288px`
+  - 로그인 패널 `min-height`: `auto`
+  - 상하 padding: `32px`
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 75개 테스트 파일, 332개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
 - 운영 배포
   - `npx vercel deploy --prod --yes`
   - 결과: 통과

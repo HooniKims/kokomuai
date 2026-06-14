@@ -29,4 +29,13 @@ describe("auth layout styles", () => {
       /\.auth-workspace-login\s+\.auth-mode-link\s*\{[^}]*margin-top:\s*0;/s,
     );
   });
+
+  it("keeps the login panel vertically compact for short login content", () => {
+    expect(stylesheet).toMatch(
+      /\.auth-workspace-login\s+\.auth-panel\s*\{[^}]*min-height:\s*auto;[^}]*padding:\s*clamp\(22px,\s*3vw,\s*32px\);/s,
+    );
+    expect(stylesheet).toMatch(
+      /\.auth-workspace-login\s+\.section-heading\s*\{[^}]*margin-bottom:\s*16px;/s,
+    );
+  });
 });

@@ -443,12 +443,14 @@ select {
 
 .auth-workspace-login .auth-panel {
   width: 100%;
-  padding: clamp(28px, 4vw, 44px);
+  min-height: auto;
+  align-self: start;
+  padding: clamp(22px, 3vw, 32px);
 }
 
 .auth-workspace-login .section-heading {
   align-items: flex-start;
-  margin-bottom: 22px;
+  margin-bottom: 16px;
 }
 
 .auth-workspace-login .section-heading h2 {
