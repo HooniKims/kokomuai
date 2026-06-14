@@ -1,7 +1,7 @@
 ﻿import type { ChatbotPolicyInput } from "../domain/chatbot/types.js";
 
 export const teacherChatbotSample: ChatbotPolicyInput & { name: string } = {
-  name: "중1 국어 9품사 이해",
+  name: "국어 9품사 이해",
   schoolLevel: "middle",
   gradeBand: "1",
   subject: "국어",

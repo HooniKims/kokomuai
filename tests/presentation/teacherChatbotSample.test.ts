@@ -4,7 +4,7 @@ import { teacherChatbotSample } from "../../src/presentation/teacherChatbotSampl
 describe("teacherChatbotSample", () => {
   it("uses a middle school Korean parts-of-speech example for teacher placeholders", () => {
     expect(teacherChatbotSample).toMatchObject({
-      name: "중1 국어 9품사 이해",
+      name: "국어 9품사 이해",
       schoolLevel: "middle",
       gradeBand: "1",
       subject: "국어"

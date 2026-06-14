@@ -5345,6 +5345,40 @@ TDD 기록:
   - `npm run build`
   - 결과: 통과
 
+### 운영 전환 61차: 발표 문서 갱신과 불필요 산출물 정리
+
+완료 시간: 2026-06-14 14:50:20 +09:00
+
+요청:
+
+- `PRESENTATION_DIFFERENTIATORS.md`를 지금까지 수정된 기능까지 반영해 업데이트한다.
+- `local-llm-api-guide.md`는 필요 없으므로 삭제한다.
+- 불필요한 캐시와 재생성 가능한 산출물을 정리한다.
+- GitHub에 올려 동기화한다.
+- 챗봇 이름 예시 문구에서 `중1`을 제거한다.
+
+수정:
+
+- 발표 차별점 문서를 정상 한글 문서로 재작성하고, 현재 구현된 가입/로그인, 관리자 자동 승격, 관리자·교사 화면 동시 표시, 로그아웃, 계정 관리, 개인정보처리방침, 보안·배포 검증 흐름을 반영했다.
+- `local-llm-api-guide.md`를 삭제했다.
+- 챗봇 이름 placeholder 원천인 `teacherChatbotSample.name`을 `국어 9품사 이해`로 변경했다.
+- 재생성 가능한 `dist`, `artifacts`, `tsconfig.tsbuildinfo`, `.vercel`을 정리했다.
+- `node_modules`는 즉시 테스트와 개발 실행에 필요해 유지했다.
+
+검증:
+
+- placeholder 및 관리자 화면 관련 단위 테스트
+  - `npm test -- --run tests/presentation/teacherChatbotSample.test.ts tests/presentation/adminWorkspaceLoading.test.ts tests/presentation/topNav.test.ts`
+  - 결과: 통과
+  - 3개 테스트 파일, 5개 테스트 통과
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 70개 테스트 파일, 294개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+
 ### 운영 전환 59차: 개인정보처리방침 문의 이메일 명시
 
 완료 시간: 2026-06-14 14:32:09 +09:00
