@@ -498,13 +498,14 @@ function createThinkingTraceFilter() {
   let probingInitialText = true;
   let initialBuffer = "";
   const holdbackCharacters = 32;
-  const initialProbeCharacters = 256;
+  const initialProbeCharacters = 16;
   const maxReasoningPreambleCharacters = 4000;
   const startTagPattern = /<\s*(think|thinking|reasoning)\b[^>]*>/i;
   const endTagPattern = /<\s*\/\s*(think|thinking|reasoning)\s*>/i;
   const channelMarkerPattern = /<channel\|>/i;
   const reasoningPreamblePattern =
-    /(학생은\s*이전\s*답변|학생이[\s\S]{0,120}대답|현재\s*상황|다음\s*사고\s*단계|질문\s*방향|수업\s*목표|\*\*계획:\*\*)/;
+    /(학생은[\s\S]{0,160}(답변|용어|어렵|느꼈|의미)|학생이[\s\S]{0,160}대답|현재\s*(상황|목표)|다음\s*(사고\s*단계|행동\s*계획)|질문\s*방향|힌트\s*강도|수업\s*목표|\*\*계획:\*\*)/;
+  const finalAnswerStartPattern = /(아이고,|네,\s*그럼|좋아요[.!。]?|다시\s+아주\s+쉽게|그러면\s+이제)/;
 
   function push(token: string): string {
     if (probingInitialText) {
@@ -518,6 +519,13 @@ function createThinkingTraceFilter() {
       }
 
       if (reasoningPreamblePattern.test(initialBuffer)) {
+        const finalAnswerStart = findTag(initialBuffer, finalAnswerStartPattern);
+        if (finalAnswerStart) {
+          probingInitialText = false;
+          carry += initialBuffer.slice(finalAnswerStart.index);
+          initialBuffer = "";
+          return drainCarry();
+        }
         if (initialBuffer.length > maxReasoningPreambleCharacters) {
           initialBuffer = initialBuffer.slice(-holdbackCharacters);
         }
@@ -590,6 +598,11 @@ function createThinkingTraceFilter() {
       const channel = findTag(initialBuffer, channelMarkerPattern);
       if (channel) {
         carry += initialBuffer.slice(channel.index + channel.text.length);
+      } else if (reasoningPreamblePattern.test(initialBuffer)) {
+        const finalAnswerStart = findTag(initialBuffer, finalAnswerStartPattern);
+        if (finalAnswerStart) {
+          carry += initialBuffer.slice(finalAnswerStart.index);
+        }
       } else if (!reasoningPreamblePattern.test(initialBuffer)) {
         carry += initialBuffer;
       }

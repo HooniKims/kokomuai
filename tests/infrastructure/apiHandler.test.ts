@@ -671,6 +671,113 @@ describe("apiHandler", () => {
     expect(body).not.toContain("학생 반응");
   });
 
+  it("removes goal and action-plan reasoning before the student-facing answer", async () => {
+    const { baseUrl, store } = await createServer({
+      env: {
+        LMSTUDIO_API_KEY: "test-lmstudio-key"
+      },
+      fetchImpl: async () =>
+        new Response(
+          [
+            'data: {"choices":[{"delta":{"content":"학생은 독립변수와 종속변수 같은 새로운 용어를 어렵다고 느꼈습니다.\\n\\n"}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"현재 목표: 학생이 기본 용어를 명확히 이해하도록 돕는다.\\n"}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"다음 행동 계획:\\n1. x와 y의 관계를 쉬운 비유로 설명한다.\\n"}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"힌트 강도: 낮음. 쉬운 비유 사용."}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"아이고, 제가 조금 어려운 말을 썼네요. 다시 쉽게 볼까요?"}}]}\n\n',
+            "data: [DONE]\n\n"
+          ].join(""),
+          {
+            status: 200,
+            headers: { "Content-Type": "text/event-stream" }
+          }
+        )
+    });
+    await store.saveAiSettings({
+      activeModelId: "gemma4:e2b",
+      updatedAt: "2026-06-14T10:20:00.000Z",
+      updatedBy: "admin-1"
+    });
+
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "어려워요",
+        history: [{ role: "assistant", content: "독립변수와 종속변수를 알아볼까요?" }],
+        chatbot: {
+          name: "수학 챗봇",
+          schoolLevel: "middle",
+          gradeBand: "1",
+          subject: "수학",
+          topic: "1차 함수",
+          learningGoal: "1차 함수의 뜻과 식을 이해한다.",
+          hintStrength: "low",
+          persona: "질문으로 돕는 수학 선생님"
+        }
+      })
+    });
+
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(body).toContain("어려운 말을");
+    expect(body).not.toContain("현재 목표");
+    expect(body).not.toContain("다음 행동 계획");
+    expect(body).not.toContain("힌트 강도");
+    expect(body).not.toContain("어렵다고 느꼈습니다");
+  });
+
+  it("does not wait for a long initial buffer before streaming normal answers", async () => {
+    const { baseUrl, store } = await createServer({
+      env: {
+        LMSTUDIO_API_KEY: "test-lmstudio-key"
+      },
+      fetchImpl: async () =>
+        new Response(
+          [
+            'data: {"choices":[{"delta":{"content":"네, 그럼 바로 시작해요. "}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"먼저 x를 넣는 숫자로 볼게요. "}}]}\n\n',
+            'data: {"choices":[{"delta":{"content":"y는 따라 나오는 값이에요."}}]}\n\n',
+            "data: [DONE]\n\n"
+          ].join(""),
+          {
+            status: 200,
+            headers: { "Content-Type": "text/event-stream" }
+          }
+        )
+    });
+    await store.saveAiSettings({
+      activeModelId: "gemma4:e2b",
+      updatedAt: "2026-06-14T10:20:00.000Z",
+      updatedBy: "admin-1"
+    });
+
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "그래",
+        history: [],
+        chatbot: {
+          name: "수학 챗봇",
+          schoolLevel: "middle",
+          gradeBand: "1",
+          subject: "수학",
+          topic: "1차 함수",
+          learningGoal: "1차 함수의 뜻과 식을 이해한다.",
+          hintStrength: "medium",
+          persona: "질문으로 돕는 수학 선생님"
+        }
+      })
+    });
+
+    const body = await response.text();
+    const contentEventCount = body.match(/"content"/g)?.length ?? 0;
+
+    expect(response.status).toBe(200);
+    expect(contentEventCount).toBeGreaterThanOrEqual(2);
+  });
+
   it("records provider network errors without exposing provider exception details", async () => {
     const { baseUrl, store } = await createServer({
       env: {
