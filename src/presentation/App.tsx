@@ -44,7 +44,11 @@ import {
   TeacherDashboardRoute,
 } from "./routes/TeacherDashboardRoute.js";
 import { footerCopyrightText } from "./legal/privacyPolicy.js";
-import { formatSchoolLevelLabel } from "./schoolLevelLabel.js";
+import {
+  buildChatTranscriptHtml,
+  makeChatTranscriptText,
+  saveChatTranscriptPdfFromHtml,
+} from "./chatExport.js";
 import { teacherChatbotSample } from "./teacherChatbotSample.js";
 import { resolveCurriculumRecommendationState } from "./curriculumRecommendationState.js";
 import {
@@ -134,29 +138,6 @@ const fallbackChatbot: ManagedChatbot = {
   createdAt: "2026-06-11T09:10:00.000Z",
   updatedAt: "2026-06-11T09:10:00.000Z",
 };
-
-function makeTxt(
-  messages: UiChatMessage[],
-  chatbot: ChatbotPolicyInput & { name?: string },
-) {
-  const title = chatbot.name?.trim() || chatbot.topic;
-  const lines = [
-    `${title} 챗봇`,
-    "",
-    "이 기록은 학습 과정 확인용이며, 정답지나 평가 결과가 아닙니다.",
-    `수업 주제: ${chatbot.topic}`,
-    `학교급/과목: ${formatSchoolLevelLabel(chatbot.schoolLevel)} ${chatbot.gradeBand} · ${chatbot.subject}`,
-    `대화 날짜: ${new Date().toLocaleString("ko-KR")}`,
-    "",
-    "대화 기록",
-    "---------",
-    ...messages.map(
-      (message) =>
-        `${message.role === "user" ? "학생" : "챗봇"}: ${message.content}`,
-    ),
-  ];
-  return lines.join("\n");
-}
 
 function downloadBlob(filename: string, type: string, content: string | Blob) {
   const blob =
@@ -316,6 +297,7 @@ export function App() {
   const [loadedConversationScope, setLoadedConversationScope] = useState("");
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [exportStatus, setExportStatus] = useState<"" | "txt" | "pdf">("");
   const [error, setError] = useState("");
   const [teachers, setTeachers] = useState<IdentityTeacherAccount[]>([]);
   const [chatbots, setChatbots] = useState<ManagedChatbot[]>([]);
@@ -956,23 +938,30 @@ export function App() {
     clearLocalConversation(conversationScope);
   }
 
-  function downloadTxt() {
-    downloadBlob(
-      "student-chat.txt",
-      "text/plain;charset=utf-8",
-      makeTxt(messages, activeChatbot),
-    );
+  async function downloadTxt() {
+    setExportStatus("txt");
+    await waitForNextPaint();
+    try {
+      downloadBlob(
+        "student-chat.txt",
+        "text/plain;charset=utf-8",
+        makeChatTranscriptText(messages, activeChatbot),
+      );
+    } finally {
+      setExportStatus("");
+    }
   }
 
   async function downloadPdf() {
-    const { default: jsPDF } = await import("jspdf");
-    const pdf = new jsPDF({ unit: "pt", format: "a4" });
-    const text = makeTxt(messages, activeChatbot);
-    const lines = pdf.splitTextToSize(text, 500);
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(10);
-    pdf.text(lines, 48, 48);
-    pdf.save("student-chat.pdf");
+    setExportStatus("pdf");
+    await waitForNextPaint();
+    try {
+      await saveChatTranscriptPdfFromHtml(
+        buildChatTranscriptHtml(messages, activeChatbot),
+      );
+    } finally {
+      setExportStatus("");
+    }
   }
 
   async function approveSelectedTeachers() {
@@ -1300,6 +1289,25 @@ export function App() {
           updatePassword={updateAccountPassword}
           withdrawAccount={withdrawAccount}
         />
+      ) : null}
+
+      {!isPrivacyPage && exportStatus ? (
+        <div
+          className="auth-loading-overlay file-export-overlay"
+          data-action="file-export-overlay"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div className="auth-loading-message">
+            <strong>
+              {exportStatus === "pdf"
+                ? "PDF 파일을 만드는 중입니다."
+                : "TXT 파일을 만드는 중입니다."}
+            </strong>
+            <span>잠시만 기다려 주세요.</span>
+          </div>
+        </div>
       ) : null}
 
       {!isPrivacyPage && shouldShowStudentLoading ? (
@@ -1665,6 +1673,14 @@ async function copyTextIfAvailable(text: string) {
   } catch {
     // 브라우저 권한이 없는 로컬 검증 환경에서도 공유 링크 표시는 유지한다.
   }
+}
+
+function waitForNextPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => resolve());
+    });
+  });
 }
 
 function resolveGradeBand(

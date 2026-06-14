@@ -26,7 +26,7 @@ export interface StudentChatRouteProps {
   stopStreaming: () => void;
   resetConversation: () => void;
   downloadPdf: () => Promise<void>;
-  downloadTxt: () => void;
+  downloadTxt: () => Promise<void>;
 }
 
 export function scrollMessageListToBottom(container: ScrollableMessageList | null): void {
@@ -83,7 +83,7 @@ export function StudentChatRoute({
           <button className="pill outline" onClick={() => void downloadPdf()} type="button" disabled={messages.length === 0}>
             <Download size={16} /> PDF 받기
           </button>
-          <button className="pill outline" onClick={downloadTxt} type="button" disabled={messages.length === 0}>
+          <button className="pill outline" onClick={() => void downloadTxt()} type="button" disabled={messages.length === 0}>
             <Download size={16} /> TXT 받기
           </button>
           <button className="pill outline" onClick={resetConversation} type="button" disabled={messages.length === 0}>

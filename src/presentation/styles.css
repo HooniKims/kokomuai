@@ -577,6 +577,10 @@ select {
   cursor: wait;
 }
 
+.file-export-overlay {
+  z-index: 140;
+}
+
 .auth-loading-message {
   width: min(420px, calc(100vw - 48px));
   border: 1px solid var(--color-forest-ink);
