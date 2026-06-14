@@ -204,6 +204,45 @@ export function applyDeletedChatbotToList(
   return current.filter((chatbot) => chatbot.id !== deleted.id);
 }
 
+export function isFirebaseEmailAlreadyInUse(error: unknown): boolean {
+  return hasFirebaseAuthCode(error, "auth/email-already-in-use");
+}
+
+export function toFriendlyFirebaseAuthError(
+  error: unknown,
+  fallbackMessage: string,
+): string {
+  if (hasFirebaseAuthCode(error, "auth/invalid-credential")) {
+    return "이메일 또는 비밀번호가 맞지 않습니다. 다시 확인해 주세요.";
+  }
+
+  if (hasFirebaseAuthCode(error, "auth/user-not-found")) {
+    return "가입된 이메일을 찾지 못했습니다. 이메일 가입을 먼저 진행해 주세요.";
+  }
+
+  if (hasFirebaseAuthCode(error, "auth/wrong-password")) {
+    return "비밀번호가 맞지 않습니다. 다시 확인해 주세요.";
+  }
+
+  if (hasFirebaseAuthCode(error, "auth/weak-password")) {
+    return "비밀번호는 8자 이상으로 입력해 주세요.";
+  }
+
+  return error instanceof Error && error.message
+    ? error.message
+    : fallbackMessage;
+}
+
+function hasFirebaseAuthCode(error: unknown, code: string): boolean {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { code?: unknown; message?: unknown };
+  return (
+    candidate.code === code ||
+    (typeof candidate.message === "string" &&
+      candidate.message.includes(code))
+  );
+}
+
 export function App() {
   const isPrivacyPage = window.location.pathname === "/privacy";
   const [usesFirebaseTeacherAuth] = useState(() =>
@@ -251,6 +290,9 @@ export function App() {
   const [authRealName, setAuthRealName] = useState("");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [authPasswordConfirmation, setAuthPasswordConfirmation] =
+    useState("");
+  const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [authSchoolQuery, setAuthSchoolQuery] = useState("");
   const [authSchoolResults, setAuthSchoolResults] = useState<
     api.SchoolSearchResult[]
@@ -569,9 +611,7 @@ export function App() {
       );
     } catch (caught) {
       setAuthError(
-        caught instanceof Error
-          ? caught.message
-          : "이메일 로그인에 실패했습니다.",
+        toFriendlyFirebaseAuthError(caught, "이메일 로그인에 실패했습니다."),
       );
     } finally {
       setIsSubmittingAuth(false);
@@ -579,6 +619,11 @@ export function App() {
   }
 
   async function signUpWithTeacherEmail() {
+    if (authPassword !== authPasswordConfirmation) {
+      setAuthError("비밀번호가 일치하지 않습니다. 다시 확인해 주세요.");
+      return;
+    }
+
     setIsSubmittingAuth(true);
     setAuthError("");
     try {
@@ -591,10 +636,27 @@ export function App() {
         "Firebase 계정이 생성됐습니다. 학교를 선택하고 가입 요청을 보내 주세요.",
       );
     } catch (caught) {
+      if (isFirebaseEmailAlreadyInUse(caught)) {
+        try {
+          await signInTeacherWithEmail(
+            getKkokkomuFirebaseAuth(),
+            authEmail.trim(),
+            authPassword,
+          );
+          setWorkspaceStatus(
+            "이미 가입된 이메일입니다. 로그인으로 이어졌습니다. 학교를 선택하고 가입 요청을 보내 주세요.",
+          );
+          return;
+        } catch {
+          setAuthError(
+            "이미 가입된 이메일입니다. 기존 비밀번호로 로그인하거나 Google로 계속하기를 사용해 주세요.",
+          );
+          return;
+        }
+      }
+
       setAuthError(
-        caught instanceof Error
-          ? caught.message
-          : "이메일 가입에 실패했습니다.",
+        toFriendlyFirebaseAuthError(caught, "이메일 가입에 실패했습니다."),
       );
     } finally {
       setIsSubmittingAuth(false);
@@ -611,9 +673,7 @@ export function App() {
       );
     } catch (caught) {
       setAuthError(
-        caught instanceof Error
-          ? caught.message
-          : "Google 로그인에 실패했습니다.",
+        toFriendlyFirebaseAuthError(caught, "Google 로그인에 실패했습니다."),
       );
     } finally {
       setIsSubmittingAuth(false);
@@ -643,7 +703,10 @@ export function App() {
     } catch (caught) {
       setAuthError(
         caught instanceof Error
-          ? caught.message
+          ? caught.message.replace(
+              "요청을 처리하는 중 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.",
+              "가입 요청 처리 중 문제가 생겼습니다. 이미 요청이 접수됐는지 관리자 화면에서 확인해 주세요.",
+            )
           : "가입 요청을 저장하지 못했습니다.",
       );
     } finally {
@@ -1061,6 +1124,8 @@ export function App() {
           realName={authRealName}
           email={authEmail}
           password={authPassword}
+          passwordConfirmation={authPasswordConfirmation}
+          showPassword={showAuthPassword}
           schoolQuery={authSchoolQuery}
           schoolResults={authSchoolResults}
           selectedSchool={authSelectedSchool}
@@ -1071,6 +1136,10 @@ export function App() {
           onRealNameChange={setAuthRealName}
           onEmailChange={setAuthEmail}
           onPasswordChange={setAuthPassword}
+          onPasswordConfirmationChange={setAuthPasswordConfirmation}
+          onTogglePasswordVisibility={() =>
+            setShowAuthPassword((current) => !current)
+          }
           onSchoolQueryChange={(value) => {
             setAuthSchoolQuery(value);
             setAuthSelectedSchool(null);

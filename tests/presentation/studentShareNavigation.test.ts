@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  isFirebaseEmailAlreadyInUse,
   resolveInitialView,
   shouldShowRoleNavigation,
   shouldUseFirebaseTeacherAuth,
+  toFriendlyFirebaseAuthError,
 } from "../../src/presentation/App";
 
 describe("student share navigation", () => {
@@ -29,5 +31,19 @@ describe("student share navigation", () => {
     expect(resolveInitialView("/")).toBe("teacher");
     expect(resolveInitialView("/teacher")).toBe("teacher");
     expect(resolveInitialView("/s/public-token")).toBe("student");
+  });
+
+  it("maps Firebase auth errors to operator-friendly messages", () => {
+    expect(
+      isFirebaseEmailAlreadyInUse({
+        code: "auth/email-already-in-use",
+      }),
+    ).toBe(true);
+    expect(
+      toFriendlyFirebaseAuthError(
+        { code: "auth/invalid-credential" },
+        "로그인 실패",
+      ),
+    ).toBe("이메일 또는 비밀번호가 맞지 않습니다. 다시 확인해 주세요.");
   });
 });

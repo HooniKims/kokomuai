@@ -332,7 +332,7 @@ select {
 }
 
 .auth-form-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .auth-actions {
@@ -340,6 +340,109 @@ select {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.auth-status {
+  transition:
+    color 120ms ease,
+    background-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.auth-status.error {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgb(234 67 53 / 0.45);
+  border-left-width: 5px;
+  border-radius: 14px;
+  color: #9f1f13;
+  background: #fff3f0;
+  box-shadow: 3px 3px 0 rgb(234 67 53 / 0.12);
+  font-weight: 700;
+}
+
+.password-field {
+  position: relative;
+  display: block;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 46px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-forest-ink);
+  background: transparent;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    transform 120ms ease;
+}
+
+.password-toggle:hover {
+  border-color: var(--color-paper-line);
+  background: rgb(26 51 0 / 0.08);
+}
+
+.password-toggle:active {
+  transform: translateY(-50%) scale(0.94);
+}
+
+.password-match-note {
+  margin-top: 6px;
+  display: block;
+  font-size: 13px;
+  line-height: 1.35;
+  color: rgb(26 51 0 / 0.68);
+}
+
+.password-match-note.match {
+  color: #1f7a3d;
+  font-weight: 700;
+}
+
+.password-match-note.mismatch {
+  color: #b42318;
+  font-weight: 700;
+}
+
+.google-auth-button {
+  border-color: #4285f4;
+  color: #ffffff;
+  background: #4285f4;
+  box-shadow: 3px 3px 0 rgb(66 133 244 / 0.22);
+}
+
+.google-auth-button:hover:not(:disabled) {
+  border-color: #3367d6;
+  background: #3367d6;
+  box-shadow: 4px 4px 0 rgb(66 133 244 / 0.28);
+}
+
+.google-auth-button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 1px 1px 0 rgb(66 133 244 / 0.24);
+}
+
+.google-icon {
+  width: 17px;
+  height: 17px;
+  padding: 2px;
+  border-radius: 999px;
+  background: #ffffff;
 }
 
 .school-search-panel {

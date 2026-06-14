@@ -189,7 +189,14 @@ export function createLocalApiHandler(
           profileToSave.teacher,
         );
         if (result.created && profileToSave.event) {
-          await dependencies.store.appendAdminActionLog(profileToSave.event);
+          try {
+            await dependencies.store.appendAdminActionLog(profileToSave.event);
+          } catch (error) {
+            console.warn(
+              "admin action log write failed after teacher profile creation",
+              error,
+            );
+          }
         }
         if (
           !result.created &&
