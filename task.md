@@ -5359,12 +5359,26 @@ TDD 기록:
 - Vercel 환경변수 동기화
   - `npm run vercel:env:sync`
   - 결과: production 대상 18개 변수 동기화 완료
+- 운영 배포
+  - `npx vercel deploy --prod --yes`
+  - 결과: `https://kokomuai.vercel.app` 별칭 연결 완료
+- 배포 smoke 테스트
+  - `$env:DEPLOY_URL='https://kokomuai.vercel.app'; npm run smoke:deploy`
+  - 결과: 통과
+  - 확인 항목: SPA root, 개인정보처리방침, API health, 익명 teacher API 차단, 보안 헤더, CORS preflight 차단
 - 브라우저 렌더링 확인
   - Vite: `http://127.0.0.1:5175/`
   - 스크린샷: `artifacts/auth-layout-1280.png`
   - 로그인 입력칸 줄 폭: 690px
   - 로그인 버튼 줄 폭: 690px
   - 버튼 3개 폭: 각각 223px
+- 운영 브라우저 렌더링 확인
+  - URL: `https://kokomuai.vercel.app`
+  - 스크린샷: `artifacts/auth-layout-production-1280.png`
+  - 로그인 입력칸 줄 폭: 690px
+  - 로그인 버튼 줄 폭: 690px
+  - 버튼 3개 폭: 각각 223px
+  - 콘솔 오류 없음
 
 ### 운영 전환 42차: 가입 폼, 계정 패널, 배포 인증 오류 보정
 
