@@ -1,4 +1,4 @@
-﻿import type http from "node:http";
+import type http from "node:http";
 import { listAvailableAiModels } from "../src/domain/ai/modelCatalog.js";
 import { updateAiSettingsModel } from "../src/domain/ai/aiSettings.js";
 import {
@@ -71,21 +71,15 @@ export function createLocalApiHandler(
 
     try {
       if (request.method === "GET" && url.pathname === "/api/teachers") {
-        if (dependencies.auth?.requireFirebaseAuth) {
-          const context = await resolveTeacherListAuthContextFromRequest(
-            request,
-            dependencies,
-          );
-          const visibleTeachers =
-            context.teacher.status === "admin"
-              ? await dependencies.store.listTeachers()
-              : [context.teacher];
-          sendJson(response, 200, { teachers: visibleTeachers });
-          return;
-        }
-
-        const teachers = await dependencies.store.listTeachers();
-        sendJson(response, 200, { teachers });
+        const context = await resolveTeacherListAuthContextFromRequest(
+          request,
+          dependencies,
+        );
+        const visibleTeachers =
+          context.teacher.status === "admin"
+            ? await dependencies.store.listTeachers()
+            : [context.teacher];
+        sendJson(response, 200, { teachers: visibleTeachers });
         return;
       }
 
@@ -106,9 +100,7 @@ export function createLocalApiHandler(
         request.method === "GET" &&
         url.pathname === "/api/admin/ai-settings"
       ) {
-        if (dependencies.auth?.requireFirebaseAuth) {
-          await requireAdminFromRequest(request, dependencies);
-        }
+        await requireAdminFromRequest(request, dependencies);
         sendJson(response, 200, {
           settings: await dependencies.store.getAiSettings(),
           models: listAvailableAiModels(),
@@ -120,18 +112,8 @@ export function createLocalApiHandler(
         request.method === "PATCH" &&
         url.pathname === "/api/admin/ai-settings"
       ) {
-        const body = await readJson<{ adminId?: string; modelId?: string }>(
-          request,
-        );
-        const admin = dependencies.auth?.requireFirebaseAuth
-          ? await requireAdminFromRequest(request, dependencies)
-          : body.adminId
-            ? await dependencies.store.getTeacher(body.adminId)
-            : undefined;
-        if (!admin || admin.status !== "admin") {
-          sendJson(response, 403, { error: "admin_not_allowed" });
-          return;
-        }
+        const body = await readJson<{ modelId?: string }>(request);
+        const admin = await requireAdminFromRequest(request, dependencies);
 
         try {
           const next = updateAiSettingsModel(
@@ -182,18 +164,16 @@ export function createLocalApiHandler(
 
       if (request.method === "POST" && url.pathname === "/api/teachers") {
         const body = await readJson<RegisterLocalTeacherInput>(request);
-        const verified = dependencies.auth?.requireFirebaseAuth
-          ? await requireVerifiedFirebaseTokenFromRequest(request, dependencies)
-          : undefined;
+        const verified = await requireVerifiedFirebaseTokenFromRequest(request, dependencies);
         const now = new Date().toISOString();
         const teacher = registerLocalTeacher(
           {
             ...body,
-            email: verified?.email ?? body.email,
-            passwordHash: verified ? "firebase-auth" : body.passwordHash,
+            email: verified.email ?? body.email,
+            passwordHash: "firebase-auth",
           },
           {
-            id: verified?.uid ?? createId("teacher"),
+            id: verified.uid,
             now,
           },
         );
@@ -254,16 +234,7 @@ export function createLocalApiHandler(
         url.pathname,
       );
       if (request.method === "POST" && approveMatch) {
-        const body = await readJson<{ adminId?: string }>(request);
-        const admin = dependencies.auth?.requireFirebaseAuth
-          ? await requireAdminFromRequest(request, dependencies)
-          : body.adminId
-            ? await dependencies.store.getTeacher(body.adminId)
-            : undefined;
-        if (!admin || admin.status !== "admin") {
-          sendJson(response, 403, { error: "admin_not_allowed" });
-          return;
-        }
+        const admin = await requireAdminFromRequest(request, dependencies);
 
         const result = await dependencies.store.updateTeacherWithAdminAction(
           approveMatch[1],
@@ -291,18 +262,8 @@ export function createLocalApiHandler(
       const rejectTeacherMatch =
         /^\/api\/admin\/teachers\/([^/]+)\/reject$/.exec(url.pathname);
       if (request.method === "POST" && rejectTeacherMatch) {
-        const body = await readJson<{ adminId?: string; reason?: string }>(
-          request,
-        );
-        const admin = dependencies.auth?.requireFirebaseAuth
-          ? await requireAdminFromRequest(request, dependencies)
-          : body.adminId
-            ? await dependencies.store.getTeacher(body.adminId)
-            : undefined;
-        if (!admin || admin.status !== "admin") {
-          sendJson(response, 403, { error: "admin_not_allowed" });
-          return;
-        }
+        const body = await readJson<{ reason?: string }>(request);
+        const admin = await requireAdminFromRequest(request, dependencies);
 
         const result = await dependencies.store.updateTeacherWithAdminAction(
           rejectTeacherMatch[1],
@@ -331,16 +292,7 @@ export function createLocalApiHandler(
       const disableTeacherMatch =
         /^\/api\/admin\/teachers\/([^/]+)\/disable$/.exec(url.pathname);
       if (request.method === "POST" && disableTeacherMatch) {
-        const body = await readJson<{ adminId?: string }>(request);
-        const admin = dependencies.auth?.requireFirebaseAuth
-          ? await requireAdminFromRequest(request, dependencies)
-          : body.adminId
-            ? await dependencies.store.getTeacher(body.adminId)
-            : undefined;
-        if (!admin || admin.status !== "admin") {
-          sendJson(response, 403, { error: "admin_not_allowed" });
-          return;
-        }
+        const admin = await requireAdminFromRequest(request, dependencies);
 
         const result = await dependencies.store.updateTeacherWithAdminAction(
           disableTeacherMatch[1],
@@ -368,16 +320,7 @@ export function createLocalApiHandler(
       const disableChatbotMatch =
         /^\/api\/admin\/chatbots\/([^/]+)\/disable$/.exec(url.pathname);
       if (request.method === "POST" && disableChatbotMatch) {
-        const body = await readJson<{ adminId?: string }>(request);
-        const admin = dependencies.auth?.requireFirebaseAuth
-          ? await requireAdminFromRequest(request, dependencies)
-          : body.adminId
-            ? await dependencies.store.getTeacher(body.adminId)
-            : undefined;
-        if (!admin || admin.status !== "admin") {
-          sendJson(response, 403, { error: "admin_not_allowed" });
-          return;
-        }
+        const admin = await requireAdminFromRequest(request, dependencies);
 
         const chatbot = await dependencies.store.getChatbot(
           disableChatbotMatch[1],
@@ -401,16 +344,7 @@ export function createLocalApiHandler(
       const passwordResetMatch =
         /^\/api\/admin\/teachers\/([^/]+)\/password-reset$/.exec(url.pathname);
       if (request.method === "POST" && passwordResetMatch) {
-        const body = await readJson<{ adminId?: string }>(request);
-        const admin = dependencies.auth?.requireFirebaseAuth
-          ? await requireAdminFromRequest(request, dependencies)
-          : body.adminId
-            ? await dependencies.store.getTeacher(body.adminId)
-            : undefined;
-        if (!admin || admin.status !== "admin") {
-          sendJson(response, 403, { error: "admin_not_allowed" });
-          return;
-        }
+        const admin = await requireAdminFromRequest(request, dependencies);
 
         const teacher = await dependencies.store.getTeacher(
           passwordResetMatch[1],
@@ -436,13 +370,7 @@ export function createLocalApiHandler(
 
       if (request.method === "POST" && url.pathname === "/api/chatbots") {
         const body = await readJson<CreateChatbotInput>(request);
-        const owner = dependencies.auth?.requireFirebaseAuth
-          ? await requireTeacherFromRequest(request, dependencies)
-          : await dependencies.store.getTeacher(body.ownerTeacherId);
-        if (!owner || !canUseTeacherFeatures(owner)) {
-          sendJson(response, 403, { error: "teacher_not_approved" });
-          return;
-        }
+        const owner = await requireTeacherFromRequest(request, dependencies);
 
         let chatbot: ManagedChatbot;
         try {
@@ -473,11 +401,9 @@ export function createLocalApiHandler(
       }
 
       if (request.method === "GET" && url.pathname === "/api/chatbots") {
-        const authTeacher = dependencies.auth?.requireFirebaseAuth
-          ? await requireTeacherFromRequest(request, dependencies)
-          : undefined;
+        const authTeacher = await requireTeacherFromRequest(request, dependencies);
         const ownerTeacherId =
-          authTeacher && authTeacher.status !== "admin"
+          authTeacher.status !== "admin"
             ? authTeacher.id
             : url.searchParams.get("ownerTeacherId");
         const source = ownerTeacherId
@@ -498,12 +424,9 @@ export function createLocalApiHandler(
         chatbotMatch
       ) {
         const body = await readJson<{
-          actorTeacherId: string;
           patch?: Partial<Omit<CreateChatbotInput, "ownerTeacherId">>;
         }>(request);
-        const actor = dependencies.auth?.requireFirebaseAuth
-          ? await requireTeacherFromRequest(request, dependencies)
-          : await dependencies.store.getTeacher(body.actorTeacherId);
+        const actor = await requireTeacherFromRequest(request, dependencies);
         if (!actor || !canUseTeacherFeatures(actor)) {
           sendJson(response, 403, { error: "teacher_not_approved" });
           return;
@@ -541,13 +464,10 @@ export function createLocalApiHandler(
       const shareMatch = /^\/api\/chatbots\/([^/]+)\/share$/.exec(url.pathname);
       if (request.method === "POST" && shareMatch) {
         const body = await readJson<{
-          actorTeacherId: string;
           token?: string;
           expiresAt?: string | null;
         }>(request);
-        const actor = dependencies.auth?.requireFirebaseAuth
-          ? await requireTeacherFromRequest(request, dependencies)
-          : await dependencies.store.getTeacher(body.actorTeacherId);
+        const actor = await requireTeacherFromRequest(request, dependencies);
         if (!actor || !canUseTeacherFeatures(actor)) {
           sendJson(response, 403, { error: "teacher_not_approved" });
           return;
@@ -590,29 +510,23 @@ export function createLocalApiHandler(
       }
 
       if (request.method === "GET" && url.pathname === "/api/usage") {
-        if (dependencies.auth?.requireFirebaseAuth) {
-          const context = await resolveRequiredAuthContextFromRequest(
-            request,
-            dependencies,
-          );
-          const summaries =
-            context.teacher.status === "admin"
-              ? await dependencies.store.listUsageSummaries()
-              : await dependencies.store.listUsageSummariesByTeacher(
-                  context.teacher.id,
-                );
-          const visibleSummaries =
-            context.teacher.status === "admin"
-              ? summaries
-              : summaries.filter(
-                  (summary) => summary.teacherId === context.teacher.id,
-                );
-          sendJson(response, 200, { summaries: visibleSummaries });
-          return;
-        }
-
-        const summaries = await dependencies.store.listUsageSummaries();
-        sendJson(response, 200, { summaries });
+        const context = await resolveRequiredAuthContextFromRequest(
+          request,
+          dependencies,
+        );
+        const summaries =
+          context.teacher.status === "admin"
+            ? await dependencies.store.listUsageSummaries()
+            : await dependencies.store.listUsageSummariesByTeacher(
+                context.teacher.id,
+              );
+        const visibleSummaries =
+          context.teacher.status === "admin"
+            ? summaries
+            : summaries.filter(
+                (summary) => summary.teacherId === context.teacher.id,
+              );
+        sendJson(response, 200, { summaries: visibleSummaries });
         return;
       }
 
@@ -620,9 +534,7 @@ export function createLocalApiHandler(
         request.method === "GET" &&
         url.pathname === "/api/admin/provider-errors"
       ) {
-        if (dependencies.auth?.requireFirebaseAuth) {
-          await requireAdminFromRequest(request, dependencies);
-        }
+        await requireAdminFromRequest(request, dependencies);
         sendJson(response, 200, {
           logs: await dependencies.store.listProviderErrorLogs(),
         });
@@ -633,9 +545,7 @@ export function createLocalApiHandler(
         request.method === "GET" &&
         url.pathname === "/api/admin/action-logs"
       ) {
-        if (dependencies.auth?.requireFirebaseAuth) {
-          await requireAdminFromRequest(request, dependencies);
-        }
+        await requireAdminFromRequest(request, dependencies);
         sendJson(response, 200, {
           logs: await dependencies.store.listAdminActionLogs(),
         });

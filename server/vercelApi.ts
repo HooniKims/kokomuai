@@ -1,4 +1,4 @@
-﻿import type http from "node:http";
+import type http from "node:http";
 import type { ProviderEnvironment } from "./aiProviderRequest.js";
 import { createApiHandler } from "./apiHandler.js";
 import type { VerifyIdToken } from "./authContext.js";
@@ -39,25 +39,23 @@ export async function createVercelApiHandler(dependencies: VercelApiDependencies
     ((query: string) => searchNeisSchools({ query, apiKey: parsedServerEnv?.neisApiKey ?? parseFirebaseServerEnv(env).neisApiKey }));
   const auth =
     dependencies.auth ??
-    (dependencies.store
-      ? undefined
-      : {
-          requireFirebaseAuth: true,
-          verifyIdToken: async (token: string) => {
-            try {
-              return await verifyFirebaseIdTokenWithIdentityToolkit(
-                {
-                  apiKey: env.VITE_FIREBASE_API_KEY ?? "",
-                  token,
-                },
-                { fetchImpl: dependencies.fetchImpl },
-              );
-            } catch (error) {
-              console.warn("firebase token verification failed", describeTokenVerificationError(error));
-              throw error;
-            }
-          }
-        });
+    {
+      requireFirebaseAuth: true,
+      verifyIdToken: async (token: string) => {
+        try {
+          return await verifyFirebaseIdTokenWithIdentityToolkit(
+            {
+              apiKey: env.VITE_FIREBASE_API_KEY ?? "",
+              token,
+            },
+            { fetchImpl: dependencies.fetchImpl },
+          );
+        } catch (error) {
+          console.warn("firebase token verification failed", describeTokenVerificationError(error));
+          throw error;
+        }
+      }
+    };
 
   return createApiHandler({
     store,

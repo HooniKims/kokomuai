@@ -1,4 +1,4 @@
-﻿import http from "node:http";
+import http from "node:http";
 import { createApiHandler } from "./apiHandler.js";
 import { getFileBackedCurriculumIndex } from "./curriculumRepository.js";
 import { createLocalStore } from "./localStore.js";
@@ -15,7 +15,23 @@ const apiHandler = createApiHandler({
   store: localStore,
   curriculumIndex,
   schoolSearch: (query) => searchNeisSchools({ query, apiKey: neisApiKey }),
-  env: process.env
+  env: process.env,
+  auth: {
+    requireFirebaseAuth: true,
+    verifyIdToken: async (token: string) => {
+      if (token === "local-admin") {
+        return { uid: "local-admin", email: "admin@local.test" };
+      }
+      if (token === "local-dev-teacher") {
+        return { uid: "local-dev-teacher", email: "local-teacher@local.test" };
+      }
+      const teacher = await localStore.getTeacher(token);
+      if (teacher) {
+        return { uid: teacher.id, email: teacher.email };
+      }
+      return { uid: token, email: token.includes("@") ? token : `${token}@local.test` };
+    }
+  }
 });
 
 const server = http.createServer(apiHandler);

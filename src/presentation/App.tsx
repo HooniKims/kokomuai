@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   clearLocalConversation,
   loadLocalConversation,
@@ -524,8 +524,14 @@ export function App() {
 
   useEffect(() => {
     if (!usesFirebaseTeacherAuth) {
+      api.setApiAuthTokenProvider(() => {
+        if (view === "admin") return "local-admin";
+        return activeTeacherId || "local-dev-teacher";
+      });
       void initializeWorkspace();
-      return;
+      return () => {
+        api.setApiAuthTokenProvider(null);
+      };
     }
 
     const auth = getKkokkomuFirebaseAuth();
@@ -538,7 +544,7 @@ export function App() {
       unsubscribe();
       api.setApiAuthTokenProvider(null);
     };
-  }, [usesFirebaseTeacherAuth]);
+  }, [usesFirebaseTeacherAuth, activeTeacherId, view]);
 
   useEffect(() => {
     if (!usesFirebaseTeacherAuth) return;

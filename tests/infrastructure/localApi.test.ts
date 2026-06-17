@@ -8,6 +8,47 @@ import { createLocalStore } from "../../server/localStore";
 import type { CurriculumIndex } from "../../server/curriculumIndex";
 import { createUsageEvent } from "../../src/domain/usage/usageAccounting";
 
+const originalFetch = globalThis.fetch;
+globalThis.fetch = function (input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const urlStr = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  const newInit = { ...init };
+  const headers = new Headers(newInit.headers);
+
+  if (!headers.has("Authorization")) {
+    let token: string | null = null;
+    const url = new URL(urlStr);
+
+    if (newInit.body && typeof newInit.body === "string") {
+      try {
+        const bodyObj = JSON.parse(newInit.body);
+        if ("adminId" in bodyObj) {
+          token = bodyObj.adminId || null;
+        } else if ("actorTeacherId" in bodyObj) {
+          token = bodyObj.actorTeacherId || null;
+        } else if ("ownerTeacherId" in bodyObj) {
+          token = bodyObj.ownerTeacherId || null;
+        } else if (url.pathname === "/api/teachers" && (newInit.method ?? "GET").toUpperCase() === "POST" && bodyObj.email) {
+          token = bodyObj.email;
+        }
+      } catch {}
+    } else {
+      if (url.pathname === "/api/teachers" || url.pathname === "/api/usage" || url.pathname.startsWith("/api/admin/")) {
+        token = "local-admin";
+      } else if (url.pathname === "/api/chatbots") {
+        const ownerId = url.searchParams.get("ownerTeacherId");
+        token = ownerId || "local-admin";
+      }
+    }
+
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+  }
+
+  newInit.headers = headers;
+  return originalFetch(urlStr, newInit);
+};
+
 const tempRoots: string[] = [];
 const openServers: http.Server[] = [];
 const blockedFetchPorts = new Set([6000]);
@@ -16,7 +57,27 @@ async function createTestServer(options: { curriculumIndex?: CurriculumIndex; sc
   const root = await mkdtemp(join(tmpdir(), "local-api-"));
   tempRoots.push(root);
   const store = createLocalStore(join(root, "store.json"));
-  const handler = createLocalApiHandler({ store, curriculumIndex: options.curriculumIndex, schoolSearch: options.schoolSearch });
+  const handler = createLocalApiHandler({
+    store,
+    curriculumIndex: options.curriculumIndex,
+    schoolSearch: options.schoolSearch,
+    auth: {
+      requireFirebaseAuth: true,
+      verifyIdToken: async (token: string) => {
+        if (token === "local-admin") {
+          return { uid: "local-admin", email: "admin@local.test" };
+        }
+        if (token === "local-dev-teacher") {
+          return { uid: "local-dev-teacher", email: "local-teacher@local.test" };
+        }
+        const teacher = await store.getTeacher(token);
+        if (teacher) {
+          return { uid: teacher.id, email: teacher.email };
+        }
+        return { uid: token, email: token.includes("@") ? token : `${token}@local.test` };
+      }
+    }
+  });
   const server = await listenOnFetchablePort(handler);
   openServers.push(server);
   const address = server.address();
