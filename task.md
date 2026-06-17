@@ -5487,6 +5487,47 @@ TDD 기록:
   - `npm run build`
   - 결과: 통과
 
+### 운영 전환 66차: 챗봇 기본 힌트 낮음 적용과 학생 채팅 세로 영역 확대
+
+완료 시간: 2026-06-18 00:39:57 +09:00
+
+요청:
+
+- 교사용 챗봇 생성 폼의 기본 힌트 강도를 `보통`이 아니라 `낮음`으로 설정한다.
+- 학생 채팅창에서 대화 내용을 더 길게 볼 수 있도록 PC, 태블릿, 모바일 모두 세로 영역을 늘린다.
+- 레이아웃, 디자인, 기능 문제가 없는지 점검하고 GitHub에 올린다.
+
+수정:
+
+- `src/presentation/teacherChatbotSample.ts`의 기본 `hintStrength`를 `low`로 변경했다.
+- 교사용 챗봇 생성 폼이 샘플 기본값을 따라 `힌트 강도: 낮음`으로 시작하도록 했다.
+- `src/presentation/styles.css`에서 `.chat-card` 높이와 데스크톱, 태블릿, 모바일 미디어 쿼리의 학생 채팅 카드 높이를 늘렸다.
+- 기본 힌트 강도와 반응형 채팅 높이를 확인하는 회귀 테스트를 추가했다.
+
+검증:
+
+- Red 확인
+  - `npm test -- --run tests/presentation/teacherChatbotSample.test.ts tests/presentation/studentWorkspaceLayoutStyle.test.ts`
+  - 결과: 변경 전 `hintStrength: medium`과 기존 채팅 높이 값 때문에 실패 확인
+- 대상 테스트
+  - `npm test -- --run tests/presentation/teacherChatbotSample.test.ts tests/presentation/studentWorkspaceLayoutStyle.test.ts`
+  - 결과: 통과
+- 전체 테스트
+  - `npm test`
+  - 결과: 통과
+  - 77개 테스트 파일, 342개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+- 화면 점검
+  - Playwright로 `1440x900`, `820x1180`, `390x844`에서 학생 채팅 화면을 확인했다.
+  - 교사용 화면에서 힌트 강도 기본 선택값이 `low`임을 확인했다.
+  - 채팅 리스트와 입력창 겹침 없음, 가로 넘침 없음.
+  - 확인 캡처: `artifacts/teacher-default-hint.png`
+  - 확인 캡처: `artifacts/chat-layout-desktop.png`
+  - 확인 캡처: `artifacts/chat-layout-tablet.png`
+  - 확인 캡처: `artifacts/chat-layout-mobile.png`
+
 ### 운영 전환 64차: 관리자 운영 패널, 가입 뒤로가기, 성취기준 고정, 챗봇 생성 오류 수정
 
 완료 시간: 2026-06-14 23:34:09 +09:00
@@ -7230,4 +7271,3 @@ LLM 실구동 확인:
 - 빌드
   - `npm run build`
   - 결과: 통과
-

@@ -18,4 +18,11 @@ describe("student workspace responsive layout styles", () => {
   it("raises the student workspace closer to the hero on larger screens", () => {
     expect(stylesheet).toMatch(/\.student-workspace\s*\{[^}]*margin-top:\s*clamp\(8px,\s*1\.4vw,\s*22px\);/s);
   });
+
+  it("shows a taller chat history on desktop, tablet, and mobile", () => {
+    expect(stylesheet).toMatch(/\.chat-card\s*\{[^}]*height:\s*clamp\(500px,\s*68vh,\s*680px\);/s);
+    expect(stylesheet).toMatch(/\.student-workspace\s+\.chat-card\s*\{[^}]*height:\s*clamp\(620px,\s*calc\(100vh - 246px\),\s*820px\);/s);
+    expect(stylesheet).toMatch(/@media \(max-width:\s*920px\)[\s\S]*\.chat-card\s*\{[^}]*height:\s*clamp\(560px,\s*74vh,\s*700px\);/s);
+    expect(stylesheet).toMatch(/@media \(max-width:\s*560px\)[\s\S]*\.chat-card\s*\{[^}]*height:\s*clamp\(540px,\s*78vh,\s*680px\);/s);
+  });
 });

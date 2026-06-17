@@ -8,6 +8,7 @@ describe("teacherChatbotSample", () => {
       schoolLevel: "middle",
       gradeBand: "1",
       subject: "국어",
+      hintStrength: "low",
     });
     expect(teacherChatbotSample.topic).toContain("품사");
     expect(teacherChatbotSample.learningGoal).toContain("명사");

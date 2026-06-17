@@ -1549,7 +1549,7 @@ textarea:focus {
 }
 
 .chat-card {
-  height: clamp(440px, 58vh, 560px);
+  height: clamp(500px, 68vh, 680px);
   min-height: 0;
   padding: clamp(18px, 2.2vw, 28px);
   display: grid;
@@ -1703,7 +1703,7 @@ textarea::placeholder {
   }
 
   .student-workspace .chat-card {
-    height: clamp(540px, calc(100vh - 306px), 680px);
+    height: clamp(620px, calc(100vh - 246px), 820px);
   }
 
   .student-workspace .message {
@@ -1785,7 +1785,7 @@ textarea::placeholder {
   }
 
   .chat-card {
-    height: clamp(430px, 62vh, 520px);
+    height: clamp(560px, 74vh, 700px);
     min-height: 0;
   }
 
@@ -1930,7 +1930,7 @@ textarea::placeholder {
   }
 
   .chat-card {
-    height: clamp(420px, 70vh, 500px);
+    height: clamp(540px, 78vh, 680px);
     min-height: 0;
   }
 
@@ -1938,4 +1938,3 @@ textarea::placeholder {
     grid-template-columns: 1fr;
   }
 }
-
