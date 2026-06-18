@@ -51,6 +51,12 @@ describe("Vercel config", () => {
     expect(headers["permissions-policy"]).toContain("camera=()");
     expect(headers["content-security-policy"]).toContain("default-src 'self'");
     expect(headers["content-security-policy"]).toContain(
+      "script-src 'self' https://apis.google.com",
+    );
+    expect(headers["content-security-policy"]).toContain(
+      "frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://*.google.com",
+    );
+    expect(headers["content-security-policy"]).toContain(
       "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://*.google.com",
     );
   });

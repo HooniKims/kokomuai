@@ -5460,6 +5460,38 @@ TDD 기록:
   - `npm run build`
   - 결과: 통과
 
+### 운영 전환 67차: Google 로그인 CSP 차단 수정
+
+완료 시간: 2026-06-18 22:52:05 +09:00
+
+요청:
+
+- `구글로 계속하기` 버튼을 누르면 `https://apis.google.com/js/api.js` 로드가 CSP `script-src 'self'`에 막히고 `Firebase: Error (auth/internal-error)`가 발생한다.
+
+원인:
+
+- 배포 CSP가 `script-src 'self'`만 허용해 Firebase Google Auth가 필요로 하는 Google API 스크립트를 차단했다.
+- Firebase Google Auth 흐름은 인증용 iframe도 사용할 수 있는데 기존 CSP에는 `frame-src`가 없어 `default-src 'self'`로 제한될 수 있었다.
+
+수정:
+
+- `vercel.json`의 CSP `script-src`에 `https://apis.google.com`을 추가했다.
+- `frame-src`를 명시하고 `https://*.firebaseapp.com`, `https://accounts.google.com`, `https://*.google.com`을 허용했다.
+- Vercel 보안 헤더 테스트가 Google Auth에 필요한 CSP 허용값을 검증하도록 확장했다.
+
+검증:
+
+- Red 확인
+  - `npm test -- --run tests/infrastructure/vercelConfig.test.ts`
+  - 결과: 기존 CSP에 `https://apis.google.com`과 `frame-src`가 없어 실패 확인
+- 대상 테스트
+  - `npm test -- --run tests/infrastructure/vercelConfig.test.ts`
+  - 결과: 통과
+- 전체 테스트와 빌드
+  - `npm test && npm run build`
+  - 결과: 통과
+  - 77개 테스트 파일, 342개 테스트 통과
+
 ### 운영 전환 65차: 페르소나 플레이스홀더 범용 문구 조정
 
 완료 시간: 2026-06-14 23:43:36 +09:00
