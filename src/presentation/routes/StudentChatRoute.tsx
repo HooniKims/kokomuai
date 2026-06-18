@@ -40,6 +40,10 @@ export function scrollChatViewToBottom(container: ScrollableMessageList | null, 
   void latestMessage;
 }
 
+export function shouldAutoScrollChat(messages: UiChatMessage[], isStreaming: boolean): boolean {
+  return messages.length > 0 || isStreaming;
+}
+
 export function StudentChatRoute({
   chatbot,
   messages,
@@ -57,6 +61,8 @@ export function StudentChatRoute({
   const latestMessageRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (!shouldAutoScrollChat(messages, isStreaming)) return;
+
     const frame = window.requestAnimationFrame(() => {
       scrollChatViewToBottom(messageListRef.current, latestMessageRef.current);
     });

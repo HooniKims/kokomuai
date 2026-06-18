@@ -300,6 +300,9 @@ select {
 }
 
 .app-footer a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   color: var(--color-forest-ink);
   text-decoration-thickness: 1px;
   text-underline-offset: 4px;
@@ -813,7 +816,7 @@ select {
 
 .student-workspace .button-stack .pill {
   justify-content: center;
-  min-height: 40px;
+  min-height: 44px;
   padding: 7px 8px;
   font-size: 14px;
 }
@@ -1868,6 +1871,29 @@ textarea::placeholder {
   }
 }
 
+@media (max-width: 920px) and (max-height: 520px) {
+  .hero-band {
+    min-height: 70px;
+    padding-bottom: 8px;
+  }
+
+  .hero-copy {
+    margin-top: 8px;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(28px, 6vw, 34px);
+  }
+
+  .hero-copy p:last-child {
+    display: none;
+  }
+
+  .chat-card {
+    height: clamp(260px, calc(100vh - 126px), 340px);
+  }
+}
+
 @media (max-width: 560px) {
   .hero-band {
     min-height: 218px;
@@ -1930,7 +1956,7 @@ textarea::placeholder {
   }
 
   .chat-card {
-    height: clamp(540px, 78vh, 680px);
+    height: clamp(480px, calc(100vh - 230px), 600px);
     min-height: 0;
   }
 

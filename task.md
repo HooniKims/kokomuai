@@ -5460,6 +5460,52 @@ TDD 기록:
   - `npm run build`
   - 결과: 통과
 
+### 운영 전환 68차: 모바일·태블릿 반응형 디자인 점검과 보정
+
+완료 시간: 2026-06-18 23:14:37 +09:00
+
+요청:
+
+- 모바일과 태블릿에서 디자인 이상 유무를 검증한다.
+- 반응형 디자인이 잘 구현되는지 확인하고 문제가 있으면 수정한다.
+
+점검:
+
+- Playwright로 교사용 대시보드와 학생 공유 채팅 화면을 `320x720`, `390x844`, `844x390`, `768x1024`, `820x1180`, `1180x820`에서 확인했다.
+- 초기 점검에서 가로 넘침은 없었지만 학생 모바일 portrait에서 입력창이 첫 화면 아래로 밀렸고, 짧은 landscape에서는 시작 말풍선이 잘렸다.
+- 학생 보조 버튼과 푸터 개인정보 링크의 터치 영역이 44px보다 작았다.
+
+수정:
+
+- 모바일 portrait 학생 채팅 카드 높이를 `clamp(480px, calc(100vh - 230px), 600px)`로 조정해 대화 영역을 유지하면서 입력창이 첫 화면 안에 들어오게 했다.
+- 짧은 landscape 화면에서는 히어로를 압축하고 채팅 카드 높이를 `clamp(260px, calc(100vh - 126px), 340px)`로 조정했다.
+- 학생 보조 버튼과 푸터 링크의 최소 터치 높이를 44px 이상으로 맞췄다.
+- 빈 대화 시작 멘트에서는 자동 스크롤하지 않도록 해 말풍선 상단이 잘리지 않게 했다.
+- 반응형 높이, touch target, 빈 대화 자동 스크롤 회귀 테스트를 추가했다.
+
+검증:
+
+- Red 확인
+  - `npm test -- --run tests/presentation/studentWorkspaceLayoutStyle.test.ts tests/presentation/footerTouchTarget.test.ts`
+  - 결과: 기존 CSS에서 모바일 높이, 짧은 landscape, 터치 영역 테스트 실패 확인
+  - `npm test -- --run tests/presentation/chatAutoScroll.test.ts`
+  - 결과: 빈 대화 자동 스크롤 조건 함수 부재로 실패 확인
+- 대상 테스트
+  - `npm test -- --run tests/presentation/chatAutoScroll.test.ts tests/presentation/studentWorkspaceLayoutStyle.test.ts tests/presentation/footerTouchTarget.test.ts`
+  - 결과: 통과
+- 화면 점검
+  - Playwright 재점검 결과 모든 확인 뷰포트에서 가로 넘침 없음, 터치 영역 문제 없음.
+  - 학생 채팅 입력창은 확인한 모바일·태블릿 portrait/landscape에서 첫 화면 안에 표시됨.
+  - 확인 캡처: `artifacts/responsive-qa/student-mobile-320-verified.png`
+  - 확인 캡처: `artifacts/responsive-qa/student-mobile-landscape-final-fit.png`
+  - 확인 캡처: `artifacts/responsive-qa/student-tablet-768-verified.png`
+  - 확인 캡처: `artifacts/responsive-qa/teacher-mobile-320-verified.png`
+  - 확인 캡처: `artifacts/responsive-qa/teacher-tablet-768-verified.png`
+- 전체 테스트와 빌드
+  - `npm test && npm run build`
+  - 결과: 통과
+  - 78개 테스트 파일, 346개 테스트 통과
+
 ### 운영 전환 67차: Google 로그인 CSP 차단 수정
 
 완료 시간: 2026-06-18 22:52:05 +09:00

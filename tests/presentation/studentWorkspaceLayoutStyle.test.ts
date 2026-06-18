@@ -23,6 +23,15 @@ describe("student workspace responsive layout styles", () => {
     expect(stylesheet).toMatch(/\.chat-card\s*\{[^}]*height:\s*clamp\(500px,\s*68vh,\s*680px\);/s);
     expect(stylesheet).toMatch(/\.student-workspace\s+\.chat-card\s*\{[^}]*height:\s*clamp\(620px,\s*calc\(100vh - 246px\),\s*820px\);/s);
     expect(stylesheet).toMatch(/@media \(max-width:\s*920px\)[\s\S]*\.chat-card\s*\{[^}]*height:\s*clamp\(560px,\s*74vh,\s*700px\);/s);
-    expect(stylesheet).toMatch(/@media \(max-width:\s*560px\)[\s\S]*\.chat-card\s*\{[^}]*height:\s*clamp\(540px,\s*78vh,\s*680px\);/s);
+    expect(stylesheet).toMatch(/@media \(max-width:\s*560px\)[\s\S]*\.chat-card\s*\{[^}]*height:\s*clamp\(480px,\s*calc\(100vh - 230px\),\s*600px\);/s);
+  });
+
+  it("keeps student chat reachable on short landscape screens", () => {
+    expect(stylesheet).toMatch(/@media \(max-width:\s*920px\) and \(max-height:\s*520px\)[\s\S]*\.hero-band\s*\{[^}]*min-height:\s*70px;/s);
+    expect(stylesheet).toMatch(/@media \(max-width:\s*920px\) and \(max-height:\s*520px\)[\s\S]*\.chat-card\s*\{[^}]*height:\s*clamp\(260px,\s*calc\(100vh - 126px\),\s*340px\);/s);
+  });
+
+  it("keeps student secondary actions large enough for touch", () => {
+    expect(stylesheet).toMatch(/\.student-workspace\s+\.button-stack\s+\.pill\s*\{[^}]*min-height:\s*44px;/s);
   });
 });

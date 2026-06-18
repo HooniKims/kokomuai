@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { scrollChatViewToBottom, scrollMessageListToBottom } from "../../src/presentation/routes/StudentChatRoute";
+import { scrollChatViewToBottom, scrollMessageListToBottom, shouldAutoScrollChat } from "../../src/presentation/routes/StudentChatRoute";
 
 describe("chat auto scroll", () => {
   it("moves the message list to the bottom when new chat content appears", () => {
@@ -30,5 +30,11 @@ describe("chat auto scroll", () => {
 
     expect(container.scrollTop).toBe(1280);
     expect(latestMessage.scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it("does not auto-scroll the empty opening message out of view", () => {
+    expect(shouldAutoScrollChat([], false)).toBe(false);
+    expect(shouldAutoScrollChat([{ role: "assistant", content: "안녕하세요." }], false)).toBe(true);
+    expect(shouldAutoScrollChat([], true)).toBe(true);
   });
 });
