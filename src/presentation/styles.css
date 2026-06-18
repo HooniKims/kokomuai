@@ -1806,6 +1806,16 @@ textarea::placeholder {
     grid-template-columns: 1fr;
   }
 
+  .admin-ai-settings {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .admin-ai-settings label,
+  .admin-ai-settings select {
+    min-width: 0;
+  }
+
   .admin-operation-tabs {
     grid-template-columns: 1fr;
   }

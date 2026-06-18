@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 import { AdminDashboardRoute } from "../../src/presentation/routes/AdminDashboardRoute";
+
+const stylesheet = readFileSync("src/presentation/styles.css", "utf8");
 
 describe("AdminDashboardRoute AI settings", () => {
   it("renders the active model selector for admins", () => {
@@ -163,6 +166,15 @@ describe("AdminDashboardRoute AI settings", () => {
     expect(appliedButton?.props?.disabled).toBe(true);
     appliedButton?.props?.onClick?.();
     expect(updateAiModel).not.toHaveBeenCalled();
+  });
+
+  it("stacks the model selector settings on tablet and mobile widths", () => {
+    expect(stylesheet).toMatch(
+      /@media \(max-width:\s*920px\)[\s\S]*\.admin-ai-settings\s*\{[^}]*grid-template-columns:\s*1fr;[^}]*align-items:\s*stretch;/s
+    );
+    expect(stylesheet).toMatch(
+      /@media \(max-width:\s*920px\)[\s\S]*\.admin-ai-settings\s+label,\s*\.admin-ai-settings\s+select\s*\{[^}]*min-width:\s*0;/s
+    );
   });
 });
 
