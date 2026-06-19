@@ -91,6 +91,29 @@ describe("chatbotManagement", () => {
     ).not.toThrow();
   });
 
+  it("rejects invalid option values from direct API callers", () => {
+    expect(() =>
+      validateChatbotDraft({
+        ...chatbotInput,
+        schoolLevel: "college",
+      } as never)
+    ).toThrow("학교급");
+
+    expect(() =>
+      validateChatbotDraft({
+        ...chatbotInput,
+        hintStrength: "maximum",
+      } as never)
+    ).toThrow("힌트 강도");
+
+    expect(() =>
+      validateChatbotDraft({
+        ...chatbotInput,
+        questionLevel: "expert",
+      } as never)
+    ).toThrow("질문 수준");
+  });
+
   it("updates chatbot authoring fields while preserving identity and owner", () => {
     const chatbot = createChatbot(chatbotInput, {
       id: "chatbot-1",

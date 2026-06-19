@@ -42,6 +42,10 @@ export class ChatbotDraftValidationError extends Error {
   }
 }
 
+const validSchoolLevels = new Set(["elementary", "middle", "high", "vocational_high"]);
+const validHintStrengths = new Set(["low", "medium", "high"]);
+const validQuestionLevels = new Set(["easy", "medium", "hard"]);
+
 export function createChatbot(input: CreateChatbotInput, options: { id: string; now: string }): ManagedChatbot {
   validateChatbotDraft(input);
 
@@ -66,6 +70,18 @@ export function createChatbot(input: CreateChatbotInput, options: { id: string; 
 export function validateChatbotDraft(input: CreateChatbotInput): void {
   if (!input.name.trim()) {
     throw new ChatbotDraftValidationError("챗봇 이름을 입력해 주세요.");
+  }
+
+  if (!validSchoolLevels.has(input.schoolLevel)) {
+    throw new ChatbotDraftValidationError("학교급 선택값을 확인해 주세요.");
+  }
+
+  if (!validHintStrengths.has(input.hintStrength)) {
+    throw new ChatbotDraftValidationError("힌트 강도 선택값을 확인해 주세요.");
+  }
+
+  if (input.questionLevel !== undefined && !validQuestionLevels.has(input.questionLevel)) {
+    throw new ChatbotDraftValidationError("질문 수준 선택값을 확인해 주세요.");
   }
 
   if (!input.ownerTeacherId.trim()) {
