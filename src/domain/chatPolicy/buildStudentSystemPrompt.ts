@@ -35,7 +35,7 @@ const questionLevelPolicy = {
 
 export function buildStudentSystemPrompt(input: ChatbotPolicyInput & { curriculumLinks?: CurriculumLink[] }): string {
   const persona = input.persona.trim() || "친절하고 전문적인 선생님";
-  const questionLevel = input.questionLevel ?? "medium";
+  const questionLevel = input.questionLevel ?? "easy";
   const curriculumLines = (input.curriculumLinks ?? [])
     .map((link) => `- ${link.achievement}`)
     .filter((line) => line.trim().length > 2);

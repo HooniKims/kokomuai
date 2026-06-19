@@ -9,7 +9,7 @@ import { formatCurriculumSelectionStatus, getVisibleCurriculumRecommendations } 
 import { formatShareNotice } from "../shareNotice.js";
 import { getChatbotDeletionPrompt } from "../chatbotDeletionPrompt.js";
 import { formatKrwCost, formatTokenCount } from "../usage/usageDisplay.js";
-import { buildLearningGoalSuggestions, buildPersonaSuggestions, buildTopicSuggestions } from "../chatbotFormSuggestions.js";
+import { applyChatbotFormAutoDraft, buildLearningGoalSuggestions, buildPersonaSuggestions, buildTopicSuggestions } from "../chatbotFormSuggestions.js";
 
 export interface TeacherDashboardRouteProps {
   workspaceStatus: string;
@@ -97,6 +97,8 @@ export function TeacherDashboardRoute({
   );
   const personaSuggestions = buildPersonaSuggestions(chatbotForm);
   const topicSuggestions = buildTopicSuggestions(chatbotForm, curriculumRecommendations);
+  const updateDraftingFields = (nextForm: TeacherDashboardRouteProps["chatbotForm"]) =>
+    setChatbotForm(applyChatbotFormAutoDraft(chatbotForm, nextForm));
 
   return (
     <section className="workspace dashboard-grid">
@@ -120,13 +122,13 @@ export function TeacherDashboardRoute({
         <div className="section-heading">
           <div>
             <span className="soft-label">챗봇 만들기</span>
-            <h2>수업 주제를 넣으면 관련 교육과정을 추천합니다.</h2>
+            <h2>챗봇 이름과 과목을 넣으면 수업 주제를 먼저 작성합니다.</h2>
           </div>
         </div>
         <div className="form-grid">
           <label>
             챗봇 이름
-            <input value={chatbotForm.name} placeholder={teacherChatbotSample.name} onChange={(event) => setChatbotForm({ ...chatbotForm, name: event.target.value })} />
+            <input value={chatbotForm.name} placeholder={teacherChatbotSample.name} onChange={(event) => updateDraftingFields({ ...chatbotForm, name: event.target.value })} />
           </label>
           <label>
             학교급
@@ -146,7 +148,7 @@ export function TeacherDashboardRoute({
           </label>
           <label>
             과목
-            <input value={chatbotForm.subject} placeholder={teacherChatbotSample.subject} onChange={(event) => setChatbotForm({ ...chatbotForm, subject: event.target.value })} />
+            <input value={chatbotForm.subject} placeholder={teacherChatbotSample.subject} onChange={(event) => updateDraftingFields({ ...chatbotForm, subject: event.target.value })} />
           </label>
           <label>
             힌트 강도
@@ -162,7 +164,7 @@ export function TeacherDashboardRoute({
           <label>
             질문 수준
             <select
-              value={chatbotForm.questionLevel ?? "medium"}
+              value={chatbotForm.questionLevel ?? "easy"}
               onChange={(event) => setChatbotForm({ ...chatbotForm, questionLevel: event.target.value as NonNullable<ChatbotPolicyInput["questionLevel"]> })}
             >
               <option value="easy">쉽게</option>
@@ -173,7 +175,7 @@ export function TeacherDashboardRoute({
           <label className="wide">
             수업 주제
             <input value={chatbotForm.topic} placeholder={teacherChatbotSample.topic} onChange={(event) => setChatbotForm({ ...chatbotForm, topic: event.target.value })} />
-            <span className="field-assist">2022 교육과정 추천을 바탕으로 주제를 빠르게 시작할 수 있습니다.</span>
+            <span className="field-assist">챗봇 이름과 과목을 바탕으로 주제를 먼저 채웁니다.</span>
             <span className="suggestion-chip-row" aria-label="수업 주제 예시">
               {topicSuggestions.map((suggestion) => (
                 <button

@@ -35,6 +35,21 @@ describe("buildStudentSystemPrompt", () => {
     expect(high).toContain("최종 답은 말하지 마세요");
   });
 
+  it("defaults missing question level to easy", () => {
+    const prompt = buildStudentSystemPrompt({
+      schoolLevel: "middle",
+      gradeBand: "1",
+      subject: "수학",
+      topic: "일차방정식",
+      learningGoal: "학생이 일차방정식의 뜻을 이해하도록 돕는다.",
+      hintStrength: "medium",
+      persona: "질문으로 돕는 수학 선생님"
+    });
+
+    expect(prompt).toContain("질문 수준: 쉽게");
+    expect(prompt).toContain("개념을 하나도 모르는 학생");
+  });
+
   it("includes selected curriculum standards when a chatbot has curriculum links", () => {
     const prompt = buildStudentSystemPrompt({
       schoolLevel: "middle",

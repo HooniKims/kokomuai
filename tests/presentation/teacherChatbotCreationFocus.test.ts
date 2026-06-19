@@ -140,10 +140,10 @@ describe("teacher chatbot creation focus", () => {
     });
   });
 
-  it("renders question level next to hint strength and applies topic suggestions", () => {
+  it("renders question level and applies chatbot-name topic suggestions", () => {
     const setChatbotForm = vi.fn();
     const form = {
-      name: "",
+      name: "품사 도우미",
       schoolLevel: "middle" as const,
       topic: "",
       learningGoal: "",
@@ -191,6 +191,8 @@ describe("teacher chatbot creation focus", () => {
     expect(text).toContain("질문 수준");
     expect(text).toContain("쉽게");
     expect(text).toContain("어렵게");
+    expect(text).toContain("챗봇 이름과 과목을 바탕으로 주제를 먼저 채웁니다.");
+    expect(text).not.toContain("2022 교육과정 추천을 바탕으로 주제를 빠르게 시작할 수 있습니다.");
 
     const topicSuggestion = collectNodes(tree).find(
       (node) => node.props?.["data-action"] === "apply-topic-suggestion",
@@ -199,7 +201,70 @@ describe("teacher chatbot creation focus", () => {
 
     expect(setChatbotForm).toHaveBeenCalledWith({
       ...form,
-      topic: "국어 문법: 품사의 종류와 특성 이해",
+      topic: "국어 품사 이해",
+    });
+  });
+
+  it("auto-fills editable fields when chatbot name and subject are entered", () => {
+    const setChatbotForm = vi.fn();
+    const form = {
+      name: "빛의 굴절 도우미",
+      schoolLevel: "middle" as const,
+      topic: "",
+      learningGoal: "",
+      subject: "",
+      gradeBand: "1",
+      persona: "",
+      hintStrength: "low" as const,
+      questionLevel: "medium" as const,
+    };
+    const tree = TeacherDashboardRoute({
+      workspaceStatus: "교사 계정으로 연결됐습니다.",
+      chatbots: [],
+      usageConversationCount: 0,
+      usageAiCallCount: 0,
+      usageInputTokenCount: 0,
+      usageOutputTokenCount: 0,
+      usageEstimatedCostKrw: 0,
+      activeTeacherId: "teacher-1",
+      chatbotForm: form,
+      setChatbotForm,
+      curriculumRecommendations: [],
+      selectedCurriculumChunkIds: [],
+      toggleCurriculumChunkSelection: vi.fn(),
+      selectedChatbotIds: [],
+      toggleChatbotSelection: vi.fn(),
+      toggleAllChatbotSelection: vi.fn(),
+      showAllCurriculumRecommendations: false,
+      setShowAllCurriculumRecommendations: vi.fn(),
+      createLocalChatbot: vi.fn(),
+      enableLocalShare: vi.fn(),
+      requestLocalChatbotDeletion: vi.fn(),
+      cancelLocalChatbotDeletion: vi.fn(),
+      deleteLocalChatbot: vi.fn(),
+      pendingDeleteChatbotId: "",
+      requestSelectedLocalChatbotsDeletion: vi.fn(),
+      deleteSelectedLocalChatbots: vi.fn(),
+      pendingSelectedDelete: false,
+      copyShareLink: vi.fn(),
+      shareNotice: "",
+      shareNoticeChatbotId: "",
+    });
+
+    const subjectInput = collectInputs(tree).find(
+      (node) => node.props?.placeholder === "국어",
+    );
+    const onSubjectChange = subjectInput?.props?.onChange;
+    if (typeof onSubjectChange === "function") {
+      onSubjectChange({ target: { value: "과학" } });
+    }
+
+    expect(setChatbotForm).toHaveBeenCalledWith({
+      ...form,
+      subject: "과학",
+      topic: "과학 빛의 굴절 이해",
+      learningGoal: "과학 빛의 굴절 이해의 핵심 개념을 학생이 자기 말로 설명하도록 돕는다.",
+      persona: "정답을 먼저 설명하지 않고 학생의 생각을 확인하는 질문형 튜터",
     });
   });
 });
@@ -249,7 +314,7 @@ function recommendation() {
 
 function collectNodes(
   node: unknown,
-): Array<{ props?: Record<string, unknown> }> {
+): Array<{ props?: Record<string, unknown>; type?: unknown }> {
   if (!node || typeof node !== "object") return [];
   if (Array.isArray(node)) return node.flatMap(collectNodes);
 
@@ -258,7 +323,7 @@ function collectNodes(
       ? ((node as { props?: { children?: unknown } }).props ?? {})
       : {};
   return [
-    node as { props?: Record<string, unknown> },
+    node as { props?: Record<string, unknown>; type?: unknown },
     ...collectNodes(props.children),
   ];
 }
@@ -278,4 +343,14 @@ function collectText(node: unknown): string[] {
 function clickNode(node: { props?: Record<string, unknown> } | undefined): void {
   const onClick = node?.props?.onClick;
   if (typeof onClick === "function") onClick();
+}
+
+function collectInputs(
+  node: unknown,
+): Array<{ props?: Record<string, unknown> }> {
+  return collectNodes(node).filter(
+    (item) =>
+      (item.type === "input" || item.type === "textarea" || item.type === "select") &&
+      item.props?.value !== undefined,
+  );
 }

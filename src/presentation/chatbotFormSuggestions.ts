@@ -20,32 +20,50 @@ interface PersonaSuggestionInput {
 }
 
 interface TopicSuggestionInput {
+  name: string;
   schoolLevel: SchoolLevel;
   gradeBand: string;
   subject: string;
 }
 
+type ChatbotFormAutoDraftInput = LearningGoalSuggestionInput &
+  PersonaSuggestionInput &
+  TopicSuggestionInput & {
+    hintStrength: string;
+    learningGoal: string;
+    persona: string;
+    questionLevel: string;
+  };
+
+const questionTutorPersona = "정답을 먼저 설명하지 않고 학생의 생각을 확인하는 질문형 튜터";
+
 export function buildTopicSuggestions(
   input: TopicSuggestionInput,
-  recommendations: CurriculumRecommendationView[],
+  _recommendations: CurriculumRecommendationView[],
 ): ChatbotFormSuggestion[] {
-  const subject = normalizeText(input.subject) || "수업";
-  const seen = new Set<string>();
+  const nameTopic = buildNameBasedTopicSuggestion(input);
+  return nameTopic ? [nameTopic] : [];
+}
 
-  return recommendations.flatMap((recommendation) => {
-    const area = normalizeText(recommendation.chunk.area) || "핵심 개념";
-    const concept = summarizeAchievementTopic(recommendation.chunk.achievement);
-    const value = `${subject} ${area}: ${concept}`;
-    if (seen.has(value)) return [];
-    seen.add(value);
-    return [
-      {
-        id: `topic-${recommendation.chunkId}`,
-        label: area,
-        value,
-      },
-    ];
-  }).slice(0, 5);
+export function applyChatbotFormAutoDraft<T extends ChatbotFormAutoDraftInput>(
+  current: T,
+  next: T,
+): T {
+  const currentDraft = buildChatbotFormAutoDraft(current);
+  const nextDraft = buildChatbotFormAutoDraft(next);
+
+  return {
+    ...next,
+    topic: shouldReplaceWithAutoDraft(current.topic, currentDraft.topic)
+      ? nextDraft.topic
+      : next.topic,
+    learningGoal: shouldReplaceWithAutoDraft(current.learningGoal, currentDraft.learningGoal)
+      ? nextDraft.learningGoal
+      : next.learningGoal,
+    persona: shouldReplaceWithAutoDraft(current.persona, currentDraft.persona)
+      ? nextDraft.persona
+      : next.persona,
+  };
 }
 
 export function buildLearningGoalSuggestions(
@@ -97,7 +115,7 @@ export function buildPersonaSuggestions(
     {
       id: "question-tutor",
       label: "질문형 튜터",
-      value: "정답을 먼저 설명하지 않고 학생의 생각을 확인하는 질문형 튜터",
+      value: questionTutorPersona,
     },
     {
       id: "misconception-checker",
@@ -121,23 +139,83 @@ function normalizeText(value: string): string {
   return value.trim();
 }
 
-function summarizeAchievement(achievement: string): string {
-  return achievement.replace(/\s+/g, " ").trim().replace(/[.。]$/, "");
+function buildChatbotFormAutoDraft(input: ChatbotFormAutoDraftInput): Pick<ChatbotFormAutoDraftInput, "topic" | "learningGoal" | "persona"> {
+  const topic = buildNameBasedTopic(input);
+  const goalTopic = normalizeText(input.topic) || topic;
+
+  return {
+    topic,
+    learningGoal: goalTopic
+      ? `${goalTopic}의 핵심 개념을 학생이 자기 말로 설명하도록 돕는다.`
+      : "",
+    persona: questionTutorPersona,
+  };
 }
 
-function summarizeAchievementTopic(achievement: string): string {
-  const withoutCode = achievement
-    .replace(/\[[^\]]+\]\s*/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/[.。]$/, "");
-  const firstClause = withoutCode
-    .split(/[,，]/)[0]
-    .replace(/을 이해하고.*$/, " 이해")
-    .replace(/를 이해하고.*$/, " 이해")
-    .replace(/을 이해한다.*$/, " 이해")
-    .replace(/를 이해한다.*$/, " 이해")
-    .replace(/한다$/, "하기")
-    .trim();
-  return firstClause || "성취기준 핵심 개념";
+function buildNameBasedTopicSuggestion(input: TopicSuggestionInput): ChatbotFormSuggestion | null {
+  const topic = buildNameBasedTopic(input);
+  if (!topic) return null;
+
+  return {
+    id: "topic-chatbot-name",
+    label: "챗봇명 기반",
+    value: topic,
+  };
+}
+
+function buildNameBasedTopic(input: Pick<TopicSuggestionInput, "name" | "subject">): string {
+  const coreKeyword = extractChatbotNameKeyword(input.name, input.subject);
+  if (!coreKeyword) return "";
+
+  const subject = normalizeText(input.subject);
+  return [subject, `${coreKeyword} 이해`].filter(Boolean).join(" ");
+}
+
+function extractChatbotNameKeyword(name: string, subject: string): string {
+  const subjectTokens = new Set(tokenizeKeywordText(subject));
+  const tokens = tokenizeKeywordText(name)
+    .filter((token) => !subjectTokens.has(token))
+    .filter((token) => !chatbotNameNoiseWords.has(token));
+
+  return tokens.slice(0, 4).join(" ");
+}
+
+function tokenizeKeywordText(value: string): string[] {
+  return normalizeText(value)
+    .replace(/[()[\]{}<>〈〉《》「」『』]/g, " ")
+    .split(/[\s:：,，.。·ㆍ|/\\_-]+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+}
+
+function shouldReplaceWithAutoDraft(currentValue: string, currentAutoValue: string): boolean {
+  const trimmed = currentValue.trim();
+  return trimmed === "" || trimmed === currentAutoValue;
+}
+
+const chatbotNameNoiseWords = new Set([
+  "ai",
+  "AI",
+  "챗봇",
+  "봇",
+  "튜터",
+  "선생님",
+  "도우미",
+  "코치",
+  "조교",
+  "길잡이",
+  "학습",
+  "수업",
+  "이해",
+  "설명",
+  "연습",
+  "문제",
+  "퀴즈",
+  "질문",
+  "핵심",
+  "개념",
+]);
+
+function summarizeAchievement(achievement: string): string {
+  return achievement.replace(/\s+/g, " ").trim().replace(/[.。]$/, "");
 }
