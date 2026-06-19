@@ -9,6 +9,7 @@ import { formatCurriculumSelectionStatus, getVisibleCurriculumRecommendations } 
 import { formatShareNotice } from "../shareNotice.js";
 import { getChatbotDeletionPrompt } from "../chatbotDeletionPrompt.js";
 import { formatKrwCost, formatTokenCount } from "../usage/usageDisplay.js";
+import { buildLearningGoalSuggestions, buildPersonaSuggestions } from "../chatbotFormSuggestions.js";
 
 export interface TeacherDashboardRouteProps {
   workspaceStatus: string;
@@ -86,6 +87,14 @@ export function TeacherDashboardRoute({
 }: TeacherDashboardRouteProps) {
   const visibleShareNotice = shareNotice ? formatShareNotice(shareNotice) : null;
   const everyChatbotSelected = chatbots.length > 0 && chatbots.every((chatbot) => selectedChatbotIds.includes(chatbot.id));
+  const selectedRecommendations = curriculumRecommendations.filter((item) =>
+    selectedCurriculumChunkIds.includes(item.chunkId),
+  );
+  const learningGoalSuggestions = buildLearningGoalSuggestions(
+    chatbotForm,
+    selectedRecommendations.length > 0 ? selectedRecommendations : curriculumRecommendations,
+  );
+  const personaSuggestions = buildPersonaSuggestions(chatbotForm);
 
   return (
     <section className="workspace dashboard-grid">
@@ -160,6 +169,20 @@ export function TeacherDashboardRoute({
               onChange={(event) => setChatbotForm({ ...chatbotForm, learningGoal: event.target.value })}
               rows={3}
             />
+            <span className="field-assist">어렵다면 예시를 눌러 넣고 수업에 맞게 고쳐 쓰세요.</span>
+            <span className="suggestion-chip-row" aria-label="대화 목표 예시">
+              {learningGoalSuggestions.map((suggestion) => (
+                <button
+                  className="suggestion-chip"
+                  data-action="apply-learning-goal-suggestion"
+                  key={suggestion.id}
+                  onClick={() => setChatbotForm({ ...chatbotForm, learningGoal: suggestion.value })}
+                  type="button"
+                >
+                  {suggestion.label}
+                </button>
+              ))}
+            </span>
           </label>
           <label className="wide">
             페르소나
@@ -168,6 +191,20 @@ export function TeacherDashboardRoute({
               placeholder={teacherChatbotSample.persona}
               onChange={(event) => setChatbotForm({ ...chatbotForm, persona: event.target.value })}
             />
+            <span className="field-assist">역할을 고르듯 시작하고, 필요한 말투만 조금 바꿔 주세요.</span>
+            <span className="suggestion-chip-row" aria-label="페르소나 예시">
+              {personaSuggestions.map((suggestion) => (
+                <button
+                  className="suggestion-chip"
+                  data-action="apply-persona-suggestion"
+                  key={suggestion.id}
+                  onClick={() => setChatbotForm({ ...chatbotForm, persona: suggestion.value })}
+                  type="button"
+                >
+                  {suggestion.label}
+                </button>
+              ))}
+            </span>
           </label>
         </div>
 

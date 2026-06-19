@@ -899,6 +899,47 @@ select {
   font-weight: 700;
 }
 
+.field-assist {
+  color: rgb(26 51 0 / 0.66);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.suggestion-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.suggestion-chip {
+  min-height: 36px;
+  border: 1px solid var(--color-paper-line);
+  border-radius: 6px;
+  padding: 7px 10px;
+  color: var(--color-forest-ink);
+  background: rgb(255 233 92 / 0.28);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    background-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.suggestion-chip:hover {
+  transform: translateY(-1px);
+  background: var(--color-highlighter-yellow);
+  box-shadow: 3px 3px 0 rgb(26 51 0 / 0.12);
+}
+
+.suggestion-chip:focus-visible {
+  outline: 3px solid var(--color-highlighter-yellow);
+  outline-offset: 2px;
+}
+
 .form-grid .wide {
   grid-column: 1 / -1;
 }

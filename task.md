@@ -5460,6 +5460,45 @@ TDD 기록:
   - `npm run build`
   - 결과: 통과
 
+### 운영 전환 70차: 챗봇 생성 입력 보조와 한글 입력 전송 보정
+
+완료 시간: 2026-06-19 19:24:00 +09:00
+
+요청:
+
+- 실제 테스트 사용자 후기를 반영해 교사가 대화 목표와 페르소나를 더 쉽게 작성하도록 돕는다.
+- 학생 채팅창에서 입력한 단어의 끝 글자가 전송 후 남는 문제를 수정한다.
+- 사용자가 확인하기 전까지 GitHub에 푸시하지 않는다.
+
+수정:
+
+- 대화 목표 작성 영역에 예시 칩을 추가했다.
+- 예시 칩은 수업 주제, 과목, 선택 성취기준을 바탕으로 바로 수정 가능한 완성 문장을 넣는다.
+- 페르소나 작성 영역에 역할 예시 칩을 추가했다.
+- 페르소나 예시는 `친절한 코치`, `질문형 튜터`, `오개념 점검`, `학생 눈높이`, `핵심 정리` 흐름으로 구성했다.
+- 한글 IME 조합 중 Enter가 눌릴 때는 메시지를 전송하지 않도록 했다.
+- 조합이 끝난 뒤 일반 Enter만 전송하게 해 마지막 조합 글자가 textarea에 다시 남는 문제를 막았다.
+
+검증:
+
+- Red 확인
+  - `npm test -- --run tests/presentation/chatbotFormSuggestions.test.ts tests/presentation/teacherChatbotCreationFocus.test.ts tests/presentation/studentChatInputSubmit.test.ts`
+  - 결과: 추천 함수/IME 전송 헬퍼 부재와 예시 칩 부재로 실패 확인
+- 대상 테스트
+  - `npm test -- --run tests/presentation/chatbotFormSuggestions.test.ts tests/presentation/teacherChatbotCreationFocus.test.ts tests/presentation/studentChatInputSubmit.test.ts`
+  - 결과: 통과
+  - 3개 테스트 파일, 7개 테스트 통과
+- 프론트/도메인/애플리케이션 테스트
+  - `npm test -- --run tests/presentation tests/domain tests/application`
+  - 결과: 통과
+  - 48개 테스트 파일, 184개 테스트 통과
+- 빌드
+  - `npm run build`
+  - 결과: 통과
+- 제한 사항
+  - `npm test` 전체 실행은 현재 세션의 network restricted 환경에서 localhost 서버 기반 인프라 테스트 58개가 5초 타임아웃으로 실패했다.
+  - Playwright 브라우저 검증은 현재 Mac sandbox의 Mach port 권한 제한으로 Chromium 실행이 실패했다.
+
 ### 운영 전환 69차: 모바일 관리자 모델 선택칸 줄바꿈 오류 수정
 
 완료 시간: 2026-06-18 23:48:00 +09:00

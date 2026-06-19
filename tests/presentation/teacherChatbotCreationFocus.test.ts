@@ -71,6 +71,72 @@ describe("teacher chatbot creation focus", () => {
 
     expect(row).toBeDefined();
   });
+
+  it("applies learning goal and persona suggestions to the chatbot form", () => {
+    const setChatbotForm = vi.fn();
+    const form = {
+      name: "",
+      schoolLevel: "middle" as const,
+      topic: "품사의 종류와 특성",
+      learningGoal: "",
+      subject: "국어",
+      gradeBand: "1",
+      persona: "",
+      hintStrength: "low" as const,
+    };
+    const tree = TeacherDashboardRoute({
+      workspaceStatus: "교사 계정으로 연결됐습니다.",
+      chatbots: [],
+      usageConversationCount: 0,
+      usageAiCallCount: 0,
+      usageInputTokenCount: 0,
+      usageOutputTokenCount: 0,
+      usageEstimatedCostKrw: 0,
+      activeTeacherId: "teacher-1",
+      chatbotForm: form,
+      setChatbotForm,
+      curriculumRecommendations: [],
+      selectedCurriculumChunkIds: [],
+      toggleCurriculumChunkSelection: vi.fn(),
+      selectedChatbotIds: [],
+      toggleChatbotSelection: vi.fn(),
+      toggleAllChatbotSelection: vi.fn(),
+      showAllCurriculumRecommendations: false,
+      setShowAllCurriculumRecommendations: vi.fn(),
+      createLocalChatbot: vi.fn(),
+      enableLocalShare: vi.fn(),
+      requestLocalChatbotDeletion: vi.fn(),
+      cancelLocalChatbotDeletion: vi.fn(),
+      deleteLocalChatbot: vi.fn(),
+      pendingDeleteChatbotId: "",
+      requestSelectedLocalChatbotsDeletion: vi.fn(),
+      deleteSelectedLocalChatbots: vi.fn(),
+      pendingSelectedDelete: false,
+      copyShareLink: vi.fn(),
+      shareNotice: "",
+      shareNoticeChatbotId: "",
+    });
+
+    const goalSuggestion = collectNodes(tree).find(
+      (node) => node.props?.["data-action"] === "apply-learning-goal-suggestion",
+    );
+    clickNode(goalSuggestion);
+
+    expect(setChatbotForm).toHaveBeenCalledWith({
+      ...form,
+      learningGoal: "품사의 종류와 특성의 핵심 개념을 학생이 자기 말로 설명하도록 돕는다.",
+    });
+
+    const personaSuggestion = collectNodes(tree).find(
+      (node) => node.props?.["data-action"] === "apply-persona-suggestion",
+    );
+    clickNode(personaSuggestion);
+
+    expect(setChatbotForm).toHaveBeenCalledWith({
+      ...form,
+      persona: expect.stringContaining("답을 바로 말하지 않고"),
+    });
+  });
 });
 
 function chatbot(id: string): ManagedChatbot {
@@ -111,4 +177,9 @@ function collectNodes(
     node as { props?: Record<string, unknown> },
     ...collectNodes(props.children),
   ];
+}
+
+function clickNode(node: { props?: Record<string, unknown> } | undefined): void {
+  const onClick = node?.props?.onClick;
+  if (typeof onClick === "function") onClick();
 }

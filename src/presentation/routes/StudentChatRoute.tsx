@@ -15,6 +15,13 @@ type LatestMessageAnchor = {
   scrollIntoView: (options?: ScrollIntoViewOptions) => void;
 };
 
+interface ChatInputKeyEvent {
+  key: string;
+  shiftKey: boolean;
+  isComposing?: boolean;
+  keyCode?: number;
+}
+
 export interface StudentChatRouteProps {
   chatbot: ChatbotPolicyInput;
   messages: UiChatMessage[];
@@ -42,6 +49,11 @@ export function scrollChatViewToBottom(container: ScrollableMessageList | null, 
 
 export function shouldAutoScrollChat(messages: UiChatMessage[], isStreaming: boolean): boolean {
   return messages.length > 0 || isStreaming;
+}
+
+export function shouldSubmitChatInputOnKeyDown(event: ChatInputKeyEvent): boolean {
+  if (event.key !== "Enter" || event.shiftKey) return false;
+  return !event.isComposing && event.keyCode !== 229;
 }
 
 export function StudentChatRoute({
@@ -121,7 +133,14 @@ export function StudentChatRoute({
             value={input}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
+              if (
+                shouldSubmitChatInputOnKeyDown({
+                  key: event.key,
+                  shiftKey: event.shiftKey,
+                  isComposing: event.nativeEvent.isComposing,
+                  keyCode: event.keyCode,
+                })
+              ) {
                 event.preventDefault();
                 void sendMessage();
               }
