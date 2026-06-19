@@ -9,6 +9,7 @@ import type {
   UsageErrorEvent,
   UsageSurface
 } from "../src/domain/usage/usageAccounting.js";
+import { estimateKrwCostFromUsd } from "../src/domain/usage/usageAccounting.js";
 import type { ProviderErrorLogEntry, StorePort } from "./storePort.js";
 
 export interface FirestoreDocumentSnapshotLike {
@@ -414,8 +415,7 @@ function cloneJson<T>(value: T): T {
 }
 
 function estimateCostKrw(estimatedCostUsd: number): number {
-  if (estimatedCostUsd <= 0) return 0;
-  return Math.max(1, Math.ceil(estimatedCostUsd * 1400));
+  return estimateKrwCostFromUsd(estimatedCostUsd);
 }
 
 function roundCurrency(value: number): number {

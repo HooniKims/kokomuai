@@ -3,7 +3,7 @@ import type { IdentityTeacherAccount } from "../../src/domain/identity/identityA
 import type { MonthlyUsageSummary } from "../../src/domain/usage/usageAccounting";
 import { AdminDashboardRoute } from "../../src/presentation/routes/AdminDashboardRoute";
 import { TeacherDashboardRoute } from "../../src/presentation/routes/TeacherDashboardRoute";
-import { formatTokenCount, summarizeUsageByTeacher, summarizeUsageTotals } from "../../src/presentation/usage/usageDisplay";
+import { formatKrwCost, formatTokenCount, summarizeUsageByTeacher, summarizeUsageTotals } from "../../src/presentation/usage/usageDisplay";
 
 describe("usage dashboard display", () => {
   it("formats teacher token and cost totals", () => {
@@ -13,6 +13,11 @@ describe("usage dashboard display", () => {
 
     expect(formatTokenCount(totals.totalTokenEstimate)).toBe("1,540");
     expect(totals.estimatedCostKrw).toBe(3);
+  });
+
+  it("formats sub-won GPT-5.4 nano costs without rounding up to one won", () => {
+    expect(formatKrwCost(0.88)).toBe("약 0.88원");
+    expect(formatKrwCost(1.15)).toBe("1.15원");
   });
 
   it("renders token and cost metrics on the teacher dashboard", () => {

@@ -19,6 +19,9 @@ describe("createAiProviderRequest", () => {
       model: "gpt-5.4-nano",
       messages,
       stream: true,
+      stream_options: {
+        include_usage: true
+      },
       reasoning_effort: "none"
     });
   });

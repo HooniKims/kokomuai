@@ -112,7 +112,28 @@ interface InternalMonthlyUsageSummary extends SurfaceUsageSummary {
 export function estimateTokensFromText(text: string): number {
   const normalized = text.replace(/\s+/g, " ").trim();
   if (!normalized) return 0;
-  return Math.ceil(normalized.length / 4);
+  let asciiRunLength = 0;
+  let tokenEstimate = 0;
+
+  for (const char of normalized) {
+    if (/\s/.test(char)) {
+      tokenEstimate += estimateAsciiRunTokens(asciiRunLength);
+      asciiRunLength = 0;
+      continue;
+    }
+
+    if (isCjkOrHangul(char)) {
+      tokenEstimate += estimateAsciiRunTokens(asciiRunLength);
+      asciiRunLength = 0;
+      tokenEstimate += 1;
+      continue;
+    }
+
+    asciiRunLength += char.length;
+  }
+
+  tokenEstimate += estimateAsciiRunTokens(asciiRunLength);
+  return tokenEstimate;
 }
 
 export function createUsageEvent(input: CreateUsageEventInput): AiCallUsageEvent {
@@ -299,7 +320,7 @@ function toMonthlyUsageSummary(summary: InternalMonthlyUsageSummary): MonthlyUsa
     inputTokenEstimate: summary.inputTokenEstimate,
     outputTokenEstimate: summary.outputTokenEstimate,
     estimatedCostUsd: roundCurrency(summary.estimatedCostUsd),
-    estimatedCostKrw: estimateCostKrw(summary.estimatedCostUsd),
+    estimatedCostKrw: estimateKrwCostFromUsd(summary.estimatedCostUsd),
     surfaces: {
       student_share: studentShare,
       teacher_preview: teacherPreview
@@ -307,11 +328,21 @@ function toMonthlyUsageSummary(summary: InternalMonthlyUsageSummary): MonthlyUsa
   };
 }
 
-function estimateCostKrw(estimatedCostUsd: number): number {
+export function estimateKrwCostFromUsd(estimatedCostUsd: number): number {
   if (estimatedCostUsd <= 0) return 0;
-  return Math.max(1, Math.ceil(estimatedCostUsd * estimatedKrwPerUsd));
+  const cost = estimatedCostUsd * estimatedKrwPerUsd;
+  if (cost < 0.01) return 0.01;
+  return Math.round(cost * 100) / 100;
 }
 
 function roundCurrency(value: number): number {
   return Math.round(value * 1_000_000) / 1_000_000;
+}
+
+function estimateAsciiRunTokens(length: number): number {
+  return length > 0 ? Math.ceil(length / 4) : 0;
+}
+
+function isCjkOrHangul(char: string): boolean {
+  return /[\u1100-\u11ff\u3130-\u318f\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af\uf900-\ufaff]/u.test(char);
 }

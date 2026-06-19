@@ -44,6 +44,11 @@ describe("usageAccounting", () => {
     expect(serialized).not.toContain(assistantText);
   });
 
+  it("estimates Korean text tokens without dividing every character by four", () => {
+    expect(estimateTokensFromText("관형사와 부사의 차이")).toBeGreaterThanOrEqual(9);
+    expect(estimateTokensFromText("linear equation")).toBeLessThanOrEqual(4);
+  });
+
   it("creates an error event with allowed technical metadata but no raw text", () => {
     const event = createUsageErrorEvent({
       id: "error-1",

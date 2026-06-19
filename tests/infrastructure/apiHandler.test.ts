@@ -452,6 +452,82 @@ describe("apiHandler", () => {
     expect(requestedModels).toEqual(["google/gemma-4-e2b", "gemma-4-12b-it", "gpt-5.4-nano"]);
   });
 
+  it("records OpenAI GPT-5.4 nano streaming usage tokens for billing", async () => {
+    const { baseUrl, store } = await createServer({
+      env: {
+        OPENAI_API_KEY: "test-openai-key"
+      },
+      fetchImpl: async () =>
+        new Response(
+          [
+            'data: {"choices":[{"delta":{"content":"좋아요."}}]}\n\n',
+            'data: {"choices":[],"usage":{"prompt_tokens":1200,"completion_tokens":340,"prompt_tokens_details":{"cached_tokens":200}}}\n\n',
+            "data: [DONE]\n\n"
+          ].join(""),
+          {
+            status: 200,
+            headers: { "Content-Type": "text/event-stream" }
+          }
+        )
+    });
+    await store.saveAiSettings({
+      activeModelId: "openai:gpt-5.4-nano",
+      updatedAt: "2026-06-14T10:20:00.000Z",
+      updatedBy: "admin-1"
+    });
+    const teacher = approveTeacher(createTeacher("teacher-usage", "usage@example.com"), {
+      adminId: "local-admin",
+      now: "2026-06-13T06:10:00.000Z",
+      logId: "admin-log-usage"
+    }).teacher;
+    await store.saveTeacher(teacher);
+    const shared = enableShareLink(
+      createChatbot(
+        {
+          ownerTeacherId: teacher.id,
+          name: "과학 챗봇",
+          schoolLevel: "middle",
+          gradeBand: "1",
+          subject: "과학",
+          topic: "빛의 굴절",
+          learningGoal: "빛의 굴절을 이해한다.",
+          hintStrength: "medium",
+          persona: "질문으로 돕는 과학 선생님"
+        },
+        { id: "chatbot-usage", now: "2026-06-13T06:11:00.000Z" }
+      ),
+      {
+        actorTeacherId: teacher.id,
+        token: "public-token-usage"
+      }
+    );
+    await store.saveChatbot(shared);
+
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "빛의 굴절이 뭐야?",
+        history: [],
+        chatbot: { id: "chatbot-usage" },
+        shareToken: "public-token-usage",
+        conversationId: "conversation-usage"
+      })
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toContain("좋아요.");
+    await expect(store.listUsageEvents()).resolves.toEqual([
+      expect.objectContaining({
+        provider: "openai",
+        modelId: "openai:gpt-5.4-nano",
+        inputTokenEstimate: 1200,
+        outputTokenEstimate: 340,
+        estimatedCostUsd: 0.000629
+      })
+    ]);
+  });
+
   it("removes streamed thinking traces before sending provider tokens to students", async () => {
     const { baseUrl, store } = await createServer({
       env: {
@@ -963,4 +1039,3 @@ function closeServer(server: http.Server): Promise<void> {
     server.close((error) => (error ? reject(error) : resolve()));
   });
 }
-

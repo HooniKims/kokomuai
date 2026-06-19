@@ -42,7 +42,10 @@ function createOpenAiRequest(model: AiModelOption, messages: ProviderMessage[], 
       temperature: 0.3,
       max_completion_tokens: 700,
       reasoning_effort: "none",
-      stream: true
+      stream: true,
+      stream_options: {
+        include_usage: true
+      }
     })
   };
 }

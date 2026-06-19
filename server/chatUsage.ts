@@ -18,6 +18,9 @@ export interface CreateChatUsageOptions {
   assistantText: string;
   riskCodes: string[];
   modelId?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  cachedInputTokens?: number;
 }
 
 export function createChatUsageEventFromRequest(
@@ -39,6 +42,9 @@ export function createChatUsageEventFromRequest(
     inputText: requestBody.message,
     outputText: options.assistantText,
     modelId: options.modelId,
+    inputTokens: options.inputTokens,
+    outputTokens: options.outputTokens,
+    cachedInputTokens: options.cachedInputTokens,
     riskCodes: options.riskCodes
   });
 }
@@ -65,6 +71,9 @@ export function createChatUsageErrorEventFromRequest(
     inputText: requestBody.message,
     assistantText: options.assistantText,
     modelId: options.modelId,
+    inputTokens: options.inputTokens,
+    outputTokens: options.outputTokens,
+    cachedInputTokens: options.cachedInputTokens,
     errorCode: options.errorCode,
     riskCodes: options.riskCodes,
     technical: options.technical

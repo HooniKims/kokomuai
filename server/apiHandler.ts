@@ -1,7 +1,6 @@
 ﻿import type http from "node:http";
-import { getDefaultAiModel, resolveAiModel, type AiModelOption } from "../src/domain/ai/modelCatalog.js";
+import { getDefaultAiModel, resolveAiModel, type AiModelOption, type AiTokenUsage } from "../src/domain/ai/modelCatalog.js";
 import { isShareLinkAccessible } from "../src/domain/chatbot/chatbotManagement.js";
-import { parseOpenAIStreamLine } from "../src/infrastructure/ai/lmStudioClient.js";
 import {
   createAiProviderRequest,
   type ProviderEnvironment,
@@ -23,6 +22,14 @@ import { applyCorsHeaders, writeCorsPreflight } from "./cors.js";
 
 type EnvironmentSource = ProviderEnvironment &
   Record<string, string | undefined>;
+
+type ProviderStreamUsage = Pick<AiTokenUsage, "inputTokens" | "outputTokens" | "cachedInputTokens">;
+
+interface ParsedProviderStreamLine {
+  done: boolean;
+  token: string | null;
+  usage?: ProviderStreamUsage;
+}
 
 export interface ApiHandlerDependencies {
   store: StorePort;
@@ -199,6 +206,7 @@ async function proxyStreamToProvider(
   const thinkingFilter = createThinkingTraceFilter();
   let buffer = "";
   let assistantText = "";
+  let providerUsage: ProviderStreamUsage | undefined;
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -206,8 +214,11 @@ async function proxyStreamToProvider(
     const lines = buffer.split(/\r?\n/);
     buffer = lines.pop() ?? "";
     for (const line of lines) {
-      const token = parseSseTokenSafely(line);
-      if (!token || token === "[DONE]") continue;
+      const streamLine = parseSseLineSafely(line);
+      if (!streamLine) continue;
+      if (streamLine.usage) providerUsage = streamLine.usage;
+      if (streamLine.done || !streamLine.token) continue;
+      const token = streamLine.token;
       const visibleToken = thinkingFilter.push(token);
       if (!visibleToken) continue;
       writeSseDelta(response, visibleToken);
@@ -231,6 +242,9 @@ async function proxyStreamToProvider(
     assistantText,
     riskCodes: prepared.guardDecision.riskCodes,
     modelId: activeModel.id,
+    inputTokens: providerUsage?.inputTokens,
+    outputTokens: providerUsage?.outputTokens,
+    cachedInputTokens: providerUsage?.cachedInputTokens,
   });
   if (usageEvent) {
     await dependencies.store.appendUsageEvent(usageEvent);
@@ -622,12 +636,62 @@ function findTag(value: string, pattern: RegExp): { index: number; text: string 
   return { index: match.index, text: match[0] };
 }
 
-function parseSseTokenSafely(line: string): string | null {
+function parseSseLineSafely(line: string): ParsedProviderStreamLine | null {
   try {
     return parseOpenAIStreamLine(line);
   } catch {
     return null;
   }
+}
+
+function parseOpenAIStreamLine(line: string): ParsedProviderStreamLine | null {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+  if (!trimmed.startsWith("data:")) return null;
+
+  const payload = trimmed.slice("data:".length).trim();
+  if (payload === "[DONE]") {
+    return { done: true, token: null };
+  }
+
+  const parsed = JSON.parse(payload) as {
+    choices?: Array<{ delta?: { content?: string } }>;
+    usage?: {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      prompt_tokens_details?: {
+        cached_tokens?: number;
+      };
+    } | null;
+  };
+
+  return {
+    done: false,
+    token: parsed.choices?.[0]?.delta?.content ?? null,
+    usage: parseProviderUsage(parsed.usage),
+  };
+}
+
+function parseProviderUsage(
+  usage: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    prompt_tokens_details?: {
+      cached_tokens?: number;
+    };
+  } | null | undefined,
+): ProviderStreamUsage | undefined {
+  if (!usage) return undefined;
+  if (!Number.isFinite(usage.prompt_tokens) || !Number.isFinite(usage.completion_tokens)) return undefined;
+
+  const cachedInputTokens = Number.isFinite(usage.prompt_tokens_details?.cached_tokens)
+    ? usage.prompt_tokens_details?.cached_tokens
+    : undefined;
+  return {
+    inputTokens: Math.max(0, Math.round(usage.prompt_tokens ?? 0)),
+    outputTokens: Math.max(0, Math.round(usage.completion_tokens ?? 0)),
+    cachedInputTokens: cachedInputTokens === undefined ? undefined : Math.max(0, Math.round(cachedInputTokens)),
+  };
 }
 
 function createId(prefix: string): string {

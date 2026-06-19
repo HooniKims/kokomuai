@@ -65,5 +65,9 @@ export function formatTokenCount(count: number): string {
 }
 
 export function formatKrwCost(cost: number): string {
-  return `${Math.round(cost).toLocaleString("ko-KR")}원`;
+  if (cost <= 0) return "0원";
+  const formatted = cost.toLocaleString("ko-KR", {
+    maximumFractionDigits: 2
+  });
+  return cost < 1 ? `약 ${formatted}원` : `${formatted}원`;
 }
