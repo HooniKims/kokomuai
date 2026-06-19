@@ -641,6 +641,7 @@ function toPublicSharedChatbot(chatbot: ManagedChatbot) {
     topic: chatbot.topic,
     learningGoal: chatbot.learningGoal,
     hintStrength: chatbot.hintStrength,
+    questionLevel: chatbot.questionLevel,
     persona: chatbot.persona,
     curriculumLinks: chatbot.curriculumLinks,
     share: {

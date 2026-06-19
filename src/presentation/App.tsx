@@ -401,6 +401,7 @@ export function App() {
     gradeBand: "",
     persona: "",
     hintStrength: demoChatbot.hintStrength,
+    questionLevel: demoChatbot.questionLevel ?? "medium",
   });
   const abortRef = useRef<AbortController | null>(null);
   const activeChatbot =
@@ -1169,6 +1170,7 @@ export function App() {
         learningGoal:
           chatbotForm.learningGoal.trim() || demoChatbot.learningGoal,
         hintStrength: chatbotForm.hintStrength,
+        questionLevel: chatbotForm.questionLevel,
         persona: chatbotForm.persona.trim() || demoChatbot.persona,
         curriculumLinks: selectedCurriculumLinks,
       });

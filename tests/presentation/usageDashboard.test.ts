@@ -33,7 +33,8 @@ describe("usage dashboard display", () => {
         subject: "",
         gradeBand: "",
         persona: "",
-        hintStrength: "medium"
+        hintStrength: "medium",
+        questionLevel: "medium"
       },
       setChatbotForm: vi.fn(),
       curriculumRecommendations: [],
@@ -104,7 +105,8 @@ describe("usage dashboard display", () => {
         subject: "",
         gradeBand: "",
         persona: "",
-        hintStrength: "medium"
+        hintStrength: "medium",
+        questionLevel: "medium"
       },
       setChatbotForm: vi.fn(),
       curriculumRecommendations: [],
@@ -160,7 +162,8 @@ describe("usage dashboard display", () => {
         subject: "",
         gradeBand: "",
         persona: "",
-        hintStrength: "medium"
+        hintStrength: "medium",
+        questionLevel: "medium"
       },
       setChatbotForm: vi.fn(),
       curriculumRecommendations: [

@@ -117,6 +117,7 @@ export function updateChatbot(
     topic: next.topic,
     learningGoal: next.learningGoal,
     hintStrength: next.hintStrength,
+    questionLevel: next.questionLevel,
     persona: next.persona,
     curriculumLinks: next.curriculumLinks
   });

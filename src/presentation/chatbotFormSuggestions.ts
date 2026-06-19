@@ -19,6 +19,35 @@ interface PersonaSuggestionInput {
   subject: string;
 }
 
+interface TopicSuggestionInput {
+  schoolLevel: SchoolLevel;
+  gradeBand: string;
+  subject: string;
+}
+
+export function buildTopicSuggestions(
+  input: TopicSuggestionInput,
+  recommendations: CurriculumRecommendationView[],
+): ChatbotFormSuggestion[] {
+  const subject = normalizeText(input.subject) || "수업";
+  const seen = new Set<string>();
+
+  return recommendations.flatMap((recommendation) => {
+    const area = normalizeText(recommendation.chunk.area) || "핵심 개념";
+    const concept = summarizeAchievementTopic(recommendation.chunk.achievement);
+    const value = `${subject} ${area}: ${concept}`;
+    if (seen.has(value)) return [];
+    seen.add(value);
+    return [
+      {
+        id: `topic-${recommendation.chunkId}`,
+        label: area,
+        value,
+      },
+    ];
+  }).slice(0, 5);
+}
+
 export function buildLearningGoalSuggestions(
   input: LearningGoalSuggestionInput,
   recommendations: CurriculumRecommendationView[],
@@ -94,4 +123,21 @@ function normalizeText(value: string): string {
 
 function summarizeAchievement(achievement: string): string {
   return achievement.replace(/\s+/g, " ").trim().replace(/[.。]$/, "");
+}
+
+function summarizeAchievementTopic(achievement: string): string {
+  const withoutCode = achievement
+    .replace(/\[[^\]]+\]\s*/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[.。]$/, "");
+  const firstClause = withoutCode
+    .split(/[,，]/)[0]
+    .replace(/을 이해하고.*$/, " 이해")
+    .replace(/를 이해하고.*$/, " 이해")
+    .replace(/을 이해한다.*$/, " 이해")
+    .replace(/를 이해한다.*$/, " 이해")
+    .replace(/한다$/, "하기")
+    .trim();
+  return firstClause || "성취기준 핵심 개념";
 }

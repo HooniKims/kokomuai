@@ -9,7 +9,7 @@ import { formatCurriculumSelectionStatus, getVisibleCurriculumRecommendations } 
 import { formatShareNotice } from "../shareNotice.js";
 import { getChatbotDeletionPrompt } from "../chatbotDeletionPrompt.js";
 import { formatKrwCost, formatTokenCount } from "../usage/usageDisplay.js";
-import { buildLearningGoalSuggestions, buildPersonaSuggestions } from "../chatbotFormSuggestions.js";
+import { buildLearningGoalSuggestions, buildPersonaSuggestions, buildTopicSuggestions } from "../chatbotFormSuggestions.js";
 
 export interface TeacherDashboardRouteProps {
   workspaceStatus: string;
@@ -29,6 +29,7 @@ export interface TeacherDashboardRouteProps {
     gradeBand: string;
     persona: string;
     hintStrength: ChatbotPolicyInput["hintStrength"];
+    questionLevel: NonNullable<ChatbotPolicyInput["questionLevel"]>;
   };
   setChatbotForm: (form: TeacherDashboardRouteProps["chatbotForm"]) => void;
   curriculumRecommendations: CurriculumRecommendationView[];
@@ -95,6 +96,7 @@ export function TeacherDashboardRoute({
     selectedRecommendations.length > 0 ? selectedRecommendations : curriculumRecommendations,
   );
   const personaSuggestions = buildPersonaSuggestions(chatbotForm);
+  const topicSuggestions = buildTopicSuggestions(chatbotForm, curriculumRecommendations);
 
   return (
     <section className="workspace dashboard-grid">
@@ -157,9 +159,34 @@ export function TeacherDashboardRoute({
               <option value="high">높음</option>
             </select>
           </label>
+          <label>
+            질문 수준
+            <select
+              value={chatbotForm.questionLevel ?? "medium"}
+              onChange={(event) => setChatbotForm({ ...chatbotForm, questionLevel: event.target.value as NonNullable<ChatbotPolicyInput["questionLevel"]> })}
+            >
+              <option value="easy">쉽게</option>
+              <option value="medium">보통</option>
+              <option value="hard">어렵게</option>
+            </select>
+          </label>
           <label className="wide">
             수업 주제
             <input value={chatbotForm.topic} placeholder={teacherChatbotSample.topic} onChange={(event) => setChatbotForm({ ...chatbotForm, topic: event.target.value })} />
+            <span className="field-assist">2022 교육과정 추천을 바탕으로 주제를 빠르게 시작할 수 있습니다.</span>
+            <span className="suggestion-chip-row" aria-label="수업 주제 예시">
+              {topicSuggestions.map((suggestion) => (
+                <button
+                  className="suggestion-chip"
+                  data-action="apply-topic-suggestion"
+                  key={suggestion.id}
+                  onClick={() => setChatbotForm({ ...chatbotForm, topic: suggestion.value })}
+                  type="button"
+                >
+                  {suggestion.label}
+                </button>
+              ))}
+            </span>
           </label>
           <label className="wide">
             대화 목표

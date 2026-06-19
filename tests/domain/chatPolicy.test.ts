@@ -58,4 +58,51 @@ describe("buildStudentSystemPrompt", () => {
     expect(prompt).toContain("연결된 성취기준");
     expect(prompt).toContain("[9국04-03] 품사의 종류와 특성을 이해하고 국어 자료를 분석한다.");
   });
+
+  it("adjusts question difficulty for before, during, and after class use", () => {
+    const easy = buildStudentSystemPrompt({
+      schoolLevel: "middle",
+      gradeBand: "1",
+      subject: "국어",
+      topic: "음운의 개념",
+      learningGoal: "학생이 음운의 뜻을 쉬운 예로 이해하도록 돕는다.",
+      hintStrength: "low",
+      questionLevel: "easy",
+      persona: "질문으로 돕는 국어 선생님"
+    });
+    const hard = buildStudentSystemPrompt({
+      schoolLevel: "middle",
+      gradeBand: "1",
+      subject: "국어",
+      topic: "음운 체계",
+      learningGoal: "학생이 음운 체계를 예와 연결해 설명하도록 돕는다.",
+      hintStrength: "medium",
+      questionLevel: "hard",
+      persona: "질문으로 돕는 국어 선생님"
+    });
+
+    expect(easy).toContain("질문 수준: 쉽게");
+    expect(easy).toContain("학습 전");
+    expect(easy).toContain("개념을 하나도 모르는 학생");
+    expect(hard).toContain("질문 수준: 어렵게");
+    expect(hard).toContain("수업 후");
+  });
+
+  it("requires student-facing questions to avoid abstract curriculum jargon and bold helpful hints", () => {
+    const prompt = buildStudentSystemPrompt({
+      schoolLevel: "middle",
+      gradeBand: "1",
+      subject: "국어",
+      topic: "자음과 모음",
+      learningGoal: "학생이 자음과 모음을 구분하도록 돕는다.",
+      hintStrength: "medium",
+      questionLevel: "easy",
+      persona: "질문으로 돕는 국어 선생님"
+    });
+
+    expect(prompt).toContain("**굵게**");
+    expect(prompt).toContain("국어의 ‘음운 체계’와 연결해서 말해 보세요");
+    expect(prompt).toContain("학생에게 그대로 묻지 마세요");
+    expect(prompt).toContain("소리를 두 가지 무리로 나누면 어떤 점이 더 보기 쉬울까요?");
+  });
 });

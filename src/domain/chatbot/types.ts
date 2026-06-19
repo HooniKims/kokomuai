@@ -1,6 +1,7 @@
 export type SchoolLevel = "elementary" | "middle" | "high" | "vocational_high";
 
 export type HintStrength = "low" | "medium" | "high";
+export type QuestionLevel = "easy" | "medium" | "hard";
 
 export interface ChatbotPolicyInput {
   schoolLevel: SchoolLevel;
@@ -9,5 +10,6 @@ export interface ChatbotPolicyInput {
   topic: string;
   learningGoal: string;
   hintStrength: HintStrength;
+  questionLevel?: QuestionLevel;
   persona: string;
 }

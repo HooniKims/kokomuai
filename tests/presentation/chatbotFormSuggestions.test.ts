@@ -3,6 +3,7 @@ import type { CurriculumRecommendationView } from "../../src/presentation/apiCli
 import {
   buildLearningGoalSuggestions,
   buildPersonaSuggestions,
+  buildTopicSuggestions,
 } from "../../src/presentation/chatbotFormSuggestions";
 
 describe("chatbot form suggestions", () => {
@@ -44,9 +45,29 @@ describe("chatbot form suggestions", () => {
     expect(suggestions[3].value).toContain("초등학생 눈높이");
     expect(suggestions[4].value).toContain("수학");
   });
+
+  it("builds editable topic suggestions from 2022 curriculum recommendations", () => {
+    const suggestions = buildTopicSuggestions(
+      {
+        subject: "국어",
+        schoolLevel: "middle",
+        gradeBand: "1",
+      },
+      [
+        recommendation("[9국04-03] 품사의 종류와 특성을 이해하고 국어 자료를 분석한다.", "문법"),
+        recommendation("[9국01-02] 대화 상황에 맞게 듣고 말한다.", "듣기·말하기"),
+      ],
+    );
+
+    expect(suggestions[0]).toMatchObject({
+      label: "문법",
+      value: "국어 문법: 품사의 종류와 특성 이해",
+    });
+    expect(suggestions.map((item) => item.value)).toContain("국어 듣기·말하기: 대화 상황에 맞게 듣고 말하기");
+  });
 });
 
-function recommendation(achievement: string): CurriculumRecommendationView {
+function recommendation(achievement: string, area = "문법"): CurriculumRecommendationView {
   return {
     chunkId: "chunk-1",
     label: "추천",
@@ -57,7 +78,7 @@ function recommendation(achievement: string): CurriculumRecommendationView {
       schoolLevel: "middle",
       gradeBand: "1",
       subject: "국어",
-      area: "문법",
+      area,
       achievement,
       excerpt: achievement,
     },
