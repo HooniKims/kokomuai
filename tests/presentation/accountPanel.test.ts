@@ -45,8 +45,8 @@ describe("AccountPanel", () => {
     expect(openText).toContain("현재 비밀번호");
     expect(openText).toContain("새 비밀번호");
     expect(openText).toContain("새 비밀번호 확인");
-    expect(openText).toContain("비밀번호를 잊었을 때는 관리자에게 이메일을 보내 주세요.");
-    expect(openText).toContain("greenguyhh@gmail.com");
+    expect(openText).toContain("비밀번호를 잊었을 때는 관리자에게 문의해 주세요.");
+    expect(openText).toContain("02-6380-8341");
     expect(findNodeByAction(openTree, "submit-password-change")).toBeDefined();
     expect(findInputByAutoComplete(openTree, "current-password")).toBeDefined();
   });

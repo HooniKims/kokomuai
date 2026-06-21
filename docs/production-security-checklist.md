@@ -66,7 +66,7 @@
 - moderate 취약점이 Firebase Admin의 사용하지 않는 선택 의존성 경로에서만 발생하는 경우, 다운그레이드나 무리한 `omit=optional` 설정으로 빌드를 깨뜨리지 말고 영향 범위를 기록합니다.
 - 로컬 서버에서 교사 가입, 관리자 승인, 챗봇 생성, 공유 링크 학생 접속, 사용량 집계가 이어지는지 확인합니다.
 - Vercel 배포 후에는 `DEPLOY_URL=https://배포주소 npm run smoke:deploy`로 실제 배포 URL을 점검합니다.
-  - `/`와 `/privacy`가 꼬꼬무AI SPA로 응답해야 합니다.
+  - `/`, `/privacy`, `/terms`가 꼬꼬무AI SPA로 응답해야 합니다.
   - `/api/health`가 `ok`, `provider`, `model`을 반환해야 합니다.
   - `/api/teachers`는 인증 없는 접근을 `401` 또는 `403`으로 거절해야 합니다.
   - `/api/teachers` 응답에는 `Cache-Control: no-store`가 포함되어야 합니다.

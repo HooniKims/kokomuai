@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeDeployUrl, runPostDeploySmokeTest } from "../../scripts/postDeploySmokeTest";
 
 describe("post deploy smoke test", () => {
-  it("checks the deployed SPA, privacy route, API health, unauthenticated teacher protection, and security headers", async () => {
+  it("checks the deployed SPA, legal routes, API health, unauthenticated teacher protection, and security headers", async () => {
     const requested: Array<{ url: string; method: string; origin: string | null }> = [];
     const result = await runPostDeploySmokeTest({
       baseUrl: "https://kkokkomu.example/",
@@ -30,6 +30,7 @@ describe("post deploy smoke test", () => {
     expect(requested).toEqual([
       { url: "https://kkokkomu.example/", method: "GET", origin: null },
       { url: "https://kkokkomu.example/privacy", method: "GET", origin: null },
+      { url: "https://kkokkomu.example/terms", method: "GET", origin: null },
       { url: "https://kkokkomu.example/api/health", method: "GET", origin: null },
       { url: "https://kkokkomu.example/api/teachers", method: "GET", origin: null },
       { url: "https://kkokkomu.example/", method: "GET", origin: null },
@@ -60,6 +61,7 @@ describe("post deploy smoke test", () => {
     expect(result.checks.filter((check) => !check.ok).map((check) => check.name)).toEqual([
       "spa-root",
       "privacy-route",
+      "terms-route",
       "api-health",
       "teacher-api-auth",
       "security-headers",

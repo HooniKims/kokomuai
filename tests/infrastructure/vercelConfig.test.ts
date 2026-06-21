@@ -21,6 +21,7 @@ describe("Vercel config", () => {
       expect.arrayContaining([
         { source: "/s/:token", destination: "/index.html" },
         { source: "/privacy", destination: "/index.html" },
+        { source: "/terms", destination: "/index.html" },
         { source: "/api/:path*", destination: "/api/index" },
         { source: "/((?!api/.*|assets/.*|favicon\\.png).*)", destination: "/index.html" },
       ]),

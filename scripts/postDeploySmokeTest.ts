@@ -26,6 +26,7 @@ export async function runPostDeploySmokeTest(input: PostDeploySmokeInput): Promi
   const checks = await Promise.all([
     checkSpaRoute(fetchImpl, baseUrl, "/", "spa-root"),
     checkSpaRoute(fetchImpl, baseUrl, "/privacy", "privacy-route"),
+    checkSpaRoute(fetchImpl, baseUrl, "/terms", "terms-route"),
     checkApiHealth(fetchImpl, baseUrl),
     checkTeacherApiAuth(fetchImpl, baseUrl),
     checkSecurityHeaders(fetchImpl, baseUrl),

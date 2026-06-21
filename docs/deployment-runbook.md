@@ -121,6 +121,7 @@ smoke test는 다음을 확인합니다.
 
 - `/`가 꼬꼬무AI SPA HTML로 응답한다.
 - `/privacy`가 SPA rewrite로 응답한다.
+- `/terms`가 SPA rewrite로 응답한다.
 - `/api/health`가 `ok`, `provider`, `model`을 반환한다.
 - 인증 없는 `/api/teachers` 접근이 `401` 또는 `403`으로 거절된다.
 - 인증 없는 `/api/teachers` 응답에 `Cache-Control: no-store`가 포함된다.

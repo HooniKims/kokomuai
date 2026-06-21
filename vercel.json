@@ -56,6 +56,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/terms",
+      "destination": "/index.html"
+    },
+    {
       "source": "/((?!api/.*|assets/.*|favicon\\.png).*)",
       "destination": "/index.html"
     }

@@ -48,6 +48,7 @@ import {
   scrollCreatedChatbotIntoView,
   TeacherDashboardRoute,
 } from "./routes/TeacherDashboardRoute.js";
+import { TermsOfServiceRoute } from "./routes/TermsOfServiceRoute.js";
 import { footerCopyrightText } from "./legal/privacyPolicy.js";
 import {
   buildChatTranscriptHtml,
@@ -303,6 +304,8 @@ function hasFirebaseAuthCode(error: unknown, code: string): boolean {
 
 export function App() {
   const isPrivacyPage = window.location.pathname === "/privacy";
+  const isTermsPage = window.location.pathname === "/terms";
+  const isLegalPage = isPrivacyPage || isTermsPage;
   const isStudentShareRoute = isStudentSharePath(window.location.pathname);
   const [usesFirebaseTeacherAuth] = useState(() =>
     shouldUseFirebaseTeacherAuth(
@@ -1343,7 +1346,7 @@ export function App() {
     teachers.find((teacher) => teacher.email === authEmail) ??
     null;
   const shouldShowAccountMenu =
-    !isPrivacyPage && view !== "student" && isTeacherAuthSignedIn;
+    !isLegalPage && view !== "student" && isTeacherAuthSignedIn;
   const shouldShowStudentLoading = shouldShowStudentShareLoading(
     view,
     isStudentShareRoute,
@@ -1370,8 +1373,9 @@ export function App() {
       </section>
 
       {isPrivacyPage ? <PrivacyPolicyRoute /> : null}
+      {isTermsPage ? <TermsOfServiceRoute /> : null}
 
-      {!isPrivacyPage && shouldShowAccountMenu && isAccountPanelOpen ? (
+      {!isLegalPage && shouldShowAccountMenu && isAccountPanelOpen ? (
         <AccountPanel
           teacher={activeTeacherProfile}
           email={authEmail}
@@ -1391,7 +1395,7 @@ export function App() {
         />
       ) : null}
 
-      {!isPrivacyPage && exportStatus ? (
+      {!isLegalPage && exportStatus ? (
         <div
           className="auth-loading-overlay file-export-overlay"
           data-action="file-export-overlay"
@@ -1410,7 +1414,7 @@ export function App() {
         </div>
       ) : null}
 
-      {!isPrivacyPage && shouldShowStudentLoading ? (
+      {!isLegalPage && shouldShowStudentLoading ? (
         <section className="workspace student-workspace">
           <aside className="info-panel">
             <div className="panel-section">
@@ -1428,7 +1432,7 @@ export function App() {
         </section>
       ) : null}
 
-      {!isPrivacyPage && view === "student" && !shouldShowStudentLoading ? (
+      {!isLegalPage && view === "student" && !shouldShowStudentLoading ? (
         <StudentChatRoute
           chatbot={activeChatbot}
           messages={messages}
@@ -1444,7 +1448,7 @@ export function App() {
         />
       ) : null}
 
-      {!isPrivacyPage && shouldShowTeacherAuthPanel ? (
+      {!isLegalPage && shouldShowTeacherAuthPanel ? (
         <TeacherAuthPanel
           mode={authMode}
           isSignedIn={isTeacherAuthSignedIn}
@@ -1484,7 +1488,7 @@ export function App() {
         />
       ) : null}
 
-      {!isPrivacyPage &&
+      {!isLegalPage &&
       shouldShowTeacherWorkspace(
         view,
         activeTeacherProfile,
@@ -1536,7 +1540,7 @@ export function App() {
         />
       ) : null}
 
-      {!isPrivacyPage && view === "admin" && !shouldShowTeacherAuthPanel ? (
+      {!isLegalPage && view === "admin" && !shouldShowTeacherAuthPanel ? (
         <AdminDashboardRoute
           teachers={teachers}
           selectedTeacherIds={selectedTeacherIds}
@@ -1568,6 +1572,7 @@ export function App() {
       ) : null}
       <footer className="app-footer">
         <span>{footerCopyrightText}</span>
+        <a href="/terms">이용약관</a>
         <a href="/privacy">개인정보처리방침</a>
       </footer>
     </main>
@@ -1720,10 +1725,8 @@ export function AccountPanel({
                   />
                 </label>
                 <p className="account-help-text">
-                  비밀번호를 잊었을 때는 관리자에게 이메일을 보내 주세요.{" "}
-                  <a href="mailto:greenguyhh@gmail.com">
-                    greenguyhh@gmail.com
-                  </a>
+                  비밀번호를 잊었을 때는 관리자에게 문의해 주세요.
+                  02-6380-8341
                 </p>
                 <button
                   className="pill dark"
