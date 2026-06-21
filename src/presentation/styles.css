@@ -292,20 +292,35 @@ select {
   margin: 34px auto 0;
   padding: 18px clamp(20px, 5vw, 56px) 28px;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 18px;
-  flex-wrap: wrap;
+  gap: 6px;
+  text-align: center;
   color: rgb(26 51 0 / 68%);
   font-size: 0.88rem;
 }
 
-.app-footer a {
+.app-footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.app-footer-links a {
   min-height: 44px;
   display: inline-flex;
   align-items: center;
   color: var(--color-forest-ink);
   text-decoration-thickness: 1px;
   text-underline-offset: 4px;
+}
+
+.app-footer-manager {
+  color: rgb(26 51 0 / 68%);
+  line-height: 1.5;
+  word-break: keep-all;
 }
 
 .account-panel-shell {

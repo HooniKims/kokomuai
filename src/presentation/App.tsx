@@ -1571,9 +1571,11 @@ export function App() {
         />
       ) : null}
       <footer className="app-footer">
-        <span>{footerCopyrightText}</span>
-        <a href="/terms">이용약관</a>
-        <a href="/privacy">개인정보처리방침</a>
+        <nav className="app-footer-links" aria-label="법적 안내">
+          <a href="/terms">이용약관</a>
+          <a href="/privacy">개인정보처리방침</a>
+        </nav>
+        <span className="app-footer-manager">{footerCopyrightText}</span>
       </footer>
     </main>
   );
