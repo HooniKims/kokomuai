@@ -1728,7 +1728,7 @@ export function AccountPanel({
                 </label>
                 <p className="account-help-text">
                   비밀번호를 잊었을 때는 관리자에게 문의해 주세요.
-                  02-6380-8341
+                  02-6380-8339
                 </p>
                 <button
                   className="pill dark"

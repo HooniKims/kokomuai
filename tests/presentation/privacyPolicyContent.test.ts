@@ -49,12 +49,12 @@ describe("privacy policy content", () => {
 
     expect(text).toContain("개인정보 보호책임자 및 문의");
     expect(text).toContain("개인정보 보호책임자: 김형훈 교사(등촌중학교)");
-    expect(text).toContain("문의: 02-6380-8341");
+    expect(text).toContain("문의: 02-6380-8339");
   });
 
   it("uses the privacy manager wording in the footer", () => {
     expect(footerCopyrightText).toBe(
-      "개인정보책임자 : 김형훈 교사(등촌중학교) 문의 02-6380-8341"
+      "개인정보책임자 : 김형훈 교사(등촌중학교) 문의 02-6380-8339"
     );
   });
 

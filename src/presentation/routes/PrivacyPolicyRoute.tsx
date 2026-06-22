@@ -1,9 +1,18 @@
-﻿import { footerCopyrightText, privacyPolicySections } from "../legal/privacyPolicy.js";
+import { footerCopyrightText, privacyPolicySections } from "../legal/privacyPolicy.js";
 
 export function PrivacyPolicyRoute() {
   return (
     <section className="workspace privacy-workspace">
       <article className="dashboard-panel privacy-panel">
+        <div className="legal-page-actions">
+          <a
+            className="pill outline legal-back-link"
+            data-action="back-to-main"
+            href="/"
+          >
+            메인으로 돌아가기
+          </a>
+        </div>
         {privacyPolicySections.map((section, index) => (
           <section key={section.title} className="privacy-section">
             {index === 0 ? <span className="soft-label">꼬꼬무AI</span> : null}

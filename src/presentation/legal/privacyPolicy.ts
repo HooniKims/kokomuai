@@ -4,7 +4,7 @@ export interface PrivacyPolicySection {
 }
 
 export const footerCopyrightText =
-  "개인정보책임자 : 김형훈 교사(등촌중학교) 문의 02-6380-8341";
+  "개인정보책임자 : 김형훈 교사(등촌중학교) 문의 02-6380-8339";
 
 export const termsOfServiceSections: PrivacyPolicySection[] = [
   {
@@ -193,7 +193,7 @@ export const privacyPolicySections: PrivacyPolicySection[] = [
     title: "개인정보 보호책임자 및 문의",
     paragraphs: [
       "개인정보 보호책임자: 김형훈 교사(등촌중학교)",
-      "문의: 02-6380-8341",
+      "문의: 02-6380-8339",
       "문의 방법: 서비스 운영자에게 직접 문의하거나, 학교 수업에서 사용하는 경우 담당 선생님을 통해 문의해 주세요.",
       "개인정보 침해에 대한 상담이 필요한 경우 개인정보침해신고센터, 개인정보분쟁조정위원회 등 관계기관의 도움을 받을 수 있습니다."
     ]

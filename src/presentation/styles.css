@@ -447,7 +447,9 @@ select {
 }
 
 .auth-workspace-login {
-  grid-template-columns: minmax(640px, 780px);
+  width: 100%;
+  max-width: min(860px, calc(100vw - 40px));
+  grid-template-columns: minmax(0, min(780px, 100%));
   justify-content: center;
 }
 
@@ -508,7 +510,7 @@ select {
 
 .auth-workspace-login .auth-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
   gap: 10px;
 }
 
@@ -1773,6 +1775,11 @@ textarea::placeholder {
 @media (max-width: 1180px) {
   .workspace {
     grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  }
+
+  .auth-workspace-login {
+    max-width: min(860px, calc(100vw - 40px));
+    grid-template-columns: minmax(0, min(780px, 100%));
   }
 
   .student-workspace {
