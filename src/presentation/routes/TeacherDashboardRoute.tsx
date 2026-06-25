@@ -122,7 +122,7 @@ export function TeacherDashboardRoute({
         <div className="section-heading">
           <div>
             <span className="soft-label">챗봇 만들기</span>
-            <h2>챗봇 이름과 과목을 넣으면 수업 주제를 먼저 작성합니다.</h2>
+            <h2>챗봇 이름과 과목을 입력하고 성취기준을 선택해주세요.</h2>
           </div>
         </div>
         <div className="form-grid">

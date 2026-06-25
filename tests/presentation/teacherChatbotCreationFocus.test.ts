@@ -191,7 +191,7 @@ describe("teacher chatbot creation focus", () => {
     expect(text).toContain("질문 수준");
     expect(text).toContain("쉽게");
     expect(text).toContain("어렵게");
-    expect(text).toContain("챗봇 이름과 과목을 바탕으로 주제를 먼저 채웁니다.");
+    expect(text).toContain("챗봇 이름과 과목을 입력하고 성취기준을 선택해주세요.");
     expect(text).not.toContain("2022 교육과정 추천을 바탕으로 주제를 빠르게 시작할 수 있습니다.");
 
     const topicSuggestion = collectNodes(tree).find(
