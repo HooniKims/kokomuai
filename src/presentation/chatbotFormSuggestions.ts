@@ -51,14 +51,14 @@ export function applyChatbotFormAutoDraft<T extends ChatbotFormAutoDraftInput>(
 ): T {
   const currentDraft = buildChatbotFormAutoDraft(current);
   const nextDraft = buildChatbotFormAutoDraft(next);
+  const shouldUseAutoTopic = shouldReplaceWithAutoDraft(current.topic, currentDraft.topic);
+  const nextTopic = shouldUseAutoTopic ? nextDraft.topic : next.topic;
 
   return {
     ...next,
-    topic: shouldReplaceWithAutoDraft(current.topic, currentDraft.topic)
-      ? nextDraft.topic
-      : next.topic,
+    topic: nextTopic,
     learningGoal: shouldReplaceWithAutoDraft(current.learningGoal, currentDraft.learningGoal)
-      ? nextDraft.learningGoal
+      ? buildLearningGoalAutoDraft(nextTopic)
       : next.learningGoal,
     persona: shouldReplaceWithAutoDraft(current.persona, currentDraft.persona)
       ? nextDraft.persona
@@ -145,11 +145,16 @@ function buildChatbotFormAutoDraft(input: ChatbotFormAutoDraftInput): Pick<Chatb
 
   return {
     topic,
-    learningGoal: goalTopic
-      ? `${goalTopic}의 핵심 개념을 학생이 자기 말로 설명하도록 돕는다.`
-      : "",
+    learningGoal: buildLearningGoalAutoDraft(goalTopic),
     persona: questionTutorPersona,
   };
+}
+
+function buildLearningGoalAutoDraft(topic: string): string {
+  const goalTopic = normalizeText(topic);
+  return goalTopic
+    ? `${goalTopic}의 핵심 개념을 학생이 자기 말로 설명하도록 돕는다.`
+    : "";
 }
 
 function buildNameBasedTopicSuggestion(input: TopicSuggestionInput): ChatbotFormSuggestion | null {

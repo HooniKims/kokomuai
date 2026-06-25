@@ -108,6 +108,34 @@ describe("chatbot form suggestions", () => {
     });
   });
 
+  it("updates the auto-drafted learning goal when Korean composition expands from an initial consonant", () => {
+    const base = {
+      name: "",
+      schoolLevel: "middle" as const,
+      topic: "",
+      learningGoal: "",
+      subject: "",
+      gradeBand: "",
+      persona: "",
+      hintStrength: "medium" as const,
+      questionLevel: "medium" as const,
+    };
+    const initialConsonantDraft = applyChatbotFormAutoDraft(base, {
+      ...base,
+      name: "ㅈ",
+    });
+
+    expect(
+      applyChatbotFormAutoDraft(initialConsonantDraft, {
+        ...initialConsonantDraft,
+        name: "조선시대",
+      }),
+    ).toMatchObject({
+      topic: "조선시대 이해",
+      learningGoal: "조선시대 이해의 핵심 개념을 학생이 자기 말로 설명하도록 돕는다.",
+    });
+  });
+
   it("keeps manually edited auto-draft fields when chatbot name changes", () => {
     const current = {
       name: "일차방정식 튜터",
