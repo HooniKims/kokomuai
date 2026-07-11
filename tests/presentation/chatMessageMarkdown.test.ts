@@ -53,4 +53,16 @@ describe("chatMessageMarkdown", () => {
       '물은 <span class="inline-math">H2O</span>, 반응은 <span class="inline-math">2H2 + O2 → 2H2O</span>'
     );
   });
+
+  it("renders bare exponents as superscript", () => {
+    expect(renderChatMessageMarkdown("1) x+3=7\n2) x^2-1=0\n3) 2x+5=11")).toBe(
+      "1) x+3=7<br />2) x<sup>2</sup>-1=0<br />3) 2x+5=11"
+    );
+  });
+
+  it("renders braced LaTeX exponents as superscript", () => {
+    expect(renderChatMessageMarkdown("$x^{12} + y^3$")).toBe(
+      '<span class="inline-math">x<sup>12</sup> + y<sup>3</sup></span>'
+    );
+  });
 });

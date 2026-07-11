@@ -1648,7 +1648,7 @@ textarea:focus {
   color: var(--color-cream-paper);
 }
 
-.message span {
+.message > span {
   display: block;
   margin-bottom: 6px;
   font-size: 13px;
@@ -1656,7 +1656,7 @@ textarea:focus {
   font-weight: 700;
 }
 
-.message.user span {
+.message.user > span {
   color: rgb(252 250 245 / 0.72);
 }
 
@@ -1674,7 +1674,9 @@ textarea:focus {
 }
 
 .message p .inline-math {
+  display: inline;
   font-family: "Times New Roman", Georgia, serif;
+  font-size: 1.15em;
   font-style: italic;
   white-space: nowrap;
 }
@@ -1683,9 +1685,15 @@ textarea:focus {
   display: block;
   margin: 10px 0;
   font-family: "Times New Roman", Georgia, serif;
-  font-size: 1.08em;
+  font-size: 1.25em;
   font-style: italic;
   text-align: center;
+}
+
+.message p sup {
+  font-size: 0.72em;
+  line-height: 0;
+  vertical-align: super;
 }
 
 .error-text {

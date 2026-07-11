@@ -6,6 +6,8 @@ export function renderChatMessageMarkdown(markdown: string): string {
     .replace(/\\\(([\s\S]*?)\\\)/g, (_match, expression: string) => `<span class="inline-math">${normalizeMathText(expression)}</span>`)
     .replace(/\$\$([\s\S]*?)\$\$/g, (_match, expression: string) => `<span class="display-math">${normalizeMathText(expression)}</span>`)
     .replace(/\$([^$\n]+?)\$/g, (_match, expression: string) => `<span class="inline-math">${normalizeMathText(expression)}</span>`)
+    .replace(/\^\{([^{}\n]+?)\}/g, "<sup>$1</sup>")
+    .replace(/\^([+-]?\d+(?:\.\d+)?|[A-Za-z])/g, "<sup>$1</sup>")
     .replace(/&lt;u&gt;([\s\S]*?)&lt;\/u&gt;/g, "<u>$1</u>")
     .replace(/\*\*([\s\S]*?)\*\*/g, "<strong>$1</strong>")
     .replace(/\n/g, "<br />");
