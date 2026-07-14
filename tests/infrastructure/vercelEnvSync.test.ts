@@ -32,7 +32,7 @@ describe("Vercel environment sync plan", () => {
       VERCEL_PROJECT_ID: "project"
     });
 
-    expect(plan.every((entry) => entry.ready)).toBe(true);
+    expect(plan.filter((entry) => entry.required).every((entry) => entry.ready)).toBe(true);
     expect(plan.map((entry) => entry.name)).toEqual(
       expect.arrayContaining([
         "OPENAI_API_KEY",
@@ -55,6 +55,21 @@ describe("Vercel environment sync plan", () => {
 
     expect(plan.map((entry) => entry.name)).toEqual(expect.arrayContaining(["FIREBASE_CLIENT_EMAIL", "FIREBASE_PRIVATE_KEY"]));
     expect(plan.map((entry) => entry.name)).not.toContain("FIREBASE_SERVICE_ACCOUNT");
+  });
+
+  it("includes optional Upstage runtime variables without requiring them for fallback deployments", () => {
+    const plan = buildVercelEnvSyncPlan({
+      UPSTAGE_API_KEY: "upstage-key",
+      UPSTAGE_API_URL: "https://api.upstage.ai/v1",
+      UPSTAGE_MODEL: "solar-pro2"
+    });
+
+    expect(plan.filter((entry) => entry.name.startsWith("UPSTAGE_"))).toEqual([
+      { name: "UPSTAGE_API_KEY", value: "upstage-key", required: false, ready: true },
+      { name: "UPSTAGE_API_URL", value: "https://api.upstage.ai/v1", required: false, ready: true },
+      { name: "UPSTAGE_MODEL", value: "solar-pro2", required: false, ready: true },
+      { name: "UPSTAGE_TIMEOUT_MS", value: "", required: false, ready: false }
+    ]);
   });
 
   it("masks secret values in dry-run output", () => {

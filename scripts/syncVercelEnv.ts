@@ -45,16 +45,23 @@ const requiredBaseEnvNames = [
   "VITE_FIREBASE_MESSAGING_SENDER_ID"
 ];
 
+const optionalEnvNames = [
+  "UPSTAGE_API_KEY",
+  "UPSTAGE_API_URL",
+  "UPSTAGE_MODEL",
+  "UPSTAGE_TIMEOUT_MS"
+];
+
 export function buildVercelEnvSyncPlan(env: Record<string, string | undefined>): VercelEnvPlanEntry[] {
   const firebaseAdminNames = resolveFirebaseAdminEnvNames(env);
-  const names = [...requiredBaseEnvNames, ...firebaseAdminNames];
+  const requiredNames = [...requiredBaseEnvNames, ...firebaseAdminNames];
 
-  return names.map((name) => {
+  return [...requiredNames, ...optionalEnvNames].map((name) => {
     const value = env[name]?.trim() ?? "";
     return {
       name,
       value,
-      required: true,
+      required: requiredNames.includes(name),
       ready: value.length > 0
     };
   });
@@ -147,7 +154,7 @@ async function main() {
   }
 
   for (const target of targets) {
-    for (const entry of plan) {
+    for (const entry of plan.filter((candidate) => candidate.ready)) {
       await addVercelEnv(entry, target, env);
       console.log(`synced ${entry.name} to ${target}`);
     }
