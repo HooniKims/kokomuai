@@ -40,6 +40,10 @@ import {
 } from "./adminBootstrap.js";
 import { isPayloadTooLargeError, readJson } from "./httpJson.js";
 import { applyCorsHeaders, writeCorsPreflight } from "./cors.js";
+import { rerankCurriculumCandidates } from "./curriculumReranker.js";
+
+const MAX_CURRICULUM_RERANK_CANDIDATES = 24;
+const MAX_CURRICULUM_RECOMMENDATIONS = 8;
 
 export type SchoolSearchDependency = (query: string) => Promise<NeisSchool[]>;
 type EnvironmentSource = Record<string, string | undefined>;
@@ -560,7 +564,7 @@ export function createLocalApiHandler(
         const schoolLevel = url.searchParams.get("schoolLevel");
         const gradeBand = url.searchParams.get("gradeBand");
         const subject = url.searchParams.get("subject");
-        const recommendations = dependencies.curriculumIndex
+        const internalCandidates = dependencies.curriculumIndex
           ? dependencies.curriculumIndex
               .search(topic)
               .filter((candidate) =>
@@ -570,9 +574,21 @@ export function createLocalApiHandler(
                   subject,
                 }),
               )
-              .slice(0, 8)
-              .map(toCurriculumApiItem)
+              .slice(0, MAX_CURRICULUM_RERANK_CANDIDATES)
           : [];
+        const rankedCandidates = await rerankCurriculumCandidates({
+          candidates: internalCandidates,
+          context: {
+            query: topic,
+            schoolLevel: schoolLevel ?? "",
+            gradeBand: gradeBand ?? "",
+            subject: subject ?? "",
+          },
+          env: dependencies.env ?? process.env,
+        });
+        const recommendations = rankedCandidates
+          .slice(0, MAX_CURRICULUM_RECOMMENDATIONS)
+          .map(toCurriculumApiItem);
         sendJson(response, 200, { recommendations });
         return;
       }

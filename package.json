@@ -29,10 +29,12 @@
     "firebase-admin": "^14.0.0",
     "idb": "^8.0.3",
     "jspdf": "^4.2.1",
+    "ky": "^2.0.2",
     "lucide-react": "^0.561.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",

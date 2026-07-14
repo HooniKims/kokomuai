@@ -53,7 +53,11 @@ const tempRoots: string[] = [];
 const openServers: http.Server[] = [];
 const blockedFetchPorts = new Set([6000]);
 
-async function createTestServer(options: { curriculumIndex?: CurriculumIndex; schoolSearch?: SchoolSearchDependency } = {}) {
+async function createTestServer(options: {
+  curriculumIndex?: CurriculumIndex;
+  schoolSearch?: SchoolSearchDependency;
+  env?: Record<string, string | undefined>;
+} = {}) {
   const root = await mkdtemp(join(tmpdir(), "local-api-"));
   tempRoots.push(root);
   const store = createLocalStore(join(root, "store.json"));
@@ -61,6 +65,7 @@ async function createTestServer(options: { curriculumIndex?: CurriculumIndex; sc
     store,
     curriculumIndex: options.curriculumIndex,
     schoolSearch: options.schoolSearch,
+    env: options.env,
     auth: {
       requireFirebaseAuth: true,
       verifyIdToken: async (token: string) => {
@@ -114,6 +119,42 @@ afterEach(async () => {
 
 async function readJson(response: Response) {
   return response.json() as Promise<unknown>;
+}
+
+function createCurriculumRerankTestIndex(): CurriculumIndex {
+  return {
+    chunks: [],
+    search: () => [
+      {
+        id: "internal-first",
+        chunkId: "internal-first",
+        sourceTitle: "2022 개정 과학과 교육과정",
+        schoolLevel: "elementary",
+        gradeBand: "5-6",
+        subject: "과학",
+        area: "식물의 한살이",
+        achievement: "식물이 자라는 데 필요한 조건을 실험한다.",
+        excerpt: "식물 생장 조건",
+        sectionPath: "과학 > 식물의 한살이",
+        matchedTerms: ["조건"],
+        score: 6,
+      },
+      {
+        id: "correct-circuit",
+        chunkId: "correct-circuit",
+        sourceTitle: "2022 개정 과학과 교육과정",
+        schoolLevel: "elementary",
+        gradeBand: "5-6",
+        subject: "과학",
+        area: "전기의 이용",
+        achievement: "전구에 불이 켜지는 전기 회로의 특징을 말한다.",
+        excerpt: "전지와 전구를 연결한다.",
+        sectionPath: "과학 > 전기의 이용",
+        matchedTerms: ["전구", "조건"],
+        score: 6,
+      },
+    ],
+  };
 }
 
 describe("localApi", () => {
@@ -743,6 +784,78 @@ describe("localApi", () => {
           achievement: "전구가 켜지는 조건을 탐구한다."
         })
       })
+    ]);
+  });
+
+  it("returns curriculum candidates in the order selected by Upstage", async () => {
+    const upstageServer = await listenOnFetchablePort((_request, response) => {
+      response.statusCode = 200;
+      response.setHeader("Content-Type", "application/json; charset=utf-8");
+      response.end(
+        JSON.stringify({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  rankedChunkIds: ["correct-circuit", "internal-first"],
+                }),
+              },
+            },
+          ],
+        }),
+      );
+    });
+    openServers.push(upstageServer);
+    const upstageAddress = upstageServer.address();
+    if (!upstageAddress || typeof upstageAddress === "string") {
+      throw new TypeError("No Upstage test server address");
+    }
+    const { baseUrl } = await createTestServer({
+      env: {
+        UPSTAGE_API_KEY: "test-upstage-key",
+        UPSTAGE_API_URL: `http://127.0.0.1:${upstageAddress.port}`,
+        UPSTAGE_MODEL: "solar-pro2",
+        UPSTAGE_TIMEOUT_MS: "500",
+      },
+      curriculumIndex: createCurriculumRerankTestIndex(),
+    });
+
+    const response = await fetch(
+      `${baseUrl}/api/curriculum/recommend?topic=${encodeURIComponent("전구가 켜지는 조건")}&schoolLevel=elementary&gradeBand=5-6&subject=${encodeURIComponent("과학")}`,
+    );
+    const payload = (await readJson(response)) as {
+      recommendations: Array<{ chunkId: string }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.recommendations.map((item) => item.chunkId)).toEqual([
+      "correct-circuit",
+      "internal-first",
+    ]);
+  });
+
+  it("returns the internal curriculum order when Upstage is unavailable", async () => {
+    const { baseUrl } = await createTestServer({
+      env: {
+        UPSTAGE_API_KEY: "test-upstage-key",
+        UPSTAGE_API_URL: "http://127.0.0.1:1",
+        UPSTAGE_MODEL: "solar-pro2",
+        UPSTAGE_TIMEOUT_MS: "50",
+      },
+      curriculumIndex: createCurriculumRerankTestIndex(),
+    });
+
+    const response = await fetch(
+      `${baseUrl}/api/curriculum/recommend?topic=${encodeURIComponent("전구가 켜지는 조건")}&schoolLevel=elementary&gradeBand=5-6&subject=${encodeURIComponent("과학")}`,
+    );
+    const payload = (await readJson(response)) as {
+      recommendations: Array<{ chunkId: string }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.recommendations.map((item) => item.chunkId)).toEqual([
+      "internal-first",
+      "correct-circuit",
     ]);
   });
 
