@@ -50,6 +50,7 @@ import {
 } from "./routes/TeacherDashboardRoute.js";
 import { TermsOfServiceRoute } from "./routes/TermsOfServiceRoute.js";
 import { footerCopyrightText } from "./legal/privacyPolicy.js";
+import { downloadShareQrImage } from "./shareQrImage.js";
 import {
   buildChatTranscriptHtml,
   createChatTranscriptPdfBlob,
@@ -1305,6 +1306,23 @@ export function App() {
     setShareNotice(`공유 링크를 복사했습니다: ${shareUrl}`);
   }
 
+  async function downloadShareQr(chatbot: ManagedChatbot) {
+    if (!chatbot.share.publicToken) return;
+    const shareUrl = `${window.location.origin}/s/${chatbot.share.publicToken}`;
+    try {
+      await downloadShareQrImage(shareUrl, chatbot.name);
+      setShareNoticeChatbotId(chatbot.id);
+      setShareNotice("QR 이미지를 저장했습니다.");
+    } catch (caught) {
+      setShareNoticeChatbotId(chatbot.id);
+      setShareNotice(
+        caught instanceof Error
+          ? caught.message
+          : "QR 이미지를 만들지 못했습니다.",
+      );
+    }
+  }
+
   async function updateAiModel(modelId: string) {
     try {
       const updated = await api.updateAiSettings("local-admin", modelId);
@@ -1535,6 +1553,7 @@ export function App() {
           deleteSelectedLocalChatbots={deleteSelectedLocalChatbots}
           pendingSelectedDelete={pendingSelectedDelete}
           copyShareLink={copyShareLink}
+          downloadShareQr={downloadShareQr}
           shareNotice={shareNotice}
           shareNoticeChatbotId={shareNoticeChatbotId}
         />

@@ -60,6 +60,7 @@ describe("usage dashboard display", () => {
       deleteSelectedLocalChatbots: vi.fn(),
       pendingSelectedDelete: false,
       copyShareLink: vi.fn(),
+      downloadShareQr: vi.fn(),
       shareNotice: "",
       shareNoticeChatbotId: ""
     });
@@ -132,6 +133,7 @@ describe("usage dashboard display", () => {
       deleteSelectedLocalChatbots: vi.fn(),
       pendingSelectedDelete: false,
       copyShareLink: vi.fn(),
+      downloadShareQr: vi.fn(),
       shareNotice: "",
       shareNoticeChatbotId: ""
     });
@@ -206,6 +208,7 @@ describe("usage dashboard display", () => {
       deleteSelectedLocalChatbots: vi.fn(),
       pendingSelectedDelete: false,
       copyShareLink: vi.fn(),
+      downloadShareQr: vi.fn(),
       shareNotice: "",
       shareNoticeChatbotId: ""
     });

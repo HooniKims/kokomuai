@@ -1,4 +1,4 @@
-﻿import { Calendar, Check, CheckCircle2, Copy, Eraser, ExternalLink } from "lucide-react";
+﻿import { Calendar, Check, CheckCircle2, Copy, Eraser, ExternalLink, QrCode } from "lucide-react";
 import type { ManagedChatbot } from "../../domain/chatbot/chatbotManagement.js";
 import type { ChatbotPolicyInput } from "../../domain/chatbot/types.js";
 import type { CurriculumRecommendationView } from "../apiClient.js";
@@ -50,6 +50,7 @@ export interface TeacherDashboardRouteProps {
   deleteSelectedLocalChatbots: () => Promise<void>;
   pendingSelectedDelete: boolean;
   copyShareLink: (chatbot: ManagedChatbot) => Promise<void>;
+  downloadShareQr: (chatbot: ManagedChatbot) => Promise<void>;
   shareNotice: string;
   shareNoticeChatbotId: string;
 }
@@ -83,6 +84,7 @@ export function TeacherDashboardRoute({
   deleteSelectedLocalChatbots,
   pendingSelectedDelete,
   copyShareLink,
+  downloadShareQr,
   shareNotice,
   shareNoticeChatbotId
 }: TeacherDashboardRouteProps) {
@@ -328,6 +330,14 @@ export function TeacherDashboardRoute({
                       </a>
                       <button className="pill outline" onClick={() => void copyShareLink(chatbot)} type="button">
                         <Copy size={16} /> 링크 복사
+                      </button>
+                      <button
+                        className="pill outline"
+                        data-action="download-share-qr"
+                        onClick={() => void downloadShareQr(chatbot)}
+                        type="button"
+                      >
+                        <QrCode size={16} /> QR 다운로드
                       </button>
                     </>
                   ) : (
