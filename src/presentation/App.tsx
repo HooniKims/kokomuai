@@ -51,6 +51,8 @@ import {
 import { TermsOfServiceRoute } from "./routes/TermsOfServiceRoute.js";
 import { footerCopyrightText } from "./legal/privacyPolicy.js";
 import { downloadShareQrImage } from "./shareQrImage.js";
+import { downloadFileBlob } from "./fileDownload.js";
+import { toWorkspaceConnectionErrorMessage } from "./workspaceConnectionError.js";
 import {
   buildChatTranscriptHtml,
   createChatTranscriptPdfBlob,
@@ -148,14 +150,10 @@ const fallbackChatbot: ManagedChatbot = {
 };
 
 function downloadBlob(filename: string, type: string, content: string | Blob) {
-  const blob =
-    content instanceof Blob ? content : new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  URL.revokeObjectURL(url);
+  downloadFileBlob(
+    filename,
+    content instanceof Blob ? content : new Blob([content], { type }),
+  );
 }
 
 function tokenFromPath(): string {
@@ -638,11 +636,8 @@ export function App() {
       await refreshWorkspace(teacher.id);
       setWorkspaceStatus("로컬 서버와 연결됐습니다.");
     } catch (caught) {
-      setWorkspaceStatus(
-        caught instanceof Error
-          ? caught.message
-          : "로컬 서버와 연결하지 못했습니다.",
-      );
+      console.error("Failed to initialize the local workspace", caught);
+      setWorkspaceStatus(toWorkspaceConnectionErrorMessage(caught));
     }
   }
 

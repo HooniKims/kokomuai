@@ -21,7 +21,11 @@
     "vercel:env:dry-run": "tsx scripts/syncVercelEnv.ts",
     "vercel:env:sync": "tsx scripts/syncVercelEnv.ts --apply",
     "smoke:deploy": "tsx scripts/postDeploySmokeTest.ts",
-    "dev:full": "concurrently \"npm:server\" \"npm:dev\""
+    "dev:full": "concurrently \"npm:server\" \"npm:dev\"",
+    "dev:e2e": "VITE_FIREBASE_AUTH_ENABLED=false vite --host 0.0.0.0",
+    "dev:full:e2e": "concurrently \"npm:server\" \"npm:dev:e2e\"",
+    "test:e2e:local": "node tests/e2e/localFullFlow.mjs",
+    "test:e2e:qr": "node tests/e2e/shareQrDownload.mjs"
   },
   "dependencies": {
     "@google-cloud/firestore": "^8.6.0",

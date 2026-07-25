@@ -5,14 +5,18 @@
  * and checks their pixels/filenames against the production layout.
  *
  * How to run:
- *   1. In one terminal, start the app with the Firebase auth gate disabled:
- *        VITE_FIREBASE_AUTH_ENABLED=false npm run dev
- *      (the override is required: .env sets VITE_FIREBASE_AUTH_ENABLED=true,
- *      which requires a signed-in Firebase teacher before the dashboard and
- *      its /api/teachers and /api/chatbots calls will work; this script drives
- *      an unauthenticated local-dev flow instead, so the gate must be off)
- *   2. In another terminal, start the local API: npm run server
- *   3. node tests/e2e/shareQrDownload.mjs
+ *   1. Start the app and the local API together, with the Firebase auth gate off:
+ *        npm run dev:full:e2e
+ *   2. node tests/e2e/shareQrDownload.mjs    (or: npm run test:e2e:qr)
+ *
+ * The auth override baked into `dev:full:e2e` is required: .env sets
+ * VITE_FIREBASE_AUTH_ENABLED=true, and with the gate on the app takes its
+ * Firebase sign-in path and never runs the unauthenticated local-dev bootstrap
+ * that this script drives. Plain `npm run dev:full` leaves it at the login screen.
+ *
+ * To generate cards a phone can actually open, point it at the machine's LAN
+ * address so the QR encodes that origin instead of 127.0.0.1:
+ *   E2E_APP_URL=http://<your-lan-ip>:5173 node tests/e2e/shareQrDownload.mjs
  *
  * Side effects: this script writes directly to server/data/local-dev-store.json
  * (bootstrapApprovedLocalTeacher, disableShareInStore) to approve a local
@@ -178,6 +182,7 @@ async function main() {
     });
 
     await disableShareInStore(chatbotC.id);
+    await waitForShareDisabled(chatbotC.id);
     await page.reload({ waitUntil: "networkidle" });
     await expectText(page, DISABLED_NAME);
 
@@ -238,11 +243,15 @@ async function createSharedChatbot(page, form) {
   return chatbot;
 }
 
+// Creation auto-enables sharing, so we must wait for that write to land before
+// turning sharing back off. Returning as soon as the row merely exists lets the
+// app's share-enable call overwrite our disable a moment later, and Case C then
+// sees a still-shared chatbot.
 async function createChatbotOnly(page, form) {
   await fillChatbotForm(page, form);
   await page.getByRole("button", { name: /생성/ }).click();
   await expectText(page, form.name);
-  return waitForCreatedChatbot(form.name);
+  return waitForCreatedChatbot(form.name, { requireShare: true });
 }
 
 async function fillChatbotForm(page, form) {
@@ -355,6 +364,23 @@ async function waitForApprovedTeacher(options = { throwOnTimeout: true }) {
   }
   if (options.throwOnTimeout) throw new Error("approved local teacher was not prepared within timeout");
   return null;
+}
+
+// The disable is written straight to the store file, outside the server's write
+// queue, so confirm it actually survived before asserting on the UI. A silent
+// lost update here would otherwise look like a bug in the QR button itself.
+async function waitForShareDisabled(chatbotId) {
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    const data = JSON.parse(await readFile(storePath, "utf8"));
+    const chatbot = data.chatbots?.find((item) => item.id === chatbotId);
+    if (!chatbot) throw new Error(`chatbot ${chatbotId} vanished from the local store`);
+    if (!chatbot.share?.enabled && !chatbot.share?.publicToken) return;
+    await wait(200);
+  }
+  throw new Error(
+    `sharing for ${chatbotId} was re-enabled after being disabled -- the app overwrote the store`,
+  );
 }
 
 async function disableShareInStore(chatbotId) {

@@ -1,3 +1,32 @@
+/**
+ * Manual, local-only end-to-end check of the whole teacher -> student flow:
+ * approve a teacher, create a chatbot from a real 2022 curriculum achievement,
+ * open the student share link, send a message, and confirm the AI answered on
+ * topic and that usage was accounted.
+ *
+ * How to run:
+ *   1. Start the app and the local API together, with the Firebase auth gate off:
+ *        npm run dev:full:e2e
+ *   2. node tests/e2e/localFullFlow.mjs      (or: npm run test:e2e:local)
+ *
+ * The auth override is REQUIRED, which is why `dev:full:e2e` exists. `.env` sets
+ * VITE_FIREBASE_AUTH_ENABLED=true, and with the gate on the app takes its
+ * Firebase sign-in path and never runs the unauthenticated local-dev bootstrap
+ * (see the `!usesFirebaseTeacherAuth` branch in src/presentation/App.tsx). This
+ * script drives that local-dev path, so the gate has to be off. Plain
+ * `npm run dev:full` will leave the script stuck at the login screen.
+ *
+ * This run needs a working AI provider, because it asserts on a real assistant
+ * reply. Set E2E_AI_MODEL_ID to pin a model. Other knobs: E2E_APP_URL,
+ * E2E_API_URL, E2E_ATTEMPTS (or --attempts=N); it retries up to 5 times by
+ * default because the AI call can be flaky.
+ *
+ * Side effects: writes server/data/local-dev-store.json and creates real
+ * chatbots, and does not clean up after itself. Never point it at a shared or
+ * production store. Screenshots land in artifacts/ (gitignored).
+ *
+ * Local, manual verification only -- not part of `npm test`, not run in CI.
+ */
 import { chromium } from "playwright";
 import { rm, mkdir, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";

@@ -1,3 +1,5 @@
+import { downloadFileBlob } from "./fileDownload.js";
+
 const FORBIDDEN_FILE_NAME_CHARS = /[/\\:*?"<>|\u0000-\u001f]/g;
 const TRIMMED_FILE_NAME_EDGES = /^[-.]+|[-.]+$/g;
 const MAX_FILE_NAME_LENGTH = 50;
@@ -141,14 +143,7 @@ export async function createShareQrPngBlob(url: string, name: string): Promise<B
 
 export async function downloadShareQrImage(url: string, name: string): Promise<void> {
   const blob = await createShareQrPngBlob(url, name);
-  const objectUrl = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = objectUrl;
-  link.download = buildShareQrFileName(name);
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(objectUrl);
+  downloadFileBlob(buildShareQrFileName(name), blob);
 }
 
 function toPngBlob(canvas: HTMLCanvasElement): Promise<Blob> {
