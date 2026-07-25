@@ -231,7 +231,7 @@ async function createSharedChatbot(page, form) {
   await fillChatbotForm(page, form);
   await page.getByRole("button", { name: /생성/ }).click();
   await expectText(page, form.name);
-  const chatbot = await waitForCreatedChatbot(form.name);
+  const chatbot = await waitForCreatedChatbot(form.name, { requireShare: true });
   if (!chatbot.share?.enabled || !chatbot.share?.publicToken) {
     throw new Error(`expected chatbot "${form.name}" to be auto-shared after creation, got share=${JSON.stringify(chatbot.share)}`);
   }
@@ -274,7 +274,7 @@ async function clickDownloadAndCapture(page, chatbotId) {
   return download;
 }
 
-async function waitForCreatedChatbot(name) {
+async function waitForCreatedChatbot(name, { requireShare = false } = {}) {
   const deadline = Date.now() + 15000;
   while (Date.now() < deadline) {
     const teacher = await waitForApprovedTeacher({ throwOnTimeout: false });
@@ -284,7 +284,15 @@ async function waitForCreatedChatbot(name) {
       // previous (unclean) run of this script can already exist -- pick the
       // most recently created match so a stale row can't be silently
       // verified in place of the one this run just created.
-      const matches = chatbots.chatbots?.filter((item) => item.name === name) ?? [];
+      let matches = chatbots.chatbots?.filter((item) => item.name === name) ?? [];
+      if (requireShare) {
+        // Auto-sharing is enabled by the server asynchronously after chatbot
+        // creation, so a name match that shows up before that finishes must
+        // not satisfy the poll -- otherwise we race the server and read the
+        // share fields before they're populated. Keep polling until a match
+        // has a real share token (or the timeout above expires).
+        matches = matches.filter((item) => item.share?.enabled && item.share?.publicToken);
+      }
       if (matches.length > 0) {
         const latest = matches.reduce((newest, candidate) =>
           new Date(candidate.createdAt).getTime() > new Date(newest.createdAt).getTime() ? candidate : newest,
@@ -294,7 +302,10 @@ async function waitForCreatedChatbot(name) {
     }
     await wait(400);
   }
-  throw new Error(`created chatbot "${name}" was not persisted within timeout`);
+  throw new Error(
+    `created chatbot "${name}" was not persisted within timeout` +
+      (requireShare ? " with sharing enabled (share.enabled/publicToken never populated)" : ""),
+  );
 }
 
 // NOTE: the app's own client-side bootstrap (App.tsx `ensureApprovedLocalTeacher`)
