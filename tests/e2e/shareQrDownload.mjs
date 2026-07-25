@@ -26,9 +26,12 @@
  * or production store.
  *
  * This script is for local, manual verification only -- it is not part of
- * `npm test` and does not run in CI. It does not fix the underlying app-level
- * local-dev auth bootstrap gap described in bootstrapApprovedLocalTeacher()
- * below; that is a separate, pre-existing issue.
+ * `npm test` and does not run in CI.
+ *
+ * bootstrapApprovedLocalTeacher() seeds an approved teacher through the API
+ * before the browser opens. That is not working around an app bug: with the auth
+ * gate off, the app's own bootstrap looks for an already-approved teacher, and
+ * seeding one first makes the run deterministic instead of order-dependent.
  */
 import { chromium } from "playwright";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -182,7 +185,7 @@ async function main() {
     });
 
     await disableShareInStore(chatbotC.id);
-    await waitForShareDisabled(chatbotC.id);
+    await assertShareStaysDisabled(chatbotC.id);
     await page.reload({ waitUntil: "networkidle" });
     await expectText(page, DISABLED_NAME);
 
@@ -295,11 +298,11 @@ async function waitForCreatedChatbot(name, { requireShare = false } = {}) {
       // verified in place of the one this run just created.
       let matches = chatbots.chatbots?.filter((item) => item.name === name) ?? [];
       if (requireShare) {
-        // Auto-sharing is enabled by the server asynchronously after chatbot
-        // creation, so a name match that shows up before that finishes must
-        // not satisfy the poll -- otherwise we race the server and read the
-        // share fields before they're populated. Keep polling until a match
-        // has a real share token (or the timeout above expires).
+        // Sharing is enabled by the APP, not the server: after POST /api/chatbots
+        // returns, App.tsx follows up with api.enableShareLink(). So a row can be
+        // visible with empty share fields for a moment. A match that shows up
+        // before that second call lands must not satisfy the poll -- keep going
+        // until a match has a real share token (or the timeout above expires).
         matches = matches.filter((item) => item.share?.enabled && item.share?.publicToken);
       }
       if (matches.length > 0) {
@@ -367,20 +370,24 @@ async function waitForApprovedTeacher(options = { throwOnTimeout: true }) {
 }
 
 // The disable is written straight to the store file, outside the server's write
-// queue, so confirm it actually survived before asserting on the UI. A silent
-// lost update here would otherwise look like a bug in the QR button itself.
-async function waitForShareDisabled(chatbotId) {
-  const deadline = Date.now() + 5000;
-  while (Date.now() < deadline) {
+// queue, so a late write from the app can clobber it. What actually prevents
+// that is waiting for the app's auto-share to land first (see createChatbotOnly);
+// this is the belt-and-braces check that it stayed disabled. It requires the
+// disabled state to hold across several reads, because reading once would only
+// echo back the write we just made.
+async function assertShareStaysDisabled(chatbotId) {
+  const requiredConsecutiveReads = 5;
+  for (let read = 0; read < requiredConsecutiveReads; read += 1) {
     const data = JSON.parse(await readFile(storePath, "utf8"));
     const chatbot = data.chatbots?.find((item) => item.id === chatbotId);
     if (!chatbot) throw new Error(`chatbot ${chatbotId} vanished from the local store`);
-    if (!chatbot.share?.enabled && !chatbot.share?.publicToken) return;
+    if (chatbot.share?.enabled || chatbot.share?.publicToken) {
+      throw new Error(
+        `sharing for ${chatbotId} came back after being disabled -- the app overwrote the store`,
+      );
+    }
     await wait(200);
   }
-  throw new Error(
-    `sharing for ${chatbotId} was re-enabled after being disabled -- the app overwrote the store`,
-  );
 }
 
 async function disableShareInStore(chatbotId) {

@@ -21,9 +21,13 @@
  * E2E_API_URL, E2E_ATTEMPTS (or --attempts=N); it retries up to 5 times by
  * default because the AI call can be flaky.
  *
- * Side effects: writes server/data/local-dev-store.json and creates real
- * chatbots, and does not clean up after itself. Never point it at a shared or
- * production store. Screenshots land in artifacts/ (gitignored).
+ * DESTRUCTIVE side effects, at the start of EVERY attempt:
+ *   - deletes server/data/local-dev-store.json outright (resetLocalStore), so
+ *     every local teacher, chatbot and conversation you had is gone
+ *   - deletes every .png/.jpg/.webp under artifacts/, recursively
+ *     (removeOldScreenshots) -- including cards left by test:e2e:qr
+ * It then creates a real teacher and chatbot and leaves them behind. Never
+ * point it at a shared or production store.
  *
  * Local, manual verification only -- not part of `npm test`, not run in CI.
  */

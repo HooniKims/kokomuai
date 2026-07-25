@@ -25,27 +25,40 @@ export interface FileDownloadHost {
   defer(task: () => void): void;
 }
 
-/** Long enough for a slow browser to start reading, short enough to not leak. */
-export const OBJECT_URL_RELEASE_DELAY_MS = 60_000;
+/**
+ * Only has to outlast the browser queueing the download, which is immediate —
+ * the requirement is "not synchronously", not "a long time". Kept generous
+ * enough for a slow disk without pinning a large blob in memory for a minute.
+ */
+const OBJECT_URL_RELEASE_DELAY_MS = 10_000;
 
 export function downloadFileBlob(
   filename: string,
   blob: Blob,
   host: FileDownloadHost = browserFileDownloadHost(),
 ): void {
-  const objectUrl = host.createObjectUrl(blob);
+  // Anchor first: if creating it throws, there is no url to leak yet.
   const anchor = host.createAttachedAnchor();
-  anchor.href = objectUrl;
-  anchor.download = filename;
+  const objectUrl = host.createObjectUrl(blob);
 
   try {
+    anchor.href = objectUrl;
+    anchor.download = filename;
     anchor.click();
   } finally {
-    anchor.remove();
+    // Schedule the release before detaching, so a throwing remove() cannot
+    // strand the url.
     host.defer(() => host.revokeObjectUrl(objectUrl));
+    anchor.remove();
   }
 }
 
+/**
+ * Untested by construction: vitest runs in `node`, so nothing here can be
+ * covered. Both browser-specific details live in this function — the
+ * appendChild that Firefox needs, and the timer that keeps the url alive —
+ * so treat changes to it as unguarded.
+ */
 function browserFileDownloadHost(): FileDownloadHost {
   return {
     createObjectUrl: (blob) => URL.createObjectURL(blob),

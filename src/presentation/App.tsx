@@ -52,7 +52,10 @@ import { TermsOfServiceRoute } from "./routes/TermsOfServiceRoute.js";
 import { footerCopyrightText } from "./legal/privacyPolicy.js";
 import { downloadShareQrImage } from "./shareQrImage.js";
 import { downloadFileBlob } from "./fileDownload.js";
-import { toWorkspaceConnectionErrorMessage } from "./workspaceConnectionError.js";
+import {
+  toUserFacingErrorMessage,
+  toWorkspaceConnectionErrorMessage,
+} from "./userFacingError.js";
 import {
   buildChatTranscriptHtml,
   createChatTranscriptPdfBlob,
@@ -273,9 +276,7 @@ export function toFriendlyFirebaseAuthError(
     return "보안을 위해 다시 로그인한 뒤 시도해 주세요.";
   }
 
-  return error instanceof Error && error.message
-    ? error.message
-    : fallbackMessage;
+  return toUserFacingErrorMessage(error, fallbackMessage);
 }
 
 export function toFriendlySignupRequestError(error: unknown): string {
@@ -283,12 +284,10 @@ export function toFriendlySignupRequestError(error: unknown): string {
     return "로그인 토큰을 확인하지 못했습니다. 새로고침 후 다시 로그인한 뒤 가입 요청을 다시 보내 주세요.";
   }
 
-  return error instanceof Error
-    ? error.message.replace(
-        "요청을 처리하는 중 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.",
-        "가입 요청 처리 중 문제가 생겼습니다. 이미 요청이 접수됐는지 관리자 화면에서 확인해 주세요.",
-      )
-    : "가입 요청을 저장하지 못했습니다.";
+  return toUserFacingErrorMessage(error, "가입 요청을 저장하지 못했습니다.").replace(
+    "요청을 처리하는 중 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.",
+    "가입 요청 처리 중 문제가 생겼습니다. 이미 요청이 접수됐는지 관리자 화면에서 확인해 주세요.",
+  );
 }
 
 function hasFirebaseAuthCode(error: unknown, code: string): boolean {
@@ -584,9 +583,7 @@ export function App() {
         .catch((caught) => {
           if (cancelled) return;
           setAuthError(
-            caught instanceof Error
-              ? caught.message
-              : "학교 검색 중 문제가 생겼습니다.",
+            toUserFacingErrorMessage(caught, "학교 검색 중 문제가 생겼습니다."),
           );
         })
         .finally(() => {
@@ -887,7 +884,7 @@ export function App() {
       await signOutTeacher(getKkokkomuFirebaseAuth());
     } catch (caught) {
       setAuthError(
-        caught instanceof Error ? caught.message : "로그아웃에 실패했습니다.",
+        toUserFacingErrorMessage(caught, "로그아웃에 실패했습니다."),
       );
     } finally {
       setIsSubmittingAuth(false);
@@ -951,9 +948,7 @@ export function App() {
       await signOutTeacher(getKkokkomuFirebaseAuth());
     } catch (caught) {
       setAccountNotice(
-        caught instanceof Error
-          ? caught.message
-          : "회원탈퇴를 처리하지 못했습니다.",
+        toUserFacingErrorMessage(caught, "회원탈퇴를 처리하지 못했습니다."),
       );
     } finally {
       setIsUpdatingAccount(false);
@@ -994,9 +989,7 @@ export function App() {
       if (!controller.signal.aborted) {
         setMessages(nextMessages);
         setError(
-          caught instanceof Error
-            ? caught.message
-            : "응답을 불러오지 못했어요. 다시 시도해 주세요.",
+          toUserFacingErrorMessage(caught, "응답을 불러오지 못했어요. 다시 시도해 주세요."),
         );
       }
     } finally {
@@ -1060,9 +1053,7 @@ export function App() {
       setResetLog("선택한 교사를 승인했습니다.");
     } catch (caught) {
       setResetLog(
-        caught instanceof Error
-          ? caught.message
-          : "교사 승인 중 문제가 생겼습니다.",
+        toUserFacingErrorMessage(caught, "교사 승인 중 문제가 생겼습니다."),
       );
     }
   }
@@ -1080,9 +1071,7 @@ export function App() {
       setResetLog("선택한 교사를 거절했습니다.");
     } catch (caught) {
       setResetLog(
-        caught instanceof Error
-          ? caught.message
-          : "교사 거절 중 문제가 생겼습니다.",
+        toUserFacingErrorMessage(caught, "교사 거절 중 문제가 생겼습니다."),
       );
     }
   }
@@ -1099,9 +1088,7 @@ export function App() {
       );
     } catch (caught) {
       setResetLog(
-        caught instanceof Error
-          ? caught.message
-          : "비밀번호 초기화 메일을 발송하지 못했습니다.",
+        toUserFacingErrorMessage(caught, "비밀번호 초기화 메일을 발송하지 못했습니다."),
       );
     }
   }
@@ -1119,9 +1106,7 @@ export function App() {
       setResetLog(`${disabled.realName} 교사 계정을 사용 중지했습니다.`);
     } catch (caught) {
       setResetLog(
-        caught instanceof Error
-          ? caught.message
-          : "교사 계정을 사용 중지하지 못했습니다.",
+        toUserFacingErrorMessage(caught, "교사 계정을 사용 중지하지 못했습니다."),
       );
     }
   }
@@ -1141,9 +1126,7 @@ export function App() {
       setResetLog("챗봇을 비활성화했습니다. 공유 링크 접근도 함께 차단됩니다.");
     } catch (caught) {
       setResetLog(
-        caught instanceof Error
-          ? caught.message
-          : "챗봇을 비활성화하지 못했습니다.",
+        toUserFacingErrorMessage(caught, "챗봇을 비활성화하지 못했습니다."),
       );
     }
   }
@@ -1194,9 +1177,7 @@ export function App() {
       window.setTimeout(() => scrollCreatedChatbotIntoView(shared.id), 0);
     } catch (caught) {
       setWorkspaceStatus(
-        caught instanceof Error
-          ? caught.message
-          : "챗봇 생성 중 문제가 생겼습니다.",
+        toUserFacingErrorMessage(caught, "챗봇 생성 중 문제가 생겼습니다."),
       );
     }
   }
@@ -1220,9 +1201,7 @@ export function App() {
     } catch (caught) {
       setShareNoticeChatbotId(chatbotId);
       setShareNotice(
-        caught instanceof Error
-          ? caught.message
-          : "공유 링크를 만들지 못했습니다.",
+        toUserFacingErrorMessage(caught, "공유 링크를 만들지 못했습니다."),
       );
     }
   }
@@ -1252,9 +1231,7 @@ export function App() {
     } catch (caught) {
       setShareNoticeChatbotId(chatbotId);
       setShareNotice(
-        caught instanceof Error
-          ? caught.message
-          : "챗봇을 삭제하지 못했습니다.",
+        toUserFacingErrorMessage(caught, "챗봇을 삭제하지 못했습니다."),
       );
     }
   }
@@ -1287,9 +1264,7 @@ export function App() {
     } catch (caught) {
       setShareNoticeChatbotId("");
       setShareNotice(
-        caught instanceof Error
-          ? caught.message
-          : "선택한 챗봇을 삭제하지 못했습니다.",
+        toUserFacingErrorMessage(caught, "선택한 챗봇을 삭제하지 못했습니다."),
       );
     }
   }
@@ -1328,9 +1303,7 @@ export function App() {
       setResetLog("AI 모델 설정을 저장했습니다.");
     } catch (caught) {
       setResetLog(
-        caught instanceof Error
-          ? caught.message
-          : "AI 모델 설정을 저장하지 못했습니다.",
+        toUserFacingErrorMessage(caught, "AI 모델 설정을 저장하지 못했습니다."),
       );
     }
   }
