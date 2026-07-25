@@ -145,6 +145,8 @@ git commit -m "Add share QR file name normalization"
 
 폭 측정 함수를 인자로 받는 이유는 이 계산이 이 기능에서 실제로 틀릴 수 있는 유일한 부분이고, 캔버스 없이 테스트되어야 하기 때문이다. 실제 호출부는 `context.measureText(text).width` 를 넘긴다.
 
+폭이 `maxWidth` 와 정확히 같은 줄은 들어가는 것으로 본다. 설계 문서가 720px 을 "이름이 차지할 수 있는 최대 가로 폭" 이라고 규정하므로 720 은 허용치다. 따라서 단어 배치 비교와 `ellipsize` 모두 `<=` 를 쓴다. 한쪽만 `<` 로 두면 같은 모듈 안에서 "들어간다" 의 기준이 갈린다.
+
 - [ ] **Step 1: Write the failing test**
 
 `tests/presentation/shareQrImage.test.ts` 에 import 를 추가하고 describe 블록을 덧붙인다.
@@ -164,9 +166,15 @@ describe("layoutQrCardName", () => {
   });
 
   it("wraps at word boundaries when a name is too wide", () => {
-    expect(layoutQrCardName("분수의 덧셈 도우미", measureTenPixelsPerCharacter, 100, 2)).toEqual([
+    expect(layoutQrCardName("분수의 덧셈 도우미들", measureTenPixelsPerCharacter, 100, 2)).toEqual([
       "분수의 덧셈",
-      "도우미",
+      "도우미들",
+    ]);
+  });
+
+  it("keeps a line that measures exactly the maximum width on one line", () => {
+    expect(layoutQrCardName("분수의 덧셈 도우미", measureTenPixelsPerCharacter, 100, 2)).toEqual([
+      "분수의 덧셈 도우미",
     ]);
   });
 
