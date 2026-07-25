@@ -35,13 +35,13 @@ export function layoutQrCardName(
 
   for (const word of normalized.split(" ")) {
     const joined = current ? `${current} ${word}` : word;
-    if (measureWidth(joined) < maxWidth) {
+    if (measureWidth(joined) <= maxWidth) {
       current = joined;
       continue;
     }
 
     flush();
-    if (measureWidth(word) < maxWidth) {
+    if (measureWidth(word) <= maxWidth) {
       current = word;
       continue;
     }

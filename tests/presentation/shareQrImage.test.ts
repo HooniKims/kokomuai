@@ -43,9 +43,15 @@ describe("layoutQrCardName", () => {
   });
 
   it("wraps at word boundaries when a name is too wide", () => {
-    expect(layoutQrCardName("분수의 덧셈 도우미", measureTenPixelsPerCharacter, 100, 2)).toEqual([
+    expect(layoutQrCardName("분수의 덧셈 도우미들", measureTenPixelsPerCharacter, 100, 2)).toEqual([
       "분수의 덧셈",
-      "도우미",
+      "도우미들",
+    ]);
+  });
+
+  it("keeps a line that measures exactly the maximum width on one line", () => {
+    expect(layoutQrCardName("분수의 덧셈 도우미", measureTenPixelsPerCharacter, 100, 2)).toEqual([
+      "분수의 덧셈 도우미",
     ]);
   });
 
