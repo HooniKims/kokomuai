@@ -348,6 +348,7 @@ export function App() {
   const [shareNoticeChatbotId, setShareNoticeChatbotId] = useState("");
   const [pendingDeleteChatbotId, setPendingDeleteChatbotId] = useState("");
   const [pendingSelectedDelete, setPendingSelectedDelete] = useState(false);
+  const [pendingShareQrChatbotId, setPendingShareQrChatbotId] = useState("");
   const [usageSummaries, setUsageSummaries] = useState<
     Awaited<ReturnType<typeof api.getUsageSummaries>>
   >([]);
@@ -1308,18 +1309,19 @@ export function App() {
 
   async function downloadShareQr(chatbot: ManagedChatbot) {
     if (!chatbot.share.publicToken) return;
+    if (pendingShareQrChatbotId) return;
     const shareUrl = `${window.location.origin}/s/${chatbot.share.publicToken}`;
+    setPendingShareQrChatbotId(chatbot.id);
     try {
       await downloadShareQrImage(shareUrl, chatbot.name);
       setShareNoticeChatbotId(chatbot.id);
       setShareNotice("QR 이미지를 저장했습니다.");
     } catch (caught) {
+      console.error("Failed to build share QR image", caught);
       setShareNoticeChatbotId(chatbot.id);
-      setShareNotice(
-        caught instanceof Error
-          ? caught.message
-          : "QR 이미지를 만들지 못했습니다.",
-      );
+      setShareNotice("QR 이미지를 만들지 못했습니다.");
+    } finally {
+      setPendingShareQrChatbotId("");
     }
   }
 
@@ -1554,6 +1556,7 @@ export function App() {
           pendingSelectedDelete={pendingSelectedDelete}
           copyShareLink={copyShareLink}
           downloadShareQr={downloadShareQr}
+          pendingShareQrChatbotId={pendingShareQrChatbotId}
           shareNotice={shareNotice}
           shareNoticeChatbotId={shareNoticeChatbotId}
         />

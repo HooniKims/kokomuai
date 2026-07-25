@@ -51,6 +51,7 @@ export interface TeacherDashboardRouteProps {
   pendingSelectedDelete: boolean;
   copyShareLink: (chatbot: ManagedChatbot) => Promise<void>;
   downloadShareQr: (chatbot: ManagedChatbot) => Promise<void>;
+  pendingShareQrChatbotId: string;
   shareNotice: string;
   shareNoticeChatbotId: string;
 }
@@ -85,6 +86,7 @@ export function TeacherDashboardRoute({
   pendingSelectedDelete,
   copyShareLink,
   downloadShareQr,
+  pendingShareQrChatbotId,
   shareNotice,
   shareNoticeChatbotId
 }: TeacherDashboardRouteProps) {
@@ -332,8 +334,10 @@ export function TeacherDashboardRoute({
                         <Copy size={16} /> 링크 복사
                       </button>
                       <button
+                        aria-busy={pendingShareQrChatbotId === chatbot.id}
                         className="pill outline"
                         data-action="download-share-qr"
+                        disabled={pendingShareQrChatbotId === chatbot.id}
                         onClick={() => void downloadShareQr(chatbot)}
                         type="button"
                       >

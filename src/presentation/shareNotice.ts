@@ -28,7 +28,7 @@ export function formatShareNotice(message: string): ShareNoticeView {
     };
   }
 
-  if (detail.includes("저장")) {
+  if (detail.includes("저장했습니다")) {
     return {
       title: "QR 저장 완료",
       detail,

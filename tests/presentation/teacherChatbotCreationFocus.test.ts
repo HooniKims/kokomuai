@@ -63,6 +63,7 @@ describe("teacher chatbot creation focus", () => {
       pendingSelectedDelete: false,
       copyShareLink: vi.fn(),
       downloadShareQr: vi.fn(),
+      pendingShareQrChatbotId: "",
       shareNotice: "",
       shareNoticeChatbotId: "",
     });
@@ -117,6 +118,7 @@ describe("teacher chatbot creation focus", () => {
       pendingSelectedDelete: false,
       copyShareLink: vi.fn(),
       downloadShareQr: vi.fn(),
+      pendingShareQrChatbotId: "",
       shareNotice: "",
       shareNoticeChatbotId: "",
     });
@@ -185,6 +187,7 @@ describe("teacher chatbot creation focus", () => {
       pendingSelectedDelete: false,
       copyShareLink: vi.fn(),
       downloadShareQr: vi.fn(),
+      pendingShareQrChatbotId: "",
       shareNotice: "",
       shareNoticeChatbotId: "",
     });
@@ -251,6 +254,7 @@ describe("teacher chatbot creation focus", () => {
       pendingSelectedDelete: false,
       copyShareLink: vi.fn(),
       downloadShareQr: vi.fn(),
+      pendingShareQrChatbotId: "",
       shareNotice: "",
       shareNoticeChatbotId: "",
     });

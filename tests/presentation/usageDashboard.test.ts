@@ -61,6 +61,7 @@ describe("usage dashboard display", () => {
       pendingSelectedDelete: false,
       copyShareLink: vi.fn(),
       downloadShareQr: vi.fn(),
+      pendingShareQrChatbotId: "",
       shareNotice: "",
       shareNoticeChatbotId: ""
     });
@@ -134,6 +135,7 @@ describe("usage dashboard display", () => {
       pendingSelectedDelete: false,
       copyShareLink: vi.fn(),
       downloadShareQr: vi.fn(),
+      pendingShareQrChatbotId: "",
       shareNotice: "",
       shareNoticeChatbotId: ""
     });
@@ -209,6 +211,7 @@ describe("usage dashboard display", () => {
       pendingSelectedDelete: false,
       copyShareLink: vi.fn(),
       downloadShareQr: vi.fn(),
+      pendingShareQrChatbotId: "",
       shareNotice: "",
       shareNoticeChatbotId: ""
     });

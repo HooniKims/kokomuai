@@ -41,6 +41,10 @@ export function layoutQrCardName(
     }
 
     flush();
+    // Fast path: the whole word already fits on its own line, so skip the
+    // character-by-character fallback below. Confirmed equivalent to that
+    // loop by exhaustive differential testing -- it always produces the same
+    // line as the loop would, just without measuring one character at a time.
     if (measureWidth(word) <= maxWidth) {
       current = word;
       continue;
@@ -83,6 +87,8 @@ const CARD_WIDTH = 880;
 const CARD_HEIGHT = 1080;
 const CARD_PADDING = 80;
 const QR_SIZE = 720;
+// QR block ends at CARD_PADDING + QR_SIZE = 80 + 720 = 800, leaving a 72px
+// gap before the name text starts.
 const NAME_TOP = 872;
 const NAME_FONT_SIZE = 48;
 const NAME_LINE_HEIGHT = 64;

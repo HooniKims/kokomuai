@@ -1,5 +1,33 @@
+/**
+ * Manual, local-only verification script for the teacher-dashboard "QR 다운로드"
+ * (share QR download) feature. It drives a real browser against a locally
+ * running app + API, creates real chatbots, downloads the generated QR PNGs,
+ * and checks their pixels/filenames against the production layout.
+ *
+ * How to run:
+ *   1. In one terminal, start the app with the Firebase auth gate disabled:
+ *        VITE_FIREBASE_AUTH_ENABLED=false npm run dev
+ *      (the override is required: .env sets VITE_FIREBASE_AUTH_ENABLED=true,
+ *      which requires a signed-in Firebase teacher before the dashboard and
+ *      its /api/teachers and /api/chatbots calls will work; this script drives
+ *      an unauthenticated local-dev flow instead, so the gate must be off)
+ *   2. In another terminal, start the local API: npm run server
+ *   3. node tests/e2e/shareQrDownload.mjs
+ *
+ * Side effects: this script writes directly to server/data/local-dev-store.json
+ * (bootstrapApprovedLocalTeacher, disableShareInStore) to approve a local
+ * teacher and to flip a chatbot's sharing off, and it creates real chatbots
+ * through the API. It does not clean up after itself -- test chatbots and
+ * store mutations are left behind after the run. Do not point it at a shared
+ * or production store.
+ *
+ * This script is for local, manual verification only -- it is not part of
+ * `npm test` and does not run in CI. It does not fix the underlying app-level
+ * local-dev auth bootstrap gap described in bootstrapApprovedLocalTeacher()
+ * below; that is a separate, pre-existing issue.
+ */
 import { chromium } from "playwright";
-import { mkdir, readFile, writeFile, rm } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const appUrl = process.env.E2E_APP_URL ?? "http://127.0.0.1:5173";
@@ -7,7 +35,11 @@ const apiUrl = process.env.E2E_API_URL ?? "http://127.0.0.1:8787";
 const artifactsDir = "artifacts";
 const storePath = "server/data/local-dev-store.json";
 
-// Constants mirrored from src/presentation/shareQrImage.ts (read-only reference, not re-implemented logic)
+// Layout constants mirrored from src/presentation/shareQrImage.ts, which is the
+// source of truth for the card geometry. `buildShareQrFileName` (the filename
+// rule) is NOT duplicated here -- it is imported live from the compiled
+// production module inside the browser page (see computeExpectedFileName
+// below), so a regression there is caught instead of silently passing.
 const CARD_WIDTH = 880;
 const CARD_HEIGHT = 1080;
 const QR_SIZE = 720;
@@ -17,6 +49,20 @@ const NAME_LINE_HEIGHT = 64;
 const CARD_BACKGROUND = "#fffdf7";
 const INK = "#153300";
 const QR_BACKGROUND = "#ffffff";
+
+// Name-band boundaries and column bounds, derived from the constants above
+// (NAME_TOP / NAME_LINE_HEIGHT / QR_SIZE in src/presentation/shareQrImage.ts
+// are the source of truth) instead of being re-typed as separate literals at
+// each call site.
+const NAME_LINE1_TOP = NAME_TOP;
+const NAME_LINE1_BOTTOM = NAME_TOP + NAME_LINE_HEIGHT - 1;
+const NAME_LINE2_TOP = NAME_TOP + NAME_LINE_HEIGHT;
+const NAME_LINE2_BOTTOM = NAME_TOP + 2 * NAME_LINE_HEIGHT - 1;
+const NAME_LINE3_TOP = NAME_TOP + 2 * NAME_LINE_HEIGHT;
+const NAME_LINE3_BOTTOM = NAME_TOP + 3 * NAME_LINE_HEIGHT - 1;
+const NAME_BAND_BOTTOM = NAME_TOP + 2 * NAME_LINE_HEIGHT; // end of the 2-line name allowance
+const NAME_BAND_LEFT = CARD_PADDING; // QR block left edge
+const NAME_BAND_RIGHT = CARD_PADDING + QR_SIZE; // QR block right edge
 
 const SHORT_NAME = "분수의 덧셈 도우미";
 const LONG_NAME = "분모가 다른 분수의 덧셈과 뺄셈을 단계별로 함께 풀어보는 수학 도우미 챗봇";
@@ -75,13 +121,17 @@ async function main() {
     await downloadA.saveAs(savedA);
 
     const suggestedA = downloadA.suggestedFilename();
-    record("1", "Case A filename exactly 분수의-덧셈-도우미-QR.png", suggestedA === "분수의-덧셈-도우미-QR.png", { suggestedA });
+    const expectedFileNameA = await computeExpectedFileName(page, SHORT_NAME);
+    record("1", "Case A filename exactly 분수의-덧셈-도우미-QR.png", suggestedA === expectedFileNameA, {
+      suggestedA,
+      expectedFileNameA,
+    });
 
     const dimsA = await readPngDimensions(savedA);
     record("2", "Case A PNG is 880x1080", dimsA.width === CARD_WIDTH && dimsA.height === CARD_HEIGHT, dimsA);
 
     const shareUrlA = `${appUrl}/s/${chatbotA.share.publicToken}`;
-    await runCardPixelChecks(page, savedA, shareUrlA, {
+    await runCardPixelChecks(page, savedA, {
       caseId: "3",
       caseLabel: "Case A pixel/palette checks",
     });
@@ -106,7 +156,7 @@ async function main() {
     await downloadB.saveAs(savedB);
 
     const suggestedB = downloadB.suggestedFilename();
-    const expectedFileNameB = buildExpectedFileName(LONG_NAME);
+    const expectedFileNameB = await computeExpectedFileName(page, LONG_NAME);
     record("8", "Case B filename is sanitized long name + -QR.png", suggestedB === expectedFileNameB, {
       suggestedB,
       expectedFileNameB,
@@ -147,7 +197,7 @@ async function main() {
 
     const failed = checks.filter((c) => !c.pass);
     const result = {
-      passed: failed.length === 0,
+      passed: failed.length === 0 && pageErrors.length === 0,
       checks,
       pageErrors,
       chatbots: { a: chatbotA.id, b: chatbotB.id, c: chatbotC.id },
@@ -157,23 +207,24 @@ async function main() {
     if (failed.length > 0) {
       console.error(`${failed.length} check(s) FAILED`);
     }
+    if (pageErrors.length > 0) {
+      throw new Error(`${pageErrors.length} page error(s) observed during run -- see pageErrors above`);
+    }
   } finally {
     await browser.close();
   }
 }
 
-function buildExpectedFileName(name) {
-  const FORBIDDEN_FILE_NAME_CHARS = /[/\\:*?"<>|]/g;
-  const TRIMMED_FILE_NAME_EDGES = /^[-.]+|[-.]+$/g;
-  const MAX_FILE_NAME_LENGTH = 50;
-  const normalized = name
-    .replace(FORBIDDEN_FILE_NAME_CHARS, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(TRIMMED_FILE_NAME_EDGES, "")
-    .slice(0, MAX_FILE_NAME_LENGTH)
-    .replace(TRIMMED_FILE_NAME_EDGES, "");
-  return `${normalized || "chatbot"}-QR.png`;
+// Computes the expected download filename by calling the real, compiled
+// production function inside the page -- not a local re-implementation.
+// Vite's dev server serves TypeScript sources directly, so the same
+// "/@id/..."-style dynamic import used by runQrMatchCheck below for the
+// "qrcode" package also works for our own module via its dev-server path.
+async function computeExpectedFileName(page, name) {
+  return page.evaluate(async (name) => {
+    const mod = await import(/* @vite-ignore */ "/src/presentation/shareQrImage.ts");
+    return mod.buildShareQrFileName(name);
+  }, name);
 }
 
 async function createSharedChatbot(page, form) {
@@ -229,8 +280,17 @@ async function waitForCreatedChatbot(name) {
     const teacher = await waitForApprovedTeacher({ throwOnTimeout: false });
     if (teacher) {
       const chatbots = await requestJson(`${apiUrl}/api/chatbots?ownerTeacherId=${encodeURIComponent(teacher.id)}`);
-      const chatbot = chatbots.chatbots?.find((item) => item.name === name);
-      if (chatbot) return chatbot;
+      // Match by name, but a leftover chatbot with the same name from a
+      // previous (unclean) run of this script can already exist -- pick the
+      // most recently created match so a stale row can't be silently
+      // verified in place of the one this run just created.
+      const matches = chatbots.chatbots?.filter((item) => item.name === name) ?? [];
+      if (matches.length > 0) {
+        const latest = matches.reduce((newest, candidate) =>
+          new Date(candidate.createdAt).getTime() > new Date(newest.createdAt).getTime() ? candidate : newest,
+        );
+        return latest;
+      }
     }
     await wait(400);
   }
@@ -364,26 +424,34 @@ function closeEnough(pixel, target, tolerance = 12) {
   );
 }
 
-async function runCardPixelChecks(page, filePath, shareUrl, { caseId, caseLabel }) {
+async function runCardPixelChecks(page, filePath, { caseId, caseLabel }) {
   await loadCardIntoPage(page, filePath);
 
   const cream = hexToRgb(CARD_BACKGROUND);
   const ink = hexToRgb(INK);
   const white = hexToRgb(QR_BACKGROUND);
 
-  // background point outside the QR block (e.g. top-left corner, well outside 80..800 box)
+  // background point outside the QR block (e.g. top-left corner, well outside the
+  // NAME_BAND_LEFT..NAME_BAND_RIGHT box)
   const bgPixel = await samplePixel(page, 10, 10);
   // white QR quiet-zone area inside the QR block but near its inner edge (margin=2 modules ~ inside padding)
   const quietZonePixel = await samplePixel(page, CARD_PADDING + 4, CARD_PADDING + 4);
   const inkPixelCount = await countInkPixelsInRegion(page, CARD_PADDING, CARD_PADDING, QR_SIZE, QR_SIZE, ink);
-  const nameBandInkCount = await countInkPixelsInRegion(page, 0, 872, CARD_WIDTH, 1000 - 872, ink);
+  const nameBandInkCount = await countInkPixelsInRegion(
+    page,
+    0,
+    NAME_TOP,
+    CARD_WIDTH,
+    NAME_BAND_BOTTOM - NAME_TOP,
+    ink,
+  );
 
   const bgOk = closeEnough(bgPixel, cream, 6);
   const quietZoneOk = closeEnough(quietZonePixel, white, 30) || closeEnough(quietZonePixel, ink, 30);
   const qrInkOk = inkPixelCount > 1000;
   const nameInkOk = nameBandInkCount > 20;
 
-  record(caseId, caseLabel, bgOk && qrInkOk && nameInkOk, {
+  record(caseId, caseLabel, bgOk && quietZoneOk && qrInkOk && nameInkOk, {
     bgPixel,
     expectedCream: cream,
     quietZonePixel,
@@ -449,17 +517,17 @@ async function runNoUrlBelowNameCheck(page, filePath, id, label) {
 
 async function lineBandCheck(page, id, label) {
   const ink = hexToRgb(INK);
-  const line1 = await countInkPixelsInRegion(page, CARD_PADDING, 872, QR_SIZE, 935 - 872, ink);
-  const line2 = await countInkPixelsInRegion(page, CARD_PADDING, 936, QR_SIZE, 999 - 936, ink);
-  const line3 = await countInkPixelsInRegion(page, CARD_PADDING, 1000, QR_SIZE, 1063 - 1000, ink);
+  const line1 = await countInkPixelsInRegion(page, CARD_PADDING, NAME_LINE1_TOP, QR_SIZE, NAME_LINE1_BOTTOM - NAME_LINE1_TOP + 1, ink);
+  const line2 = await countInkPixelsInRegion(page, CARD_PADDING, NAME_LINE2_TOP, QR_SIZE, NAME_LINE2_BOTTOM - NAME_LINE2_TOP + 1, ink);
+  const line3 = await countInkPixelsInRegion(page, CARD_PADDING, NAME_LINE3_TOP, QR_SIZE, NAME_LINE3_BOTTOM - NAME_LINE3_TOP + 1, ink);
   const pass = line1 > 5 && line2 > 5 && line3 === 0;
   record(id, label, pass, { line1InkPixelCount: line1, line2InkPixelCount: line2, line3InkPixelCount: line3 });
 }
 
 async function horizontalBoundsCheck(page, id, label) {
   const ink = hexToRgb(INK);
-  const leftOfColumn = await countInkPixelsInRegion(page, 0, 872, CARD_PADDING, 1000 - 872, ink);
-  const rightOfColumn = await countInkPixelsInRegion(page, CARD_PADDING + QR_SIZE, 872, CARD_WIDTH - (CARD_PADDING + QR_SIZE), 1000 - 872, ink);
+  const leftOfColumn = await countInkPixelsInRegion(page, 0, NAME_TOP, NAME_BAND_LEFT, NAME_BAND_BOTTOM - NAME_TOP, ink);
+  const rightOfColumn = await countInkPixelsInRegion(page, NAME_BAND_RIGHT, NAME_TOP, CARD_WIDTH - NAME_BAND_RIGHT, NAME_BAND_BOTTOM - NAME_TOP, ink);
   const pass = leftOfColumn === 0 && rightOfColumn === 0;
   record(id, label, pass, { leftOfColumnInkPixelCount: leftOfColumn, rightOfColumnInkPixelCount: rightOfColumn });
 }

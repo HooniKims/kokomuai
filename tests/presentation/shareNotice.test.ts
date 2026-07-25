@@ -38,6 +38,15 @@ describe("shareNotice", () => {
     });
   });
 
+  it("does not mistake a QR save failure for a completed save action", () => {
+    expect(formatShareNotice("QR 이미지를 저장하지 못했습니다.")).toEqual({
+      title: "알림",
+      detail: "QR 이미지를 저장하지 못했습니다.",
+      url: "",
+      tone: "default"
+    });
+  });
+
   it("keeps plain notices visible without inventing a link", () => {
     expect(formatShareNotice("챗봇을 삭제했습니다.")).toEqual({
       title: "알림",

@@ -34,6 +34,25 @@ describe("share QR download action", () => {
 
     expect(trigger).toBeUndefined();
   });
+
+  it("disables the QR download only for the row with a download in flight", () => {
+    const inFlight = chatbot({ enabled: true });
+    const other = { ...chatbot({ enabled: true }), id: "chatbot-2", name: "다른 챗봇" };
+    const tree = TeacherDashboardRoute(baseProps({
+      chatbots: [inFlight, other],
+      pendingShareQrChatbotId: inFlight.id,
+    }));
+
+    const triggers = collectNodes(tree).filter(
+      (node) => node.props?.["data-action"] === "download-share-qr",
+    );
+
+    expect(triggers).toHaveLength(2);
+    expect(triggers[0]?.props?.disabled).toBe(true);
+    expect(triggers[0]?.props?.["aria-busy"]).toBe(true);
+    expect(triggers[1]?.props?.disabled).toBe(false);
+    expect(triggers[1]?.props?.["aria-busy"]).toBe(false);
+  });
 });
 
 function baseProps(
@@ -79,6 +98,7 @@ function baseProps(
     pendingSelectedDelete: false,
     copyShareLink: vi.fn(),
     downloadShareQr: vi.fn(),
+    pendingShareQrChatbotId: "",
     shareNotice: "",
     shareNoticeChatbotId: "",
     ...overrides,
