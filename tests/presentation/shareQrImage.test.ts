@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildShareQrFileName, layoutQrCardName } from "../../src/presentation/shareQrImage";
+import {
+  buildShareQrFileName,
+  createShareQrPngBlob,
+  downloadShareQrImage,
+  layoutQrCardName,
+} from "../../src/presentation/shareQrImage";
 
 describe("buildShareQrFileName", () => {
   it("turns a Korean chatbot name into a hyphenated png file name", () => {
@@ -78,5 +83,12 @@ describe("layoutQrCardName", () => {
     expect(layoutQrCardName("  분수   도우미  ", measureTenPixelsPerCharacter, 100, 2)).toEqual([
       "분수 도우미",
     ]);
+  });
+});
+
+describe("share QR image factories", () => {
+  it("exposes blob creation and download as functions instead of running at import time", () => {
+    expect(typeof createShareQrPngBlob).toBe("function");
+    expect(typeof downloadShareQrImage).toBe("function");
   });
 });
