@@ -28,6 +28,15 @@ export function formatShareNotice(message: string): ShareNoticeView {
     };
   }
 
+  if (detail.includes("저장")) {
+    return {
+      title: "QR 저장 완료",
+      detail,
+      url,
+      tone: "success"
+    };
+  }
+
   if (detail.includes("준비")) {
     return {
       title: "공유 준비 완료",

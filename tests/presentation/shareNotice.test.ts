@@ -29,6 +29,15 @@ describe("shareNotice", () => {
     });
   });
 
+  it("highlights a saved QR image as a completed save action", () => {
+    expect(formatShareNotice("QR 이미지를 저장했습니다.")).toEqual({
+      title: "QR 저장 완료",
+      detail: "QR 이미지를 저장했습니다.",
+      url: "",
+      tone: "success"
+    });
+  });
+
   it("keeps plain notices visible without inventing a link", () => {
     expect(formatShareNotice("챗봇을 삭제했습니다.")).toEqual({
       title: "알림",
