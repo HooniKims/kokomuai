@@ -42,6 +42,7 @@ export interface ApiHandlerDependencies {
     verifyIdToken: VerifyIdToken;
   };
   passwordResetEmail?: (email: string) => Promise<void>;
+  signupNoticeEmail?: (teacher: { realName: string; email: string; schoolName: string }) => Promise<void>;
 }
 
 export function createApiHandler(
@@ -54,6 +55,7 @@ export function createApiHandler(
     env: dependencies.env,
     auth: dependencies.auth,
     passwordResetEmail: dependencies.passwordResetEmail,
+    signupNoticeEmail: dependencies.signupNoticeEmail,
   });
 
   return async (request, response) => {

@@ -11,6 +11,7 @@ import { createFirebaseStore, type FirestoreLike } from "./firebaseStore.js";
 import type { SchoolSearchDependency } from "./localApi.js";
 import { searchNeisSchools } from "./neisSchoolSearch.js";
 import { sendFirebasePasswordResetEmail } from "./passwordResetEmail.js";
+import { createSignupNoticeEmailSender, type SignupNoticeTeacher } from "./signupNoticeEmail.js";
 import type { StorePort } from "./storePort.js";
 
 type EnvironmentSource = ProviderEnvironment & Record<string, string | undefined>;
@@ -27,6 +28,7 @@ export interface VercelApiDependencies {
     verifyIdToken: VerifyIdToken;
   };
   passwordResetEmail?: (email: string) => Promise<void>;
+  signupNoticeEmail?: (teacher: SignupNoticeTeacher) => Promise<void>;
 }
 
 export async function createVercelApiHandler(dependencies: VercelApiDependencies = {}): Promise<http.RequestListener> {
@@ -73,7 +75,10 @@ export async function createVercelApiHandler(dependencies: VercelApiDependencies
             apiKey: env.VITE_FIREBASE_API_KEY ?? ""
           },
           { fetchImpl: dependencies.fetchImpl }
-        ))
+        )),
+    signupNoticeEmail:
+      dependencies.signupNoticeEmail ??
+      createSignupNoticeEmailSender(env, dependencies.fetchImpl)
   });
 }
 

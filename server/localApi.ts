@@ -58,6 +58,7 @@ export interface LocalApiDependencies {
     verifyIdToken: VerifyIdToken;
   };
   passwordResetEmail?: (email: string) => Promise<void>;
+  signupNoticeEmail?: (teacher: { realName: string; email: string; schoolName: string }) => Promise<void>;
 }
 
 export function createLocalApiHandler(
@@ -202,6 +203,20 @@ export function createLocalApiHandler(
           } catch (error) {
             console.warn(
               "admin action log write failed after teacher profile creation",
+              error,
+            );
+          }
+        }
+        if (result.created && !shouldBootstrapAdmin) {
+          try {
+            await dependencies.signupNoticeEmail?.({
+              realName: result.teacher.realName,
+              email: result.teacher.email,
+              schoolName: result.teacher.school.schoolName,
+            });
+          } catch (error) {
+            console.warn(
+              "signup notice email failed after teacher profile creation",
               error,
             );
           }

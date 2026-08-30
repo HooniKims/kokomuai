@@ -57,6 +57,7 @@ async function createTestServer(options: {
   curriculumIndex?: CurriculumIndex;
   schoolSearch?: SchoolSearchDependency;
   env?: Record<string, string | undefined>;
+  signupNoticeEmail?: (teacher: { realName: string; email: string; schoolName: string }) => Promise<void>;
 } = {}) {
   const root = await mkdtemp(join(tmpdir(), "local-api-"));
   tempRoots.push(root);
@@ -66,6 +67,7 @@ async function createTestServer(options: {
     curriculumIndex: options.curriculumIndex,
     schoolSearch: options.schoolSearch,
     env: options.env,
+    signupNoticeEmail: options.signupNoticeEmail,
     auth: {
       requireFirebaseAuth: true,
       verifyIdToken: async (token: string) => {
@@ -315,6 +317,75 @@ describe("localApi", () => {
     const listResponse = await fetch(`${baseUrl}/api/teachers`);
     const listed = (await readJson(listResponse)) as { teachers: Array<{ id: string; status: string }> };
     expect(listed.teachers.some((teacher) => teacher.id === registered.teacher.id && teacher.status === "approved")).toBe(true);
+  });
+
+  it("notifies the operator once per new teacher signup and never for repeat registrations", async () => {
+    const notified: Array<{ realName: string; email: string; schoolName: string }> = [];
+    const { baseUrl } = await createTestServer({
+      signupNoticeEmail: async (teacher) => {
+        notified.push(teacher);
+      }
+    });
+
+    const payload = {
+      realName: "김하늘",
+      email: "teacher@example.com",
+      passwordHash: "argon2id$hashed-password",
+      school: {
+        schoolName: "한빛초등학교",
+        schoolKind: "초등학교",
+        officeCode: "B10",
+        standardSchoolCode: "1234567",
+        region: "서울"
+      }
+    };
+
+    const first = await fetch(`${baseUrl}/api/teachers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    expect(first.status).toBe(201);
+    expect(notified).toEqual([
+      { realName: "김하늘", email: "teacher@example.com", schoolName: "한빛초등학교" }
+    ]);
+
+    const second = await fetch(`${baseUrl}/api/teachers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    expect(second.status).toBe(200);
+    expect(notified).toHaveLength(1);
+  });
+
+  it("still registers the teacher when the signup notice email fails", async () => {
+    const { baseUrl } = await createTestServer({
+      signupNoticeEmail: async () => {
+        throw new Error("resend unavailable");
+      }
+    });
+
+    const response = await fetch(`${baseUrl}/api/teachers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        realName: "김하늘",
+        email: "teacher@example.com",
+        passwordHash: "argon2id$hashed-password",
+        school: {
+          schoolName: "한빛초등학교",
+          schoolKind: "초등학교",
+          officeCode: "B10",
+          standardSchoolCode: "1234567",
+          region: "서울"
+        }
+      })
+    });
+
+    expect(response.status).toBe(201);
+    const registered = (await readJson(response)) as { teacher: { status: string } };
+    expect(registered.teacher.status).toBe("pending");
   });
 
   it("rejects oversized teacher registration payloads before saving anything", async () => {
