@@ -1,4 +1,4 @@
-﻿import type { AiModelOption } from "../src/domain/ai/modelCatalog.js";
+import type { AiModelOption } from "../src/domain/ai/modelCatalog.js";
 
 export type ProviderMessage = { role: "system" | "user" | "assistant"; content: string };
 
@@ -54,7 +54,7 @@ function createLmStudioRequest(model: AiModelOption, messages: ProviderMessage[]
   const apiKey = env.LMSTUDIO_API_KEY?.trim();
   if (!apiKey) throw new Error("LMSTUDIO_API_KEY is required");
 
-  const baseUrl = stripTrailingSlash(env.LMSTUDIO_API_URL?.trim() || "https://lm.alluser.site");
+  const baseUrl = stripTrailingSlash(env.LMSTUDIO_API_URL?.trim() || "https://lm.alluser.kr");
   return {
     url: `${baseUrl}/v1/chat/completions`,
     headers: {
