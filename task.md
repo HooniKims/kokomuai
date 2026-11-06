@@ -1,4 +1,4 @@
-﻿# 콘페스타 참가용 질문형 학습 챗봇 작업 정리
+# 콘페스타 참가용 질문형 학습 챗봇 작업 정리
 
 ## 작업 목적
 
@@ -7230,7 +7230,7 @@ LLM 실구동 확인:
 
 - 운영 `/api/chat` 직접 호출 결과, 응답은 HTTP `200`이지만 스트림의 모델이 `gpt-5.4-nano-2026-03-17`로 표시되어 OpenAI fallback 상태임을 확인했다.
 - 같은 LM Studio 공개 주소를 로컬 PC에서 직접 호출하면 `unsloth/gemma-4-12b-it`가 HTTP `200`으로 응답했다.
-- Vercel 함수 진단 로그를 추가해 확인한 결과, `lm.alluser.site:443` 연결에서 `UND_ERR_CONNECT_TIMEOUT`이 발생했다.
+- Vercel 함수 진단 로그를 추가해 확인한 결과, `lm.alluser.kr:443` 연결에서 `UND_ERR_CONNECT_TIMEOUT`이 발생했다.
 - 즉 HTTP 403, Origin 차단, API 키 오류가 아니라 Vercel 함수가 Washington(`iad1`)에서 LM Studio 서버까지 TCP 연결을 열지 못하는 문제였다.
 
 수정:
