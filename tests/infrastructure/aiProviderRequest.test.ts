@@ -28,16 +28,16 @@ describe("createAiProviderRequest", () => {
 
   it("builds an LM Studio request with X-API-Key and documented model ids", () => {
     const request = createAiProviderRequest(resolveAiModel("lmstudio:gemma-4-12b-it"), messages, {
-      LMSTUDIO_API_URL: "https://lm.alluser.site",
+      LMSTUDIO_API_URL: "https://lm.alluser.kr",
       LMSTUDIO_API_KEY: "local-key",
       LMSTUDIO_GEMMA_12B_MODEL: "gemma-4-12b-it"
     });
 
-    expect(request.url).toBe("https://lm.alluser.site/v1/chat/completions");
+    expect(request.url).toBe("https://lm.alluser.kr/v1/chat/completions");
     expect(request.headers).toMatchObject({
       "Content-Type": "application/json; charset=utf-8",
-      Origin: "https://lm.alluser.site",
-      Referer: "https://lm.alluser.site/",
+      Origin: "https://lm.alluser.kr",
+      Referer: "https://lm.alluser.kr/",
       "X-API-Key": "local-key"
     });
     expect(JSON.parse(request.body)).toMatchObject({
