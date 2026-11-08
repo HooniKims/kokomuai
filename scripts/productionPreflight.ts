@@ -25,7 +25,6 @@ const requiredServerEnv = [
   "LMSTUDIO_GEMMA_E4B_MODEL",
   "LMSTUDIO_GEMMA_E2B_MODEL",
   "LMSTUDIO_GEMMA_12B_MODEL",
-  "LMSTUDIO_GEMMA_26B_MODEL"
 ];
 export const clientForbiddenEnvNames = [
   "OPENAI_API_KEY",

@@ -25,7 +25,7 @@ describe("apiHandler", () => {
     await expect(health.json()).resolves.toMatchObject({
       ok: true,
       provider: "lmstudio",
-      model: "gemma-4-12b-it"
+      model: "unsloth/gemma-4-12b-it"
     });
 
     const schools = await fetch(`${baseUrl}/api/schools/search?q=${encodeURIComponent("새빛중")}`);
@@ -393,7 +393,7 @@ describe("apiHandler", () => {
 
     expect(response.status).toBe(200);
     await expect(response.text()).resolves.toContain("도와줄게요.");
-    expect(requestedModels).toEqual(["google/gemma-4-e2b", "gemma-4-12b-it"]);
+    expect(requestedModels).toEqual(["google/gemma-4-e2b", "unsloth/gemma-4-12b-it"]);
   });
 
   it("falls back to OpenAI when local LM Studio models are unavailable from production", async () => {
@@ -449,7 +449,7 @@ describe("apiHandler", () => {
 
     expect(response.status).toBe(200);
     await expect(response.text()).resolves.toContain("OpenAI fallback answer.");
-    expect(requestedModels).toEqual(["google/gemma-4-e2b", "gemma-4-12b-it", "gpt-5.4-nano"]);
+    expect(requestedModels).toEqual(["google/gemma-4-e2b", "unsloth/gemma-4-12b-it", "gpt-5.4-nano"]);
   });
 
   it("records OpenAI GPT-5.4 nano streaming usage tokens for billing", async () => {

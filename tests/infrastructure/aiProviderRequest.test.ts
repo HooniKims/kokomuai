@@ -30,7 +30,7 @@ describe("createAiProviderRequest", () => {
     const request = createAiProviderRequest(resolveAiModel("lmstudio:gemma-4-12b-it"), messages, {
       LMSTUDIO_API_URL: "https://lm.alluser.kr",
       LMSTUDIO_API_KEY: "local-key",
-      LMSTUDIO_GEMMA_12B_MODEL: "gemma-4-12b-it"
+      LMSTUDIO_GEMMA_12B_MODEL: "unsloth/gemma-4-12b-it"
     });
 
     expect(request.url).toBe("https://lm.alluser.kr/v1/chat/completions");
@@ -41,7 +41,7 @@ describe("createAiProviderRequest", () => {
       "X-API-Key": "local-key"
     });
     expect(JSON.parse(request.body)).toMatchObject({
-      model: "gemma-4-12b-it",
+      model: "unsloth/gemma-4-12b-it",
       messages,
       stream: true,
       reasoning_effort: "none"

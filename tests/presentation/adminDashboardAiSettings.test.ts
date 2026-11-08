@@ -35,7 +35,7 @@ describe("AdminDashboardRoute AI settings", () => {
           {
             id: "lmstudio:gemma-4-12b-it",
             provider: "lmstudio",
-            apiModel: "gemma-4-12b-it",
+            apiModel: "unsloth/gemma-4-12b-it",
             displayName: "Gemma 4 12B",
             description: "로컬 LLM",
             isDefault: false,
@@ -88,7 +88,7 @@ describe("AdminDashboardRoute AI settings", () => {
           {
             id: "lmstudio:gemma-4-12b-it",
             provider: "lmstudio",
-            apiModel: "gemma-4-12b-it",
+            apiModel: "unsloth/gemma-4-12b-it",
             displayName: "Gemma 4 12B",
             description: "높은 품질 모델",
             isDefault: false,
@@ -145,7 +145,7 @@ describe("AdminDashboardRoute AI settings", () => {
           {
             id: "lmstudio:gemma-4-12b-it",
             provider: "lmstudio",
-            apiModel: "gemma-4-12b-it",
+            apiModel: "unsloth/gemma-4-12b-it",
             displayName: "Gemma 4 12B",
             description: "높은 품질 모델",
             isDefault: false,

@@ -7,12 +7,12 @@ import {
 } from "../../src/domain/ai/modelCatalog";
 
 describe("ai model catalog", () => {
-  it("uses Gemma 4 12B as the default local LLM model", () => {
+  it("uses Gemma 4 12B IT as the default local LLM model", () => {
     expect(getDefaultAiModel()).toMatchObject({
       id: "lmstudio:gemma-4-12b-it",
       provider: "lmstudio",
-      apiModel: "gemma-4-12b-it",
-      displayName: "Gemma 4 12B"
+      apiModel: "unsloth/gemma-4-12b-it",
+      displayName: "Gemma 4 12B IT"
     });
   });
 
@@ -24,7 +24,7 @@ describe("ai model catalog", () => {
       "lmstudio:gemma-4-12b-it",
       "gemma4:e4b",
       "gemma4:e2b",
-      "lmstudio:gemma-4-26b-a4b-it-q4ks"
+      "lmstudio:google-gemma-4-12b"
     ]);
   });
 

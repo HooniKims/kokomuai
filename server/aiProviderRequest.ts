@@ -9,7 +9,6 @@ export interface ProviderEnvironment {
   LMSTUDIO_GEMMA_E4B_MODEL?: string;
   LMSTUDIO_GEMMA_E2B_MODEL?: string;
   LMSTUDIO_GEMMA_12B_MODEL?: string;
-  LMSTUDIO_GEMMA_26B_MODEL?: string;
 }
 
 export interface AiProviderRequest {
@@ -78,7 +77,6 @@ function resolveLmStudioApiModel(model: AiModelOption, env: ProviderEnvironment)
   if (model.id === "gemma4:e4b") return env.LMSTUDIO_GEMMA_E4B_MODEL || model.apiModel;
   if (model.id === "gemma4:e2b") return env.LMSTUDIO_GEMMA_E2B_MODEL || model.apiModel;
   if (model.id === "lmstudio:gemma-4-12b-it") return env.LMSTUDIO_GEMMA_12B_MODEL || model.apiModel;
-  if (model.id === "lmstudio:gemma-4-26b-a4b-it-q4ks") return env.LMSTUDIO_GEMMA_26B_MODEL || model.apiModel;
   return model.apiModel;
 }
 

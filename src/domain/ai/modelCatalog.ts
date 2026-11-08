@@ -39,8 +39,8 @@ const availableAiModels: AiModelOption[] = [
   {
     id: "lmstudio:gemma-4-12b-it",
     provider: "lmstudio",
-    apiModel: "gemma-4-12b-it",
-    displayName: "Gemma 4 12B",
+    apiModel: "unsloth/gemma-4-12b-it",
+    displayName: "Gemma 4 12B IT",
     description: "로컬 LLM 기본값, 속도와 품질 균형",
     isDefault: true,
     pricing: freeLocalPricing()
@@ -64,11 +64,11 @@ const availableAiModels: AiModelOption[] = [
     pricing: freeLocalPricing()
   },
   {
-    id: "lmstudio:gemma-4-26b-a4b-it-q4ks",
+    id: "lmstudio:google-gemma-4-12b",
     provider: "lmstudio",
-    apiModel: "gemma-4-26b-a4b-it",
-    displayName: "Gemma 4 26B Q4",
-    description: "가장 느림, 품질 높음",
+    apiModel: "google/gemma-4-12b",
+    displayName: "Gemma 4 12B",
+    description: "Google 원본 12B, 느리지만 품질 높음",
     isDefault: false,
     pricing: freeLocalPricing()
   }
